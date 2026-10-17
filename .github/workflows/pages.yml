@@ -1,5 +1,6 @@
-# Publie StreamHub sur GitHub Pages, avec l'index des épisodes TF1+ et M6+ (scripts/build_episode_index.py).
-# Tourne à chaque modification du code et toutes les 6 heures, pour suivre les nouveaux épisodes.
+# Publie StreamHub sur GitHub Pages, avec l'index des épisodes TF1+ et M6+ et celui du catalogue HBO Max de Canal+
+# (scripts/build_episode_index.py).
+# Tourne à chaque modification du code et toutes les 6 heures, pour suivre les nouveaux épisodes et titres.
 name: Publier StreamHub
 
 on:
@@ -35,7 +36,7 @@ jobs:
           # Le script « reprise après connexion » s'installe depuis le site (Safari + appli Userscripts)
           cp extension/streamhub-reprise.user.js _site/
 
-      - name: Indexer les épisodes TF1+ et M6+
+      - name: Indexer les épisodes TF1+ et M6+, et le catalogue HBO Max de Canal+
         # Si une plateforme ne répond pas, le site est quand même publié : StreamHub renverra vers sa page
         run: python3 scripts/build_episode_index.py _site/data || echo "::warning::Index incomplet"
 

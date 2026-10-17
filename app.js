@@ -1,14 +1,14 @@
 import { loadSettings, saveSettings, relayUrl, HISTORY_MAX } from './store.js';
 import { makeApi, img, testTmdbKey, testSaKey, testRelay } from './api.js';
 import { syncNow, syncState, createCode, joinCode, leave, startAutoSync } from './sync.js';
-import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink } from './providers.js';
+import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink } from './providers.js';
 import { INDEXED_PLATFORMS, platformEpisodeUrl } from './episodes.js';
 import { aliasMatches } from './aliases.js';
 import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.0.1';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -1522,9 +1522,10 @@ function toDesktopApp(link) {
 // connexion. Une fois connecté et le profil choisi, l'extension ouvre le titre au lieu de l'accueil.
 const hasResumeExtension = () => document.documentElement.dataset.streamhubExtension === '1';
 
-function withResume(url) {
+// play : la page s'ouvre sans lancer la lecture (Disney+, série) ; le script appuiera sur « Reprendre » / « Lecture »
+function withResume(url, { play = false } = {}) {
   if (!/^https:\/\//.test(url) || url.includes('#streamhub=')) return url;
-  return `${url.split('#')[0]}#streamhub=${encodeURIComponent(url.split('#')[0])}`;
+  return `${url.split('#')[0]}#streamhub=${encodeURIComponent(url.split('#')[0])}${play ? '&play=1' : ''}`;
 }
 
 // Appli web de l'écran d'accueil (iPhone, iPad) : on ouvre le lien du titre directement, sans page
@@ -1601,7 +1602,7 @@ function waitForDirectLink(link, event) {
 function onLaunch(link, event) {
   if (waitForDirectLink(link, event)) return;
   toDesktopApp(link);
-  if (!IOS_WEB_APP) link.href = withResume(link.href); // le script de reprise ne tourne pas dans les applis
+  if (!IOS_WEB_APP) link.href = withResume(link.href, { play: link.dataset.resume === 'click' }); // le script ne tourne pas dans les applis
   const platform = link.dataset.platform ?? '';
   let entry;
   if (link.dataset.libraryKey) {
@@ -1755,7 +1756,40 @@ function applyDirectLinks(options) {
     a.dataset.direct = 'sa';
     $('.watch-hint', a).textContent = play ? 'Lecture directe' : 'Fiche du titre';
   }
+  applySeriesResume();
   refreshLikeButton(); // les boutons « Liker aussi » pointent maintenant vers la page du titre
+}
+
+// Séries : « Regarder sur… » reprend où tu t'es arrêté, ou commence à l'épisode 1 si tu n'as jamais regardé la série.
+// Netflix, Disney+, Prime Video, Canal+ gardent la progression : on leur envoie le lien qu'elles savent reprendre
+// (voir seriesResumeLink). TF1+ et M6+ n'en ont pas : on lance l'épisode qui suit le dernier épisode regardé depuis
+// StreamHub (historique), retrouvé grâce à l'index des épisodes.
+function applySeriesResume() {
+  if (current?.type !== 'tv') return;
+  const key = current.key;
+  const last = library.list('history').find((e) => e.key === library.titleKey('tv', current.id));
+  for (const a of el.detail.querySelectorAll('a.watch[data-service]')) {
+    if (a.dataset.kind === 'rent' || a.dataset.kind === 'buy') continue;
+    const resume = seriesResumeLink(a.href, a.dataset.page);
+    if (resume) {
+      a.href = resume.href;
+      if (resume.click) a.dataset.resume = 'click';
+      // Disney+ sur ordinateur, avec le script : il appuie sur « Reprendre » à ta place
+      $('.watch-hint', a).textContent = resume.click && !CAN_DOWNLOAD && hasResumeExtension() ? 'Reprise de la série' : resume.hint;
+      continue;
+    }
+    const platform = hostServiceFor(a.dataset.platform)?.id;
+    if (!INDEXED_PLATFORMS.has(platform) || !last?.episode || hostServiceFor(last.platform)?.id !== platform) continue;
+    const titles = [titleOf(current.item), originalTitleOf(current.item)];
+    const redraw = () => current?.key === key && applySeriesResume(); // une fois l'index chargé
+    const next =
+      [{ season: last.season, episode: last.episode + 1 }, { season: last.season + 1, episode: 1 }]
+        .map((keys) => ({ keys, href: platformEpisodeUrl(platform, titles, keys, redraw) }))
+        .find((n) => n.href);
+    if (!next) continue;
+    a.href = next.href;
+    $('.watch-hint', a).textContent = `Épisode suivant : S${next.keys.season} E${next.keys.episode}`;
+  }
 }
 
 // Liens JustWatch (via le relais) pour les boutons restés sans lien direct
@@ -1775,6 +1809,7 @@ function applyRelayLinks(offers, type) {
     const entry = current.entries.find((e) => e.name === a.dataset.platform);
     if (entry) entry.href = offer.url;
   }
+  applySeriesResume();
   refreshLikeButton();
   if (type === 'tv') applySeasonLinks();
 }

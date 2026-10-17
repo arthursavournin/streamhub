@@ -182,6 +182,29 @@ export function desktopWebLink(href, { play = false } = {}) {
   return `https://www.primevideo.com/detail/${encodeURIComponent(id)}${watch ? '?deepLinkingRedirect=1&autoplay=1' : ''}${url.hash}`;
 }
 
+// Série : lien qui laisse la plateforme reprendre où on s'est arrêté (épisode suivant), ou commencer à l'épisode 1
+// si on ne l'a jamais regardée. StreamHub ne peut pas lire la progression (pas d'API, données protégées par la
+// connexion) : il envoie le lien que la plateforme sait reprendre elle-même, plutôt que celui de l'épisode 1.
+// play : lien de lecture reçu (Streaming Availability ou JustWatch) ; page : lien de la page de la série.
+// Renvoie { href, hint, click } ou null ; click : la plateforme n'a pas de lien de reprise, il faut appuyer sur son
+// bouton « Reprendre » (fait par le script sur ordinateur).
+export function seriesResumeLink(play, page) {
+  const p = String(page ?? '');
+  // Netflix : « /watch/<épisode> » lance cet épisode, « /watch/<série> » reprend la série
+  const netflix = /netflix\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?title\/(\d+)/.exec(p)?.[1];
+  if (netflix) return { href: `https://www.netflix.com/watch/${netflix}`, hint: 'Reprise de la série' };
+  // Disney+ : « /play/<id> » est l'épisode 1 ; la page de la série affiche « Reprendre S1 E7 » (ou « Lecture »)
+  if (/disneyplus\.com\/(?:[a-z]{2}-[a-z]{2}\/)?browse\/entity-/.test(p)) return { href: p, hint: 'Page de la série', click: true };
+  // Prime Video : « watch?gti=<série> » reprend déjà (l'appli : « time=auto »)
+  if (/^https:\/\/app\.primevideo\.com\/watch\?/.test(String(play))) return { href: play, hint: 'Reprise de la série' };
+  // Canal+ : la fiche de la série avec « autoplay=true » lance son bouton principal (« Reprendre » s'il y a une
+  // progression) ; un lien d'épisode (« episodeId= ») lancerait cet épisode
+  if (/canalplus\.com\/.*\/h\/[^?]+\?(?:.*&)?autoplay=true/.test(String(play)) && !/episodeId=/.test(String(play))) {
+    return { href: play, hint: 'Reprise de la série' };
+  }
+  return null;
+}
+
 // Identifiant d'un titre d'après son adresse sur la plateforme (même calcul que le script
 // extension/streamhub-reprise.user.js) : reconnaît un même titre sous plusieurs adresses.
 export function pageRef(href) {

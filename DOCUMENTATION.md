@@ -60,14 +60,18 @@ Sous chaque bouton, une indication précise ce qu'il va faire :
 | Indication | Ce qui se passe |
 |---|---|
 | **Lecture directe** | La vidéo démarre sur la plateforme |
+| **Reprise de la série** | La série reprend à l'épisode suivant, là où tu t'es arrêté (ou à l'épisode 1 si tu ne l'as jamais regardée) |
+| **Épisode suivant : S1 E7** | L'épisode qui suit le dernier que tu as regardé depuis StreamHub (TF1+, M6+) |
 | **Fiche du titre** | La page du titre s'ouvre sur la plateforme (il reste à appuyer sur Lecture) |
-| **Page de la série** | La page de la série s'ouvre (TF1+) |
+| **Page de la série** | La page de la série s'ouvre (Disney+, TF1+), avec son bouton « Reprendre » ou « Lecture » |
 | **Recherche sur la plateforme** | Une recherche du titre s'ouvre sur la plateforme |
 | **Accueil de la plateforme** | La plateforme s'ouvre sur son accueil (aucun lien plus précis n'existe) |
 | **Liens sur TMDB** | La page « Où regarder » de TMDB, qui renvoie vers chaque plateforme |
 
-Pour une **série**, chaque saison se déplie pour afficher ses épisodes (résumé, date, durée), avec un bouton pour
-lancer directement celui que tu veux quand la plateforme le permet.
+Pour une **série**, le bouton « Regarder sur… » **reprend où tu t'es arrêté** (épisode suivant), ou commence à
+l'épisode 1 si tu ne l'as jamais regardée ([détails](#reprendre-une-série)). Chaque saison se déplie aussi pour
+afficher ses épisodes (résumé, date, durée), avec un bouton pour lancer directement celui que tu veux quand la
+plateforme le permet.
 
 ### Tes listes
 
@@ -283,6 +287,20 @@ lien le plus précis possible :
 Les deux premières sources sont interrogées en même temps à l'ouverture d'une fiche. Si tu cliques sur « Regarder
 sur… » avant leur réponse, StreamHub attend le bon lien (4 secondes au plus) au lieu d'ouvrir la recherche.
 
+### Reprendre une série
+
+Pour une série, « Regarder sur… » lance l'**épisode suivant**, là où tu t'es arrêté, ou l'épisode 1 si tu ne l'as
+jamais regardée. StreamHub ne peut pas lire ta progression sur les plateformes (elles n'ont pas d'API publique, et
+ta progression est protégée par ta connexion) : il leur envoie le lien qu'elles savent reprendre elles-mêmes.
+
+| Plateforme | Comment la série reprend |
+|---|---|
+| **Netflix** | Lien vers la série (et non vers l'épisode 1) : Netflix lance l'épisode suivant |
+| **Prime Video** | Lien de lecture de la série : Prime Video reprend où tu t'es arrêté (site et appli) |
+| **Canal+** | Fiche de la série avec lecture automatique : Canal+ lance son bouton « Reprendre » |
+| **Disney+** | Page de la série, qui affiche « Reprendre S1 E7 » (ou « Lecture ») ; sur ordinateur, le [script](#8-le-script--reprise-après-connexion-) appuie dessus à ta place, sur iPhone et iPad il reste un appui |
+| **TF1+**, **M6+** | Pas de reprise par lien : StreamHub lance l'épisode qui suit le dernier que tu as regardé **depuis StreamHub** (quand tu as répondu « Oui » à « Tu as regardé… ? »), grâce à son index des épisodes |
+
 ### Sur ordinateur
 
 Chaque plateforme s'ouvre dans son propre onglet (un seul onglet Netflix, un seul onglet Canal+…).
@@ -324,9 +342,12 @@ Quand tu lances un titre depuis StreamHub et que la plateforme te demande d'abor
 profil (code PIN compris), elle t'envoie ensuite sur son accueil et oublie le titre. Ce petit script s'en souvient :
 une fois connecté et le profil choisi, il ouvre le titre demandé. Il sert surtout **sur ordinateur**.
 
-Il fait aussi deux choses de plus : il rouvre une fois le titre quand M6+ affiche son accueil, ou TF1+ la fiche du
-programme, au lieu de la vidéo ; et sur le site Prime Video, si la lecture a été demandée mais que la fiche reste
-affichée, il appuie une fois sur « Reprendre » ou « Lecture ».
+Il fait aussi trois choses de plus :
+- il rouvre une fois le titre quand M6+ affiche son accueil, ou TF1+ la fiche du programme, au lieu de la vidéo ;
+- sur le site Prime Video, si la lecture a été demandée mais que la fiche reste affichée, il appuie une fois sur
+  « Reprendre » ou « Lecture » ;
+- sur Disney+, quand tu lances une série, il appuie sur « Reprendre » (ou « Lecture ») sur la page de la série :
+  la série reprend à l'épisode suivant.
 
 Il n'agit que dans un parcours lancé depuis StreamHub (moins de 15 minutes), n'envoie rien sur Internet et ne garde,
 dans ton navigateur, que l'adresse du titre lancé. Une fois installé, la ligne « Script… installé » apparaît dans

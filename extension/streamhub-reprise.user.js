@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         StreamHub – reprise après connexion
 // @namespace    https://arthursavournin.github.io/streamhub/
-// @version      2.6
+// @version      2.7
 // @description  Ouvre le titre lancé depuis StreamHub après la connexion ou le choix du profil, au lieu de laisser sur l'accueil.
 // @author       StreamHub
 // @match        *://*/*
@@ -31,7 +31,7 @@
   const MAX_AGE = 15 * 60 * 1000;
   const STABLE_MS = 1500; // écran de connexion / profil disparu depuis… avant de rediriger
   const SETTLE_MS = 4000; // page du titre affichée sans écran bloquant depuis… : on y est
-  const PLAY_MS = 3000; // Prime Video, lecture demandée : fiche affichée sans lecteur depuis… → bouton de lecture
+  const PLAY_MS = 3000; // lecture demandée (Prime Video, série Disney+) : fiche sans lecteur depuis… → bouton de lecture
 
   // Stockage partagé entre les sites (la connexion se fait parfois sur un autre site que la plateforme) :
   // GM.* pour les gestionnaires de scripts, chrome.storage pour l'extension Chrome.
@@ -147,20 +147,23 @@
   // Adresses de connexion / profil, par mots entiers (« pin » ne doit pas reconnaître « /shopping »)
   const GATE_URL = /(?:^|[/_.-])(?:log-?in|sign-?in|connexion|identification|auth|authenticate|account|compte|profiles?|profils?|profilesgate|select-profile|who-?s-?watching|pin)(?=[/_.-]|$)/i;
 
-  // ---------- Prime Video : lancer la lecture depuis la fiche ----------
+  // ---------- Lancer la lecture depuis la fiche (Prime Video, séries Disney+) ----------
 
-  // Sur le site, « …?deepLinkingRedirect=1&autoplay=1 » lance certains titres mais laisse d'autres sur la fiche
-  // (Naruto, constaté par l'utilisateur, version 50). Si la lecture a été demandée (autoplay=1) et que le lecteur
-  // ne s'ouvre pas, on appuie une fois sur le bouton de lecture de la fiche (« Reprendre », « Lecture »…).
-  const wantsPrimePlay = (target) => /(^|\.)primevideo\.com$/.test(new URL(target).hostname) && /[?&]autoplay=1\b/.test(target);
-  const primePlayerOpen = () =>
+  // Prime Video : sur le site, « …?deepLinkingRedirect=1&autoplay=1 » lance certains titres mais laisse d'autres sur
+  // la fiche (Naruto, constaté par l'utilisateur). Disney+ : pour reprendre une série à l'épisode suivant, StreamHub
+  // ouvre la page de la série (le lien de lecture serait l'épisode 1) et le signale par « &play=1 ». Dans les deux
+  // cas, si le lecteur ne s'ouvre pas, on appuie une fois sur le bouton de la fiche (« Reprendre », « Lecture »…).
+  const wantsPlay = (pending) =>
+    pending.play || (/(^|\.)primevideo\.com$/.test(new URL(pending.target).hostname) && /[?&]autoplay=1\b/.test(pending.target));
+  const playerOpen = () =>
     Boolean(document.fullscreenElement) ||
+    /^\/(?:[a-z]{2}-[a-z]{2}\/)?play\//.test(location.pathname) || // lecteur Disney+
     [...document.querySelectorAll('#dv-web-player, .webPlayerSDKContainer, [class*="webPlayer" i]')].some(
       (el) => isVisible(el) && el.getBoundingClientRect().width > innerWidth * 0.8,
     );
   const PLAY_TEXT = /^(?:reprendre|lecture|lire|regarder|play|resume|watch)\b/i;
   const NOT_PLAY = /bande|trailer|plus tard|liste|later|list|épisodes|episodes|acheter|louer|buy|rent|essai|trial|s'abonner|subscribe/i;
-  function primePlayButton() {
+  function playButton() {
     const candidates = [
       ...document.querySelectorAll('[data-automation-id*="play" i], [data-testid*="play" i]'),
       ...document.querySelectorAll('button, a[role="button"], a[href*="autoplay"]'),
@@ -209,8 +212,8 @@
 
     // Sur la page du titre : c'est arrivé (on surveille encore un écran de profil tardif)
     if (samePage(location.href, pending.target) || (pending.landing && samePage(location.href, pending.landing))) {
-      if (!pending.played && settled >= PLAY_MS && wantsPrimePlay(pending.target) && !primePlayerOpen()) {
-        const button = primePlayButton();
+      if (!pending.played && settled >= PLAY_MS && wantsPlay(pending) && !playerOpen()) {
+        const button = playButton();
         if (button) {
           await store.set(KEY, { ...pending, played: true, reached: true }); // une seule fois, puis on s'arrête
           button.click();
@@ -254,6 +257,7 @@
       const gated = GATE_URL.test(location.pathname);
       await store.set(KEY, {
         target: wanted,
+        play: params.get('play') === '1', // StreamHub demande la lecture depuis la fiche (série Disney+)
         at: Date.now(),
         brand: brandOf(new URL(wanted).hostname),
         sawGate: gated,

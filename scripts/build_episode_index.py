@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Construit l'index des épisodes TF1+ et M6+ utilisé par StreamHub.
+"""Construit l'index des épisodes TF1+ et M6+, et celui du catalogue HBO Max de Canal+, utilisés par StreamHub.
 
 Sur ces plateformes, le lien d'un épisode contient un identifiant interne impossible à deviner :
   TF1+ : https://www.tf1.fr/tf1/demain-nous-appartient/videos/…-episode-2299-33917459.html
@@ -12,7 +12,18 @@ et elles interdisent aux autres sites de lire leurs pages. Ce script lit leurs p
      "s": {"10-17": "<fin du lien>"},       # saison-épisode
      "d": {"2026-09-24": "<fin du lien>"}}  # date de diffusion
 
-Lien complet = base + fin du lien. Lancé par .github/workflows/pages.yml toutes les 6 heures.
+Lien complet = base + fin du lien.
+
+Canal+ (option HBO Max) : un titre HBO Max a sur Canal+ sa propre fiche, sans rapport avec la fiche Canal VOD
+(Harry Potter : /cinema/harry-potter-a-l-ecole-des-sorciers/h/40438941_50889, contre …/h/435039_40099 en VOD), et
+Canal+ interdit aux autres sites d'utiliser sa recherche. On lit donc les grilles de « Nos catégories » (Films, Séries,
+Documentaires, Tous les programmes…) de la page HBO Max de Canal+ (API publique du site) et on écrit
+data/canal/hbo.json :
+
+    {"movie": {"harrypotteralecoledessorciers": "/cinema/…/h/40438941_50889"},  # titre simplifié → chemin
+     "tv": {"thelastofus": "/series/the-last-of-us/h/40427680_50889"}}
+
+Lancé par .github/workflows/pages.yml toutes les 6 heures.
 
 Usage : build_episode_index.py <dossier de sortie>
 """
@@ -20,6 +31,8 @@ import concurrent.futures
 import json
 import re
 import sys
+import time
+import unicodedata
 import urllib.request
 from collections import defaultdict
 from pathlib import Path
@@ -105,6 +118,74 @@ def m6_videos():
             yield program, f'https://www.m6.fr/{program}-p_{program_id}/', tail
 
 
+# Canal+ : jeton public du site (portail France, visiteur non connecté), visible dans les adresses de son API.
+# S'il change, l'index n'est pas construit et StreamHub ouvre la page HBO Max de Canal+.
+CANAL_TOKEN = 'b63a43e7548cb1a6e7c7319084f48af8'
+CANAL_HBO_PAGE = f'https://hodor.canalplus.pro/api/v2/mycanal/page/{CANAL_TOKEN}/125873.json?aegon=true'
+# L'API refuse les requêtes qui ne ressemblent pas à celles d'un navigateur sur canalplus.com
+CANAL_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) '
+    'Chrome/141.0.0.0 Safari/537.36',
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'fr-FR,fr;q=0.9',
+    'Origin': 'https://www.canalplus.com',
+    'Referer': 'https://www.canalplus.com/',
+    'Sec-Fetch-Site': 'cross-site',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Dest': 'empty',
+    'sec-ch-ua': '"Chromium";v="141", "Google Chrome";v="141"',
+    'sec-ch-ua-platform': '"macOS"',
+    'sec-ch-ua-mobile': '?0',
+}
+
+
+def canal_json(url):
+    req = urllib.request.Request(url, headers=CANAL_HEADERS)
+    with urllib.request.urlopen(req, timeout=60) as res:
+        return json.loads(res.read().decode('utf-8'))
+
+
+def simplify(title):
+    """« Harry Potter à l'école des sorciers » → « harrypotteralecoledessorciers » (comme episodes.js)."""
+    text = unicodedata.normalize('NFD', str(title)).lower()
+    return re.sub(r'[^a-z0-9]', '', ''.join(c for c in text if not unicodedata.combining(c)))
+
+
+def canal_hbo(out):
+    """Catalogue HBO Max de Canal+ : titre simplifié → chemin de la fiche, films et séries à part."""
+    hub = canal_json(CANAL_HBO_PAGE)
+    # Grilles complètes (« contentGrid ») de la page : une par catégorie. « Tous les programmes » ne contient
+    # presque que des séries et émissions : les films sont dans la grille « Films ».
+    grids = list(dict.fromkeys(
+        c['onClick']['URLPage'] for strate in hub.get('strates', []) for c in strate.get('contents', [])
+        if (c.get('onClick') or {}).get('displayTemplate') == 'contentGrid' and c['onClick'].get('URLPage')
+    ))
+    if not grids:
+        raise RuntimeError('aucune grille de catégorie sur la page HBO Max de Canal+')
+    index = {'movie': {}, 'tv': {}}
+    pages = 0
+    for url in grids:
+        while url and pages < 300:
+            grid = canal_json(url)
+            pages += 1
+            for content in grid.get('contents', []):
+                path = (content.get('onClick') or {}).get('path', '')
+                key = simplify(content.get('title', ''))
+                if not key or not re.search(r'/h/\d+_\d+$', path):
+                    continue
+                kind = 'movie' if path.startswith('/cinema/') else 'tv'
+                index[kind].setdefault(key, path)
+            paging = grid.get('paging') or {}
+            url = paging.get('URLPage') if paging.get('hasNextPage') else None
+            time.sleep(0.3)
+    total = len(index['movie']) + len(index['tv'])
+    if total < 50:
+        raise RuntimeError(f'catalogue HBO Max de Canal+ incomplet ({total} titres)')
+    (out / 'canal').mkdir(parents=True, exist_ok=True)
+    (out / 'canal' / 'hbo.json').write_text(json.dumps(index, ensure_ascii=False, separators=(',', ':')))
+    print(f'canal/hbo : {total} titres ({pages} pages)', flush=True)
+
+
 def main():
     out = Path(sys.argv[1])
     failed = False
@@ -114,6 +195,11 @@ def main():
         except Exception as err:  # une plateforme en panne ne bloque pas l'autre
             print(f'::warning::Index {name} non construit : {err}', flush=True)
             failed = True
+    try:
+        canal_hbo(out)
+    except Exception as err:
+        print(f'::warning::Index canal/hbo non construit : {err}', flush=True)
+        failed = True
     sys.exit(1 if failed else 0)
 
 

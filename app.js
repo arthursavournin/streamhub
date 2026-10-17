@@ -2,13 +2,13 @@ import { loadSettings, saveSettings, relayUrl, HISTORY_MAX } from './store.js';
 import { makeApi, img, testTmdbKey, testSaKey, testRelay } from './api.js';
 import { syncNow, syncState, createCode, joinCode, leave, startAutoSync } from './sync.js';
 import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, CANAL_HBO, HBO_MAX_IDS, CANAL_CINE_SERIES } from './providers.js';
-import { INDEXED_PLATFORMS, platformEpisodeUrl } from './episodes.js';
+import { INDEXED_PLATFORMS, platformEpisodeUrl, canalHboPath } from './episodes.js';
 import { aliasMatches } from './aliases.js';
 import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.2.1';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -877,6 +877,7 @@ async function openDetail(type, id, opener) {
     current.item = item;
     if (type === 'tv') current.seasons = tmdbSeasons(item);
     renderDetail(item, type);
+    applyCanalHbo(); // index HBO Max de Canal+ (fichier publié avec StreamHub, sans attendre les liens directs)
     if (type === 'tv') loadEpisodeGroups(item, key); // en parallèle des liens directs
     // Liens directs : Streaming Availability et JustWatch (relais) interrogés en même temps. Pour une série,
     // Streaming Availability peut mettre plusieurs secondes ; un clic pendant ce temps attend le lien (onLaunch).
@@ -1766,8 +1767,27 @@ function applyDirectLinks(options) {
     a.dataset.direct = 'sa';
     $('.watch-hint', a).textContent = play ? 'Lecture directe' : 'Fiche du titre';
   }
+  applyCanalHbo();
   applySeriesResume();
   refreshLikeButton(); // les boutons « Liker aussi » pointent maintenant vers la page du titre
+}
+
+// Option HBO Max de Canal+ : la fiche HBO du titre sur Canal+, d'après l'index publié avec StreamHub (la fiche Canal
+// VOD qu'on trouve ailleurs est une autre offre, payante à l'unité : constaté par l'utilisateur avec Harry Potter).
+// Titre absent de l'index : la page HBO Max de Canal+. Sur iPhone, l'appli Canal+ s'ouvre sur la fiche.
+function applyCanalHbo() {
+  if (!current?.item) return;
+  const a = el.detail.querySelector(`a.watch[data-platform="${CANAL_HBO.name}"]`);
+  if (!a) return;
+  const key = current.key;
+  const titles = [titleOf(current.item), originalTitleOf(current.item)];
+  const path = canalHboPath(current.type, titles, () => current?.key === key && (applyCanalHbo(), applySeriesResume()));
+  if (path === undefined) return; // index en cours de chargement
+  const page = path ? `https://www.canalplus.com${path}` : 'https://www.canalplus.com/chaines/hbo-max/';
+  a.href = (path && autoplayLink(page)) || page; // lecture automatique, comme pour Canal+
+  a.dataset.page = page;
+  a.dataset.direct = 'canal-hbo';
+  $('.watch-hint', a).textContent = path ? 'Lecture directe' : 'Page HBO Max de Canal+';
 }
 
 // Séries : « Regarder sur… » reprend où tu t'es arrêté, ou commence à l'épisode 1 si tu n'as jamais regardé la série.
@@ -1807,12 +1827,7 @@ const JW_KIND = { flatrate: 'FLATRATE', free: 'FREE', ads: 'ADS', rent: 'RENT', 
 
 function applyRelayLinks(offers, type) {
   for (const a of el.detail.querySelectorAll('a.watch:not([data-direct])')) {
-    let same = offers.filter((o) => squash(o.provider) === squash(a.dataset.platform));
-    // Chaîne de Canal+ (option HBO Max) : JustWatch ne la connaît pas, mais a souvent la fiche Canal+ du titre
-    // (en location ou achat) ; avec l'option, c'est sur cette fiche qu'on le regarde
-    if (!same.length && isChannel(a.dataset.platform) && hostServiceFor(a.dataset.platform)?.id === 'canal') {
-      same = offers.filter((o) => /(^|\.)canalplus\.com\//.test(o.url.replace(/^https?:\/\//, '')));
-    }
+    const same = offers.filter((o) => squash(o.provider) === squash(a.dataset.platform));
     const offer = same.find((o) => o.type === JW_KIND[a.dataset.kind]) ?? same[0];
     if (!offer) continue;
     const play = offer.deeplink && offer.deeplink !== offer.url ? offer.deeplink : autoplayLink(offer.url);
@@ -1824,6 +1839,7 @@ function applyRelayLinks(offers, type) {
     const entry = current.entries.find((e) => e.name === a.dataset.platform);
     if (entry) entry.href = offer.url;
   }
+  applyCanalHbo();
   applySeriesResume();
   refreshLikeButton();
   if (type === 'tv') applySeasonLinks();

@@ -55,7 +55,10 @@ boutons **« Regarder sur… »**, rangés en trois groupes :
 - **Aussi disponible sur** : les autres plateformes où le titre est inclus (abonnement, gratuit, avec pub).
   Une chaîne vendue sur une autre plateforme s'affiche avec sa plateforme entre parenthèses : « HBO Max (Prime
   Video) », « HBO Max (Canal+) ». L'option HBO Max de Canal+ n'est pas référencée par TMDB ni JustWatch : StreamHub
-  la propose pour chaque titre disponible sur HBO Max (France), avec la fiche Canal+ du titre.
+  la propose pour chaque titre disponible sur HBO Max (France), et ouvre la fiche HBO du titre sur Canal+ (pas la
+  fiche Canal VOD, qui est une location payante), grâce à l'index du catalogue HBO Max de Canal+ qu'il publie
+  toutes les 6 heures. Un titre absent de l'index ouvre la page HBO Max de Canal+. Sur iPhone et iPad, l'appli
+  Canal+ s'ouvre sur la fiche.
 - **Location et achat** : les boutiques (Apple TV, Amazon Video…), repliées par défaut.
 
 Sous chaque bouton, une indication précise ce qu'il va faire :
@@ -313,7 +316,7 @@ Chaque plateforme s'ouvre dans son propre onglet (un seul onglet Netflix, un seu
 | **Netflix**, **Disney+** | La page du titre ou la lecture, selon le lien disponible |
 | **Prime Video** | La lecture démarre, sur le site ou dans l'appli Prime Video selon le réglage « Ouvrir les titres » |
 | **Canal+** | La fiche du titre s'ouvre et lance la lecture (son coupé au départ) |
-| **TF1+**, **M6+** | La vidéo ou la page du programme ; pour les épisodes, StreamHub retrouve leur lien grâce à son index ([partie 11](#publication-et-index-tf1--m6)) |
+| **TF1+**, **M6+** | La vidéo ou la page du programme ; pour les épisodes, StreamHub retrouve leur lien grâce à son index ([partie 11](#publication-et-index-tf1-m6-hbo-max-de-canal)) |
 | **Autres** | La page du titre, une recherche ou l'accueil de la plateforme |
 
 Si la plateforme te demande de te connecter ou de choisir un profil, elle oublie souvent le titre demandé : le
@@ -474,12 +477,16 @@ Puis ouvre **http://localhost:8080**. Le relais accepte les appels venant de `lo
 | `extension/` | Script « reprise après connexion » et extension Chrome |
 | `scripts/` | Index des épisodes TF1+ / M6+, publication du relais |
 
-### Publication et index TF1+ / M6+
+### Publication et index (TF1+, M6+, HBO Max de Canal+)
 
 Le site est publié par `.github/workflows/pages.yml` à chaque modification de la branche `main` et **toutes les
 6 heures**. À chaque publication, `scripts/build_episode_index.py` lit les plans de site publics de TF1+ et M6+ et
 écrit `data/<plateforme>/<programme>.json` (numéro d'épisode, saison-épisode et date → lien de l'épisode) : les liens
 d'épisode de ces plateformes contiennent un identifiant interne impossible à deviner.
+
+Le même script écrit `data/canal/hbo.json` : le catalogue HBO Max de Canal+ (titre simplifié → adresse de la fiche,
+films et séries à part), lu dans les grilles de la page HBO Max de Canal+. Sur Canal+, la fiche HBO d'un titre a une
+adresse sans rapport avec sa fiche Canal VOD, et Canal+ n'autorise pas les autres sites à utiliser sa recherche.
 
 GitHub met en pause les tâches planifiées d'un dépôt sans commit depuis 60 jours : le workflow la réactive à chaque
 passage, pour que l'index continue de se mettre à jour.

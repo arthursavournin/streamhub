@@ -51,3 +51,14 @@ export function platformEpisodeUrl(platform, titles, keys, onLoaded) {
     (absolute ? index.e?.[absolute] : undefined);
   return file ? index.base + file : null;
 }
+
+// Fiche HBO Max d'un titre sur Canal+ (option HBO Max de Canal+), d'après l'index data/canal/hbo.json publié avec
+// StreamHub (scripts/build_episode_index.py) : chemin (« /cinema/…/h/40438941_50889 »), null si le titre n'y est
+// pas, undefined pendant le chargement (onLoaded est appelé une fois chargé). La fiche Canal VOD du même titre a une
+// autre adresse, sans rapport.
+export function canalHboPath(type, titles, onLoaded) {
+  const index = load('data/canal/hbo.json', onLoaded);
+  if (!index) return index;
+  const list = index[type === 'movie' ? 'movie' : 'tv'] ?? {};
+  return titles.map(simplify).map((t) => list[t]).find(Boolean) ?? null;
+}

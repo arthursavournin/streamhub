@@ -8,7 +8,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.3.1';
+const APP_VERSION = '1.3.2';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>

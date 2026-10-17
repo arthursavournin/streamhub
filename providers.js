@@ -80,8 +80,14 @@ const isBaseOf = (channel, id, name) =>
 export const CANAL_CINE_SERIES = { id: 99000381, name: 'Canal+ Ciné Séries', includes: [381, 345, 8, ...CANAL_CHANNELS.map((c) => c.id)] };
 
 // Logos remplacés (dossier logos/) : celui de TMDB pour « HBO Max Amazon Channel » est un montage « HBO max on
-// prime video », pas le logo de la plateforme avec l'étiquette « prime video | channels » des autres chaînes Prime
-const LOGOS = { hbomaxamazonchannel: 'logos/hbo-max-amazon-channel.png' };
+// prime video », pas le logo de la plateforme avec l'étiquette « prime video | channels » des autres chaînes Prime ;
+// les chaînes de Canal+ ont le logo de la plateforme avec une étiquette « CANAL+ | channels » sur le même modèle
+const LOGOS = {
+  hbomaxamazonchannel: 'logos/hbo-max-amazon-channel.png',
+  hbomaxcanalchannel: 'logos/hbo-max-canal-channel.png',
+  appletvcanalchannel: 'logos/apple-tv-canal-channel.png',
+  paramountpluscanalchannel: 'logos/paramount-plus-canal-channel.png',
+};
 export const providerLogo = (name, path) => LOGOS[String(name ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')] ?? path;
 export function withLogos(offers) {
   if (!offers) return offers;
@@ -95,7 +101,7 @@ export function withVirtualChannels(offers, region) {
   for (const channel of CANAL_CHANNELS) {
     const base = flatrate.find((p) => isBaseOf(channel, p.provider_id, p.provider_name));
     if (!base || flatrate.some((p) => p.provider_id === channel.id)) continue;
-    flatrate = [...flatrate, { provider_id: channel.id, provider_name: channel.name, logo_path: base.logo_path, display_priority: base.display_priority }];
+    flatrate = [...flatrate, { provider_id: channel.id, provider_name: channel.name, logo_path: providerLogo(channel.name, base.logo_path), display_priority: base.display_priority }];
   }
   return flatrate === offers.flatrate ? offers : { ...offers, flatrate };
 }
@@ -113,7 +119,7 @@ export function withVirtualProviders(list, region) {
   if (canal) out = after(out, canal, { id: CANAL_CINE_SERIES.id, name: CANAL_CINE_SERIES.name, logo: canal.logo, priority: canal.priority });
   for (const channel of CANAL_CHANNELS) {
     const base = out.find((p) => isBaseOf(channel, p.id, p.name));
-    if (base) out = after(out, base, { id: channel.id, name: channel.name, logo: base.logo, priority: base.priority });
+    if (base) out = after(out, base, { id: channel.id, name: channel.name, logo: providerLogo(channel.name, base.logo), priority: base.priority });
   }
   return out;
 }

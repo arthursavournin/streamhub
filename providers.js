@@ -79,6 +79,16 @@ const isBaseOf = (channel, id, name) =>
 // Identifiants TMDB (= JustWatch) : Canal+ 381, Canal+ Séries 345, Netflix 8.
 export const CANAL_CINE_SERIES = { id: 99000381, name: 'Canal+ Ciné Séries', includes: [381, 345, 8, ...CANAL_CHANNELS.map((c) => c.id)] };
 
+// Logos remplacés (dossier logos/) : celui de TMDB pour « HBO Max Amazon Channel » est un montage « HBO max on
+// prime video », pas le logo de la plateforme avec l'étiquette « prime video | channels » des autres chaînes Prime
+const LOGOS = { hbomaxamazonchannel: 'logos/hbo-max-amazon-channel.png' };
+export const providerLogo = (name, path) => LOGOS[String(name ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')] ?? path;
+export function withLogos(offers) {
+  if (!offers) return offers;
+  const fix = (list) => (Array.isArray(list) ? list.map((p) => ({ ...p, logo_path: providerLogo(p.provider_name, p.logo_path) })) : list);
+  return Object.fromEntries(Object.entries(offers).map(([k, v]) => [k, fix(v)]));
+}
+
 export function withVirtualChannels(offers, region) {
   if (region !== 'FR' || !offers?.flatrate) return offers;
   let flatrate = offers.flatrate;

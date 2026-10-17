@@ -1,14 +1,14 @@
 import { loadSettings, saveSettings, relayUrl, HISTORY_MAX } from './store.js';
 import { makeApi, img, testTmdbKey, testSaKey, testRelay } from './api.js';
 import { syncNow, syncState, createCode, joinCode, leave, startAutoSync } from './sync.js';
-import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, CANAL_CHANNELS, CANAL_CINE_SERIES } from './providers.js';
+import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, providerLogo, CANAL_CHANNELS, CANAL_CINE_SERIES } from './providers.js';
 import { INDEXED_PLATFORMS, platformEpisodeUrl, canalChannelPath } from './episodes.js';
 import { aliasMatches } from './aliases.js';
 import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.3.1';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -682,7 +682,7 @@ async function fetchRow(row) {
 
 function meHeader() {
   const logos = settings.providers
-    .map((p) => `<img src="${img(p.logo, 'w92')}" alt="${esc(p.name)}" title="${esc(p.name)}">`)
+    .map((p) => `<img src="${img(providerLogo(p.name, p.logo), 'w92')}" alt="${esc(p.name)}" title="${esc(p.name)}">`)
     .join('');
   return `<div class="me-head">
     <h1>Mon espace</h1>
@@ -1050,7 +1050,7 @@ const shortPlatformName = (name) => SHORT_PLATFORM_NAMES[squash(name)] ?? channe
 // Logo d'une plateforme : celui de tes abonnements (Réglages), sinon celui du bouton de la fiche ouverte
 function platformLogo(platform, service) {
   const p = settings.providers.find((x) => squash(x.name) === squash(platform) || (service && serviceFor(x.name)?.id === service));
-  if (p?.logo) return img(p.logo, 'w92');
+  if (p?.logo) return img(providerLogo(p.name, p.logo), 'w92');
   const a = [...el.detail.querySelectorAll('a.watch')].find((x) => x.dataset.platform === platform);
   return a ? ($('img', a)?.getAttribute('src') ?? '') : '';
 }

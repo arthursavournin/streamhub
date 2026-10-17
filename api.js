@@ -3,7 +3,7 @@
 // - Streaming Availability (RapidAPI) : liens directs vers le film ou la série sur chaque plateforme
 // `type` vaut 'movie' (film) ou 'tv' (série), comme dans les URL de TMDB.
 import { cacheGet, cacheSet, relayUrl } from './store.js';
-import { autoplayLink, withVirtualChannels, withVirtualProviders } from './providers.js';
+import { autoplayLink, providerLogo, withLogos, withVirtualChannels, withVirtualProviders } from './providers.js';
 
 const TMDB = 'https://api.themoviedb.org/3';
 const SA_HOST = 'streaming-availability.p.rapidapi.com';
@@ -11,7 +11,8 @@ const SA_CACHE_MS = 3 * 24 * 3600 * 1000; // l'offre gratuite est limitée : on 
 // Relais StreamHub (relay/worker.js) : interroge JustWatch, qui refuse les appels directs des autres sites
 const RELAY_CACHE_MS = 24 * 3600 * 1000;
 
-export const img = (path, size = 'w342') => (path ? `https://image.tmdb.org/t/p/${size}${path}` : '');
+// Les chemins TMDB commencent par « / » ; les autres sont des images de StreamHub (logos/)
+export const img = (path, size = 'w342') => (!path ? '' : path.startsWith('/') ? `https://image.tmdb.org/t/p/${size}${path}` : path);
 
 export class ApiError extends Error {
   constructor(message, status) {
@@ -70,7 +71,7 @@ export function makeApi(settings) {
         byId.set(p.provider_id, {
           id: p.provider_id,
           name: p.provider_name,
-          logo: p.logo_path,
+          logo: providerLogo(p.provider_name, p.logo_path),
           priority: p.display_priorities?.[region] ?? p.display_priority ?? 999,
         });
       }
@@ -141,14 +142,14 @@ export function makeApi(settings) {
         include_video_language: `${language.slice(0, 2)},en,null`,
       });
       const results = data['watch/providers']?.results;
-      if (results?.[region]) results[region] = withVirtualChannels(results[region], region); // option HBO Max de Canal+
+      if (results?.[region]) results[region] = withVirtualChannels(withLogos(results[region]), region); // option HBO Max de Canal+
       return data;
     },
 
     // Offres pour le pays choisi : { link, flatrate, free, ads, rent, buy } ou null
     async offers(type, id) {
       const data = await tmdb(`/${type}/${id}/watch/providers`);
-      return withVirtualChannels(data.results?.[region] ?? null, region);
+      return withVirtualChannels(withLogos(data.results?.[region] ?? null), region);
     },
 
     // Liens directs d'après JustWatch (via le relais) : [{ provider, type: FLATRATE | FREE | ADS | RENT | BUY, url, deeplink }]

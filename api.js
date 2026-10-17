@@ -1,0 +1,248 @@
+// Accès aux deux API :
+// - TMDB : catalogue, fiches, et « où regarder » par pays (données JustWatch)
+// - Streaming Availability (RapidAPI) : liens directs vers le film ou la série sur chaque plateforme
+// `type` vaut 'movie' (film) ou 'tv' (série), comme dans les URL de TMDB.
+import { cacheGet, cacheSet, relayUrl } from './store.js';
+import { autoplayLink } from './providers.js';
+
+const TMDB = 'https://api.themoviedb.org/3';
+const SA_HOST = 'streaming-availability.p.rapidapi.com';
+const SA_CACHE_MS = 3 * 24 * 3600 * 1000; // l'offre gratuite est limitée : on garde les liens 3 jours
+// Relais StreamHub (relay/worker.js) : interroge JustWatch, qui refuse les appels directs des autres sites
+const RELAY_CACHE_MS = 24 * 3600 * 1000;
+
+export const img = (path, size = 'w342') => (path ? `https://image.tmdb.org/t/p/${size}${path}` : '');
+
+export class ApiError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.status = status;
+  }
+}
+
+// Tris proposés dans l'interface → paramètres TMDB (les champs de date diffèrent entre films et séries)
+const SORTS = {
+  popularity: { movie: 'popularity.desc', tv: 'popularity.desc' },
+  rating: { movie: 'vote_average.desc', tv: 'vote_average.desc' },
+  recent: { movie: 'primary_release_date.desc', tv: 'first_air_date.desc' },
+};
+
+// Partagé entre instances : une même URL n'est demandée qu'une fois par session.
+const memo = new Map();
+
+export function makeApi(settings) {
+  const region = settings.region;
+  const language = settings.language;
+
+  function tmdb(path, params = {}) {
+    const key = settings.tmdbKey.trim();
+    if (!key) return Promise.reject(new ApiError('Ajoute ta clé TMDB dans les réglages.', 401));
+    const url = new URL(TMDB + path);
+    const headers = { accept: 'application/json' };
+    // Jeton v4 (JWT, commence par « eyJ ») ou clé v3 classique
+    if (key.startsWith('eyJ')) headers.Authorization = `Bearer ${key}`;
+    else url.searchParams.set('api_key', key);
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, v);
+    }
+    const id = `${key}|${url}`;
+    if (memo.has(id)) return memo.get(id);
+    const request = fetch(url, { headers }).then(async (res) => {
+      if (res.ok) return res.json();
+      if (res.status === 401) throw new ApiError('Clé TMDB invalide. Vérifie-la dans les réglages.', 401);
+      if (res.status === 429) throw new ApiError('TMDB reçoit trop de requêtes, réessaie dans un instant.', 429);
+      throw new ApiError(`TMDB : erreur ${res.status}.`, res.status);
+    });
+    memo.set(id, request);
+    request.catch(() => memo.delete(id));
+    return request;
+  }
+
+  return {
+    // Plateformes du pays, films et séries confondus (certaines ne proposent que des séries)
+    async providers() {
+      const lists = await Promise.all(
+        ['movie', 'tv'].map((type) => tmdb(`/watch/providers/${type}`, { watch_region: region, language })),
+      );
+      const byId = new Map();
+      for (const p of lists.flatMap((l) => l.results)) {
+        if (byId.has(p.provider_id)) continue;
+        byId.set(p.provider_id, {
+          id: p.provider_id,
+          name: p.provider_name,
+          logo: p.logo_path,
+          priority: p.display_priorities?.[region] ?? p.display_priority ?? 999,
+        });
+      }
+      return [...byId.values()].sort((a, b) => a.priority - b.priority);
+    },
+
+    async genres(type) {
+      const data = await tmdb(`/genre/${type}/list`, { language });
+      return data.genres;
+    },
+
+    // extra : paramètres TMDB supplémentaires (ex. { with_origin_country: 'JP' })
+    discover(type, { page, genre, sort, providers, extra = {} }) {
+      const today = new Date().toISOString().slice(0, 10);
+      const sortBy = (SORTS[sort] ?? SORTS.popularity)[type];
+      const dateField = type === 'tv' ? 'first_air_date' : 'primary_release_date';
+      return tmdb(`/discover/${type}`, {
+        language,
+        page,
+        region: type === 'movie' ? region : undefined,
+        watch_region: region,
+        with_watch_providers: providers.length ? providers.join('|') : undefined,
+        with_watch_monetization_types: providers.length ? 'flatrate|free|ads' : undefined,
+        with_genres: genre,
+        sort_by: sortBy,
+        'vote_count.gte': sort === 'rating' ? (type === 'tv' ? 150 : 300) : sort === 'recent' ? 10 : undefined,
+        [`${dateField}.lte`]: sort === 'recent' ? today : undefined,
+        include_adult: false,
+        ...extra,
+      });
+    },
+
+    // Chaque résultat porte son media_type ('movie' ou 'tv'). type 'all' = films et séries mélangés.
+    async search(type, query, page) {
+      const res = await tmdb(`/search/${type === 'all' ? 'multi' : type}`, { query, page, language, include_adult: false });
+      const results =
+        type === 'all'
+          ? res.results.filter((r) => r.media_type === 'movie' || r.media_type === 'tv') // pas les personnes
+          : res.results.map((r) => ({ ...r, media_type: type }));
+      return { ...res, results };
+    },
+
+    // Films et séries les plus vus de la semaine (sans les personnes)
+    async trending() {
+      const res = await tmdb('/trending/all/week', { language });
+      return { ...res, results: res.results.filter((r) => r.media_type === 'movie' || r.media_type === 'tv') };
+    },
+
+    // Autres découpages d'une série proposés sur TMDB (ex. « TF1+ » : les saisons telles que la plateforme les présente)
+    async episodeGroups(tvId) {
+      const data = await tmdb(`/tv/${tvId}/episode_groups`);
+      return data.results ?? [];
+    },
+
+    episodeGroup(groupId) {
+      return tmdb(`/tv/episode_group/${groupId}`, { language });
+    },
+
+    // Détail d'une saison : liste des épisodes avec résumé, image, date, durée
+    season(tvId, number) {
+      return tmdb(`/tv/${tvId}/season/${number}`, { language });
+    },
+
+    details(type, id) {
+      return tmdb(`/${type}/${id}`, {
+        language,
+        append_to_response: 'watch/providers,videos,credits',
+        include_video_language: `${language.slice(0, 2)},en,null`,
+      });
+    },
+
+    // Offres pour le pays choisi : { link, flatrate, free, ads, rent, buy } ou null
+    async offers(type, id) {
+      const data = await tmdb(`/${type}/${id}/watch/providers`);
+      return data.results?.[region] ?? null;
+    },
+
+    // Liens directs d'après JustWatch (via le relais) : [{ provider, type: FLATRATE | FREE | ADS | RENT | BUY, url, deeplink }]
+    async relayOffers(type, tmdbId, title) {
+      const cacheKey = `jw:${type}:${region}:${tmdbId}`;
+      const cached = cacheGet(cacheKey, RELAY_CACHE_MS);
+      if (cached) return cached;
+      const params = new URLSearchParams({ tmdb: tmdbId, type, title, country: region });
+      const res = await fetch(`${relayUrl(settings)}/offers?${params}`);
+      if (!res.ok) throw new ApiError(`Relais : erreur ${res.status}.`, res.status);
+      const { offers = [] } = await res.json();
+      cacheSet(cacheKey, offers);
+      return offers;
+    },
+
+    // Liens directs (fiche ou lecture) par plateforme, via Streaming Availability v4.
+    // Pour une série, on récupère aussi les liens de chaque saison et de chaque épisode.
+    // Renvoie { options, seasons: [{ number, options, episodes: [{ number, options }] }] } ou null sans clé.
+    async streamingOptions(type, tmdbId) {
+      if (!settings.saKey.trim()) return null;
+      const country = region.toLowerCase();
+      const cacheKey = `sa4:${type}:${country}:${tmdbId}`;
+      const cached = cacheGet(cacheKey, SA_CACHE_MS);
+      if (cached) return cached;
+
+      const params = new URLSearchParams({ country });
+      if (type === 'tv') params.set('series_granularity', 'episode');
+      const res = await fetch(`https://${SA_HOST}/shows/${type}/${tmdbId}?${params}`, {
+        headers: { 'X-RapidAPI-Key': settings.saKey.trim(), 'X-RapidAPI-Host': SA_HOST },
+      });
+      if (res.status === 404) {
+        const empty = { options: [], seasons: [] };
+        cacheSet(cacheKey, empty);
+        return empty;
+      }
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) throw new ApiError('Clé Streaming Availability invalide ou non abonnée.', res.status);
+        if (res.status === 429) throw new ApiError('Quota Streaming Availability atteint pour aujourd’hui.', 429);
+        throw new ApiError(`Streaming Availability : erreur ${res.status}.`, res.status);
+      }
+      const data = await res.json();
+      const pick = (streamingOptions) =>
+        (streamingOptions?.[country] ?? []).map((o) => ({
+          service: o.service?.id,
+          name: o.service?.name,
+          type: o.type, // subscription | free | addon | rent | buy
+          link: o.link,
+          videoLink: o.videoLink ?? autoplayLink(o.link),
+          addon: o.addon?.name ?? null,
+        }));
+      const result = {
+        options: pick(data.streamingOptions),
+        seasons: (data.seasons ?? []).map((s, i) => ({
+          // Le numéro n'est pas un champ documenté : on le lit dans le titre (« Season 2 »), sinon l'ordre
+          number: Number(String(s.title ?? '').match(/\d+/)?.[0] ?? i + 1),
+          options: pick(s.streamingOptions),
+          episodes: (s.episodes ?? []).map((e, j) => ({
+            number: e.episodeNumber ?? j + 1,
+            options: pick(e.streamingOptions),
+          })),
+        })),
+      };
+      cacheSet(cacheKey, result);
+      return result;
+    },
+  };
+}
+
+// ---------- Vérification des clés (bouton « Tester » des réglages) ----------
+// Chaque test renvoie un message à afficher ; il lève une ApiError si la clé ne marche pas.
+
+export async function testTmdbKey(key) {
+  const url = new URL(`${TMDB}/configuration`);
+  const headers = { accept: 'application/json' };
+  if (key.startsWith('eyJ')) headers.Authorization = `Bearer ${key}`;
+  else url.searchParams.set('api_key', key);
+  const res = await fetch(url, { headers, cache: 'no-store' });
+  if (res.ok) return 'Clé TMDB valide.';
+  throw new ApiError(res.status === 401 ? 'Clé TMDB refusée.' : `TMDB répond ${res.status}.`, res.status);
+}
+
+// Une requête du quota Streaming Availability
+export async function testSaKey(key, region) {
+  const res = await fetch(`https://${SA_HOST}/countries/${region.toLowerCase()}`, {
+    headers: { 'X-RapidAPI-Key': key, 'X-RapidAPI-Host': SA_HOST },
+    cache: 'no-store',
+  });
+  const left = res.headers.get('x-ratelimit-requests-remaining');
+  if (res.ok) return `Clé Streaming Availability valide${left ? ` (${left} requêtes restantes sur ton forfait)` : ''}.`;
+  if (res.status === 401 || res.status === 403) throw new ApiError('Clé refusée, ou pas abonnée à Streaming Availability sur RapidAPI.', res.status);
+  if (res.status === 429) throw new ApiError('Clé valide, mais quota épuisé pour le moment.', 429);
+  throw new ApiError(`Streaming Availability : erreur ${res.status}.`, res.status);
+}
+
+export async function testRelay(url) {
+  const res = await fetch(`${url}/`, { cache: 'no-store' }).catch(() => null);
+  const data = res?.ok ? await res.json().catch(() => null) : null;
+  if (data?.service === 'StreamHub relay') return 'Relais joignable.';
+  throw new ApiError('Relais injoignable à cette adresse (ou il refuse ce site).', res?.status ?? 0);
+}

@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070d1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>StreamHub</title>
+  <link rel="manifest" href="manifest.webmanifest?v=3">
+  <link rel="icon" href="icon.svg?v=3" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
+  <meta name="apple-mobile-web-app-title" content="StreamHub">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <button type="button" class="brand" data-nav="home" aria-label="StreamHub, accueil">
+      <img src="icon.svg?v=3" alt="" width="30" height="30">
+      <span>StreamHub</span>
+    </button>
+    <nav class="main-nav" aria-label="Navigation principale">
+      <button type="button" data-nav="home" aria-current="false">Accueil</button>
+      <button type="button" data-nav="movies" aria-current="false">Films</button>
+      <button type="button" data-nav="tv" aria-current="false">Séries</button>
+      <button type="button" data-nav="library" aria-current="false">Bibliothèque</button>
+      <button type="button" data-nav="me" aria-current="false">Mon espace</button>
+    </nav>
+    <form class="search" id="searchForm" role="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="searchInput" type="search" placeholder="Rechercher" autocomplete="off" enterkeyhint="search" aria-label="Rechercher un film ou une série">
+    </form>
+    <button class="icon-btn" id="settingsBtn" type="button" aria-label="Réglages" title="Réglages et abonnements">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </header>
+
+  <main id="main">
+    <!-- Accueil, Films, Séries, Mon espace : une affiche mise en avant et des rangées -->
+    <div class="rows-page" id="rowsPage"></div>
+
+    <!-- Bibliothèque (tout le catalogue, avec filtres), Ma liste, Historique, Téléchargements : une grille -->
+    <section class="grid-page" id="gridPage" hidden>
+      <div class="page-head">
+        <button type="button" class="back-btn" id="backBtn" data-nav="me" hidden>‹ Mon espace</button>
+        <h1 id="pageTitle">Bibliothèque</h1>
+      </div>
+      <nav class="filters" id="filters" aria-label="Filtres">
+        <div class="type-switch" id="typeSwitch" role="group" aria-label="Films ou séries">
+          <button type="button" data-type="all" aria-pressed="true">Tout</button>
+          <button type="button" data-type="movie" aria-pressed="false">Films</button>
+          <button type="button" data-type="tv" aria-pressed="false">Séries</button>
+        </div>
+        <div class="selects">
+          <select id="platformSelect" aria-label="Plateforme"></select>
+          <select id="genreSelect" aria-label="Genre"><option value="">Tous les genres</option></select>
+          <select id="sortSelect" aria-label="Trier par">
+            <option value="popularity">Populaires</option>
+            <option value="rating">Mieux notés</option>
+            <option value="recent">Plus récents</option>
+          </select>
+        </div>
+      </nav>
+      <div class="status" id="status" aria-live="polite"></div>
+      <div class="grid" id="grid"></div>
+      <div class="sentinel" id="sentinel" aria-hidden="true"></div>
+    </section>
+  </main>
+
+  <!-- Sur téléphone : navigation en bas, comme l'appli Netflix -->
+  <nav class="bottom-nav" aria-label="Navigation">
+    <button type="button" data-nav="home" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Accueil</span></button>
+    <button type="button" data-nav="movies" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/></svg><span>Films</span></button>
+    <button type="button" data-nav="tv" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="m8 2 4 4 4-4M8 21h8"/></svg><span>Séries</span></button>
+    <button type="button" data-nav="library" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Bibliothèque</span></button>
+    <button type="button" data-nav="me" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg><span>Mon espace</span></button>
+  </nav>
+
+  <dialog id="detail" class="sheet detail" tabindex="-1" autofocus>
+    <div class="sheet-close"><button type="button" class="icon-btn close" data-close aria-label="Fermer">✕</button></div>
+    <div class="sheet-scroll" id="detailBody"></div>
+  </dialog>
+
+  <dialog id="settings" class="sheet settings" tabindex="-1" autofocus>
+    <div class="sheet-close"><button type="button" class="icon-btn close" data-close aria-label="Fermer">✕</button></div>
+    <div class="sheet-scroll" id="settingsBody">
+    <form id="settingsForm" method="dialog">
+      <header class="sheet-head">
+        <h2>Réglages</h2>
+      </header>
+      <p class="intro" id="settingsIntro" hidden>
+        Bienvenue ! Tu utilises déjà StreamHub sur un autre navigateur ou appareil ? Entre ton code de
+        synchronisation dans « Synchronisation » : tout revient (clés, abonnements, J’aime, historique).
+        Sinon, colle ta clé TMDB dans « Clés API » puis coche les plateformes auxquelles tu es abonné.
+      </p>
+
+      <details class="settings-group" data-group="providers">
+        <summary>
+          <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          <span class="group-text"><strong>Mes abonnements</strong><small data-summary="providers"></small></span>
+        </summary>
+        <div class="group-body">
+          <input type="search" id="providerFilter" class="provider-filter" placeholder="Filtrer les plateformes…" autocomplete="off" aria-label="Filtrer les plateformes">
+          <div class="provider-grid" id="providerGrid"></div>
+        </div>
+      </details>
+
+      <details class="settings-group" data-group="sync">
+        <summary>
+          <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 0 1-14.3 4.9M4 12a8 8 0 0 1 14.3-4.9"/><path d="M18.5 3v4.2h-4.2M5.5 21v-4.2h4.2"/></svg>
+          <span class="group-text"><strong>Synchronisation</strong><small data-summary="sync"></small></span>
+        </summary>
+        <div class="group-body">
+          <p class="hint">Les mêmes réglages, clés, J’aime et historique sur tous tes navigateurs et appareils
+            (Safari, Chrome, iPhone…). Tout est chiffré avec ton code avant de quitter l’appareil : sans lui, personne ne peut lire tes données.</p>
+          <div id="syncOff">
+            <div class="key-row">
+              <input id="syncCodeInput" autocomplete="off" autocapitalize="characters" spellcheck="false"
+                placeholder="Code reçu d’un autre appareil" aria-label="Code de synchronisation">
+              <button type="button" class="btn" id="syncJoin">Utiliser ce code</button>
+            </div>
+            <p class="sync-or">ou</p>
+            <button type="button" class="btn primary" id="syncCreate">Créer mon code de synchronisation</button>
+          </div>
+          <div id="syncOn" hidden>
+            <div class="key-row">
+              <input id="syncCode" readonly aria-label="Ton code de synchronisation">
+              <button type="button" class="btn" data-copy="#syncCode">Copier</button>
+            </div>
+            <p class="hint">Entre ce code dans StreamHub sur tes autres appareils. Il donne accès à tes clés : garde-le pour toi
+              (note-le dans ton gestionnaire de mots de passe).</p>
+            <div class="key-actions">
+              <button type="button" class="btn" id="syncNow">Synchroniser maintenant</button>
+              <button type="button" class="btn ghost" id="syncLeave">Arrêter sur cet appareil</button>
+            </div>
+          </div>
+          <p class="key-status" id="syncStatus" role="status"></p>
+        </div>
+      </details>
+
+      <details class="settings-group" data-group="keys">
+        <summary>
+          <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M14.5 8.5l2 2"/></svg>
+          <span class="group-text"><strong>Clés API</strong><small data-summary="keys"></small></span>
+        </summary>
+        <div class="group-body">
+          <p class="hint">Enregistrées dans ce navigateur (et chiffrées dans ta synchronisation). Elles ne sont jamais publiées sur GitHub.</p>
+          <div class="field">
+            <label for="tmdbKey">Clé API TMDB <em>obligatoire : catalogue, fiches, plateformes par pays</em></label>
+            <div class="key-row">
+              <input id="tmdbKey" name="tmdbKey" autocomplete="off" spellcheck="false" placeholder="Clé API (v3) ou jeton d’accès (v4)">
+              <button type="button" class="btn" data-test-key="tmdb">Tester</button>
+            </div>
+            <p class="key-status" data-key-status="tmdb"><a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">Obtenir une clé gratuite</a></p>
+          </div>
+          <div class="field">
+            <label for="saKey">Clé Streaming Availability <em>facultative : liens directs vers chaque film, série et épisode</em></label>
+            <div class="key-row">
+              <input id="saKey" name="saKey" autocomplete="off" spellcheck="false" placeholder="Clé RapidAPI">
+              <button type="button" class="btn" data-test-key="sa">Tester</button>
+            </div>
+            <p class="key-status" data-key-status="sa"><a href="https://rapidapi.com/movie-of-the-night-movie-of-the-night-default/api/streaming-availability" target="_blank" rel="noopener">Obtenir une clé (offre gratuite)</a></p>
+          </div>
+          <div class="field">
+            <label for="relay">Relais StreamHub <em>liens JustWatch (France TV, chaînes Prime…) et synchronisation, sans clé</em></label>
+            <div class="key-row">
+              <input id="relay" name="relay" type="url" autocomplete="off" spellcheck="false" placeholder="https://streamhub-relay.arthursavournin.workers.dev">
+              <button type="button" class="btn" data-test-key="relay">Tester</button>
+            </div>
+            <p class="key-status" data-key-status="relay">Laisse vide pour le relais par défaut.</p>
+          </div>
+        </div>
+      </details>
+
+      <details class="settings-group" data-group="look">
+        <summary>
+          <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 0 0 0-17Z" fill="currentColor"/></svg>
+          <span class="group-text"><strong>Apparence</strong><small data-summary="look"></small></span>
+        </summary>
+        <div class="group-body">
+          <fieldset class="choice-list">
+            <legend>Effet verre (Liquid Glass) <em>transparence des barres, boutons et croix, sur cet appareil</em></legend>
+            <label class="choice"><input type="radio" name="glass" value="auto">
+              <span>Automatique<em>Transparent, presque opaque si « Augmenter le contraste » est activé dans l’accessibilité du système</em></span></label>
+            <label class="choice"><input type="radio" name="glass" value="clear">
+              <span>Transparent<em>Le plus proche du verre d’iOS et macOS</em></span></label>
+            <label class="choice"><input type="radio" name="glass" value="tinted">
+              <span>Teinté<em>Plus opaque, plus lisible</em></span></label>
+          </fieldset>
+          <p class="hint">Une page web ne peut pas lire le réglage Liquid Glass d’iOS, d’iPadOS ou de macOS : choisis ici l’effet voulu.</p>
+        </div>
+      </details>
+
+      <details class="settings-group" data-group="device">
+        <summary>
+          <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.5 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.5-3.5-8.5s1-6 3.5-8.5Z"/></svg>
+          <span class="group-text"><strong>Pays et lecture</strong><small data-summary="device"></small></span>
+        </summary>
+        <div class="group-body">
+          <label class="field">
+            <span>Pays <em>catalogue et plateformes disponibles</em></span>
+            <select name="region">
+              <option value="FR">France</option>
+              <option value="BE">Belgique</option>
+              <option value="CH">Suisse</option>
+              <option value="LU">Luxembourg</option>
+              <option value="CA">Canada</option>
+              <option value="GB">Royaume-Uni</option>
+              <option value="US">États-Unis</option>
+              <option value="DE">Allemagne</option>
+              <option value="ES">Espagne</option>
+              <option value="IT">Italie</option>
+            </select>
+          </label>
+          <fieldset class="choice-list" id="desktopAppsField" hidden>
+            <legend>Ouvrir les titres <em>sur cet ordinateur</em></legend>
+            <label class="choice"><input type="radio" name="openIn" value="web">
+              <span>Sur le site internet<em>Dans un onglet du navigateur</em></span></label>
+            <label class="choice"><input type="radio" name="openIn" value="app">
+              <span>Dans l’appli de l’ordinateur<em id="desktopAppsHint">Quand elle est installée sur ce Mac : Prime Video pour l’instant (les autres plateformes n’ont pas d’appli Mac). Le navigateur peut demander l’autorisation la première fois.</em></span></label>
+          </fieldset>
+          <p class="hint extension-status" id="extensionStatus"></p>
+        </div>
+      </details>
+
+      <p class="form-error" id="settingsError" role="alert"></p>
+      <footer class="sheet-foot">
+        <span class="app-version" id="appVersion"></span>
+        <button type="submit" class="btn primary">Enregistrer</button>
+      </footer>
+    </form>
+    </div>
+  </dialog>
+
+  <div class="relaunch" id="relaunch" role="status" popover="manual" hidden></div>
+  <div class="relaunch confirm" id="confirm" role="dialog" aria-label="Question" popover="manual" data-nav-trap hidden></div>
+  <div class="toast" id="toast" role="status" aria-live="polite" popover="manual" hidden></div>
+</body>
+</html>

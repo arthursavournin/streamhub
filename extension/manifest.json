@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "StreamHub – reprise après connexion",
+  "description": "Quand une plateforme demande de se connecter ou de choisir un profil, ouvre ensuite le titre lancé depuis StreamHub. N'agit que dans les onglets ouverts depuis StreamHub.",
+  "version": "2.6",
+  "icons": {
+    "128": "icon-128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "streamhub-reprise.user.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "permissions": [
+    "storage"
+  ]
+}

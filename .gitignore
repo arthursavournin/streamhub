@@ -1,0 +1,15 @@
+.DS_Store
+.claude/
+data/
+fixtures/
+mock.js
+test.html
+exttest/
+linktest/
+mobiletest/
+.tmptest/
+
+# Notes de travail locales (contexte pour Claude), jamais publiées
+CLAUDE.md
+# Sauvegardes locales (ancien historique Git), jamais publiées
+.sauvegarde/

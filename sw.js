@@ -1,0 +1,40 @@
+// Service worker : rend l'appli installable et garde l'interface en cache (hors ligne).
+// Les appels aux API passent toujours par le réseau.
+const SHELL_CACHE = 'streamhub-shell-v1.0.0';
+const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'api.js', 'store.js', 'providers.js', 'nav.js', 'library.js', 'episodes.js', 'aliases.js',
+  'sync.js', 'icon.svg?v=3', 'icon-192.png?v=3', 'apple-touch-icon.png?v=3', 'manifest.webmanifest?v=3'];
+
+self.addEventListener('install', (event) => {
+  // cache: 'reload' : on prend la version du serveur, pas celle du cache du navigateur
+  event.waitUntil(caches.open(SHELL_CACHE).then((cache) => cache.addAll(SHELL.map((u) => new Request(u, { cache: 'reload' })))));
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== SHELL_CACHE).map((k) => caches.delete(k)))),
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+
+  // Interface : réseau d'abord (pour recevoir les mises à jour), cache si hors ligne.
+  // cache: 'no-cache' : le navigateur revérifie chaque fichier auprès du serveur. Sans ça, il peut garder
+  // quelques minutes un ancien fichier à côté d'un nouveau après une mise à jour, et l'appli ne démarre plus.
+  if (url.origin === self.location.origin) {
+    event.respondWith(
+      fetch(request, { cache: 'no-cache' })
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(SHELL_CACHE).then((cache) => cache.put(request, copy));
+          return res;
+        })
+        .catch(() => caches.match(request)),
+    );
+  }
+  // Affiches (image.tmdb.org) : le cache HTTP du navigateur suffit
+});

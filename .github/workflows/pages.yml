@@ -1,0 +1,67 @@
+# Publie StreamHub sur GitHub Pages, avec l'index des épisodes TF1+ et M6+ (scripts/build_episode_index.py).
+# Tourne à chaque modification du code et toutes les 6 heures, pour suivre les nouveaux épisodes.
+name: Publier StreamHub
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Copier le site
+        run: |
+          mkdir -p _site
+          rsync -a --exclude '.git' --exclude '.github' --exclude 'scripts' --exclude 'extension' --exclude 'relay' --exclude 'CLAUDE.md' --exclude '_site' ./ _site/
+          # Le script « reprise après connexion » s'installe depuis le site (Safari + appli Userscripts)
+          cp extension/streamhub-reprise.user.js _site/
+
+      - name: Indexer les épisodes TF1+ et M6+
+        # Si une plateforme ne répond pas, le site est quand même publié : StreamHub renverra vers sa page
+        run: python3 scripts/build_episode_index.py _site/data || echo "::warning::Index incomplet"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  # GitHub met en pause les tâches planifiées d'un dépôt public sans commit depuis 60 jours.
+  # Réactiver la tâche à chaque passage planifié remet ce compteur à zéro : l'index des épisodes
+  # continue de se mettre à jour même si le code ne bouge plus.
+  keepalive:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/pages.yml/enable"
+        env:
+          GH_TOKEN: ${{ github.token }}

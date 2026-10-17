@@ -64,6 +64,10 @@ export function hostServiceFor(providerName) {
 // les chaînes Prime. Identifiant inventé (pas un identifiant TMDB) ; HBO_MAX_IDS sert aux recherches TMDB.
 export const CANAL_HBO = { id: 99001899, name: 'HBO Max Canal+ Channel' };
 export const HBO_MAX_IDS = [1899];
+// Offre Canal+ Ciné Séries (France) : le socle Canal+ avec Netflix, Apple TV+, HBO Max, Paramount+ et Ciné+ OCS
+// (référencé sous Canal+ dans les données). Case des réglages, juste après Canal+ : la cocher coche ces plateformes.
+// Identifiants TMDB (= JustWatch) : Canal+ 381, Canal+ Séries 345, Netflix 8, Apple TV 350, Paramount Plus 531.
+export const CANAL_CINE_SERIES = { id: 99000381, name: 'Canal+ Ciné Séries', includes: [381, 345, 8, 350, 531, CANAL_HBO.id] };
 const isHboMax = (providerName) => serviceFor(providerName)?.id === 'hbo';
 
 export function withVirtualChannels(offers, region) {
@@ -74,12 +78,20 @@ export function withVirtualChannels(offers, region) {
   return { ...offers, flatrate: [...offers.flatrate, channel] };
 }
 
-// Liste des plateformes des réglages : l'option HBO Max de Canal+ juste après HBO Max (France)
+// Liste des plateformes des réglages (France) : l'offre Canal+ Ciné Séries juste après Canal+, l'option HBO Max de
+// Canal+ juste après HBO Max
 export function withVirtualProviders(list, region) {
-  const hbo = region === 'FR' && list.find((p) => isHboMax(p.name));
-  if (!hbo || list.some((p) => p.id === CANAL_HBO.id)) return list;
-  const i = list.indexOf(hbo);
-  return [...list.slice(0, i + 1), { id: CANAL_HBO.id, name: CANAL_HBO.name, logo: hbo.logo, priority: hbo.priority }, ...list.slice(i + 1)];
+  if (region !== 'FR') return list;
+  const after = (items, base, extra) => {
+    const i = items.indexOf(base);
+    return i < 0 || items.some((p) => p.id === extra.id) ? items : [...items.slice(0, i + 1), extra, ...items.slice(i + 1)];
+  };
+  let out = list;
+  const canal = out.find((p) => p.id === 381);
+  if (canal) out = after(out, canal, { id: CANAL_CINE_SERIES.id, name: CANAL_CINE_SERIES.name, logo: canal.logo, priority: canal.priority });
+  const hbo = out.find((p) => isHboMax(p.name));
+  if (hbo) out = after(out, hbo, { id: CANAL_HBO.id, name: CANAL_HBO.name, logo: hbo.logo, priority: hbo.priority });
+  return out;
 }
 
 // Page qui liste les épisodes d'une série sur la plateforme, quand on sait la construire

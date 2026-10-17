@@ -230,7 +230,7 @@ La roue dentée en haut à droite ouvre les réglages. Les sections sont replié
 
 | Section | Contenu |
 |---|---|
-| **Mes abonnements** | Les plateformes auxquelles tu es abonné, avec un champ pour filtrer la liste. Cocher Prime Video coche aussi les chaînes incluses avec Prime. Les options payantes vendues sur une autre plateforme sont des « chaînes » à cocher à part, par exemple **HBO Max Amazon Channel** (HBO Max sur Prime Video) ou **HBO Max Canal+ Channel** (l'option HBO Max de Canal+, en France). |
+| **Mes abonnements** | Les plateformes auxquelles tu es abonné, avec un champ pour filtrer la liste. Cocher Prime Video coche aussi les chaînes incluses avec Prime. Les options payantes vendues sur une autre plateforme sont des « chaînes » à cocher à part, par exemple **HBO Max Amazon Channel** (HBO Max sur Prime Video) ou **HBO Max Canal+ Channel** (l'option HBO Max de Canal+, en France). Cocher **Canal+ Ciné Séries** (France) coche aussi les plateformes de l'offre : Canal+, Canal+ Séries, Netflix, Apple TV+, Paramount+ et HBO Max (Canal+) ; Ciné+ OCS est référencé sous Canal+. Netflix, Apple TV+ et Paramount+ restent des comptes à part (activés depuis ton espace Canal+) et s'ouvrent dans leurs propres applis. |
 | **Synchronisation** | Créer ou utiliser un code, synchroniser maintenant, arrêter sur cet appareil. |
 | **Clés API** | Clé TMDB, clé Streaming Availability, adresse du relais, avec un bouton Tester pour chacune. |
 | **Apparence** | Effet verre : Automatique, Transparent ou Teinté (propre à chaque appareil). |

@@ -1,14 +1,14 @@
 import { loadSettings, saveSettings, relayUrl, HISTORY_MAX } from './store.js';
 import { makeApi, img, testTmdbKey, testSaKey, testRelay } from './api.js';
 import { syncNow, syncState, createCode, joinCode, leave, startAutoSync } from './sync.js';
-import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, CANAL_HBO, HBO_MAX_IDS } from './providers.js';
+import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, CANAL_HBO, HBO_MAX_IDS, CANAL_CINE_SERIES } from './providers.js';
 import { INDEXED_PLATFORMS, platformEpisodeUrl } from './episodes.js';
 import { aliasMatches } from './aliases.js';
 import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -138,11 +138,13 @@ function matchesFilter(offers, filter = state.filter) {
   return list.some((p) => p.provider_id === id || (service && serviceFor(p.provider_name)?.id === service));
 }
 
-// Pour les recherches TMDB : l'option HBO Max de Canal+ (inconnue de TMDB) correspond au catalogue HBO Max
+// Pour les recherches TMDB : les cases inventées par StreamHub correspondent à de vraies plateformes (option HBO Max
+// de Canal+ → catalogue HBO Max ; Canal+ Ciné Séries → Canal+, ses autres plateformes étant cochées avec elle)
 function activeProviderIds(filter = state.filter) {
   if (filter === 'all') return [];
   const ids = filter === 'mine' ? myIds() : [Number(filter)];
-  return [...new Set(ids.flatMap((id) => (id === CANAL_HBO.id ? HBO_MAX_IDS : [id])))];
+  const real = (id) => (id === CANAL_HBO.id ? HBO_MAX_IDS : id === CANAL_CINE_SERIES.id ? [381] : [id]);
+  return [...new Set(ids.flatMap(real))];
 }
 
 // Sans abonnement choisi, on montre tout le catalogue
@@ -2134,7 +2136,18 @@ el.providerGrid.addEventListener('click', (e) => {
   };
   const on = !draftProviders.has(id);
   select(id, on);
-  if (id === PRIME) {
+  if (id === CANAL_CINE_SERIES.id) {
+    // Cochée : les plateformes incluses le sont aussi. Décochée : seule l'offre l'est (Netflix ou Apple TV+ peuvent
+    // être des abonnements à part)
+    if (!on) return btn.setAttribute('aria-pressed', 'false');
+    for (const pid of CANAL_CINE_SERIES.includes) select(pid, true);
+    renderProviderChoices();
+    const names = CANAL_CINE_SERIES.includes.map((pid) => providerChoices.find((c) => c.id === pid)?.name).filter(Boolean);
+    if (names.length) {
+      el.settingsError.textContent = `Inclus avec Canal+ Ciné Séries, ajoutés aussi : ${names.join(', ')}.`;
+      el.settingsError.classList.add('info');
+    }
+  } else if (id === PRIME) {
     for (const pid of INCLUDED_WITH_PRIME) select(pid, on);
     renderProviderChoices();
     const names = INCLUDED_WITH_PRIME.map((pid) => providerChoices.find((c) => c.id === pid)?.name).filter(Boolean);

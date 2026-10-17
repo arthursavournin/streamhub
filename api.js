@@ -3,7 +3,7 @@
 // - Streaming Availability (RapidAPI) : liens directs vers le film ou la série sur chaque plateforme
 // `type` vaut 'movie' (film) ou 'tv' (série), comme dans les URL de TMDB.
 import { cacheGet, cacheSet, relayUrl } from './store.js';
-import { autoplayLink } from './providers.js';
+import { autoplayLink, withVirtualChannels, withVirtualProviders } from './providers.js';
 
 const TMDB = 'https://api.themoviedb.org/3';
 const SA_HOST = 'streaming-availability.p.rapidapi.com';
@@ -74,7 +74,7 @@ export function makeApi(settings) {
           priority: p.display_priorities?.[region] ?? p.display_priority ?? 999,
         });
       }
-      return [...byId.values()].sort((a, b) => a.priority - b.priority);
+      return withVirtualProviders([...byId.values()].sort((a, b) => a.priority - b.priority), region);
     },
 
     async genres(type) {
@@ -134,18 +134,21 @@ export function makeApi(settings) {
       return tmdb(`/tv/${tvId}/season/${number}`, { language });
     },
 
-    details(type, id) {
-      return tmdb(`/${type}/${id}`, {
+    async details(type, id) {
+      const data = await tmdb(`/${type}/${id}`, {
         language,
         append_to_response: 'watch/providers,videos,credits',
         include_video_language: `${language.slice(0, 2)},en,null`,
       });
+      const results = data['watch/providers']?.results;
+      if (results?.[region]) results[region] = withVirtualChannels(results[region], region); // option HBO Max de Canal+
+      return data;
     },
 
     // Offres pour le pays choisi : { link, flatrate, free, ads, rent, buy } ou null
     async offers(type, id) {
       const data = await tmdb(`/${type}/${id}/watch/providers`);
-      return data.results?.[region] ?? null;
+      return withVirtualChannels(data.results?.[region] ?? null, region);
     },
 
     // Liens directs d'après JustWatch (via le relais) : [{ provider, type: FLATRATE | FREE | ADS | RENT | BUY, url, deeplink }]

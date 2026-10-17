@@ -1,14 +1,14 @@
 import { loadSettings, saveSettings, relayUrl, HISTORY_MAX } from './store.js';
 import { makeApi, img, testTmdbKey, testSaKey, testRelay } from './api.js';
 import { syncNow, syncState, createCode, joinCode, leave, startAutoSync } from './sync.js';
-import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink } from './providers.js';
+import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, CANAL_HBO, HBO_MAX_IDS } from './providers.js';
 import { INDEXED_PLATFORMS, platformEpisodeUrl } from './episodes.js';
 import { aliasMatches } from './aliases.js';
 import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.0.2';
+const APP_VERSION = '1.1.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -138,10 +138,11 @@ function matchesFilter(offers, filter = state.filter) {
   return list.some((p) => p.provider_id === id || (service && serviceFor(p.provider_name)?.id === service));
 }
 
+// Pour les recherches TMDB : l'option HBO Max de Canal+ (inconnue de TMDB) correspond au catalogue HBO Max
 function activeProviderIds(filter = state.filter) {
   if (filter === 'all') return [];
-  if (filter === 'mine') return myIds();
-  return [Number(filter)];
+  const ids = filter === 'mine' ? myIds() : [Number(filter)];
+  return [...new Set(ids.flatMap((id) => (id === CANAL_HBO.id ? HBO_MAX_IDS : [id])))];
 }
 
 // Sans abonnement choisi, on montre tout le catalogue
@@ -1034,7 +1035,14 @@ const SHORT_PLATFORM_NAMES = {
   netflixstandardwithads: 'Netflix avec pub',
   appletvplus: 'Apple TV+',
 };
-const shortPlatformName = (name) => SHORT_PLATFORM_NAMES[squash(name)] ?? name;
+// Chaînes vendues sur une autre plateforme : « HBO Max Amazon Channel » → « HBO Max (Prime Video) »,
+// « HBO Max Canal+ Channel » → « HBO Max (Canal+) »
+const CHANNEL_HOSTS = { amazon: 'Prime Video', 'apple tv': 'Apple TV', 'canal+': 'Canal+' };
+const channelName = (name) => {
+  const m = /^(.*?)\s+(Amazon|Apple TV|Canal\+)\s+Channels?$/i.exec(String(name ?? ''));
+  return m ? `${m[1]} (${CHANNEL_HOSTS[m[2].toLowerCase()]})` : null;
+};
+const shortPlatformName = (name) => SHORT_PLATFORM_NAMES[squash(name)] ?? channelName(name) ?? name;
 // Logo d'une plateforme : celui de tes abonnements (Réglages), sinon celui du bouton de la fiche ouverte
 function platformLogo(platform, service) {
   const p = settings.providers.find((x) => squash(x.name) === squash(platform) || (service && serviceFor(x.name)?.id === service));
@@ -1797,7 +1805,12 @@ const JW_KIND = { flatrate: 'FLATRATE', free: 'FREE', ads: 'ADS', rent: 'RENT', 
 
 function applyRelayLinks(offers, type) {
   for (const a of el.detail.querySelectorAll('a.watch:not([data-direct])')) {
-    const same = offers.filter((o) => squash(o.provider) === squash(a.dataset.platform));
+    let same = offers.filter((o) => squash(o.provider) === squash(a.dataset.platform));
+    // Chaîne de Canal+ (option HBO Max) : JustWatch ne la connaît pas, mais a souvent la fiche Canal+ du titre
+    // (en location ou achat) ; avec l'option, c'est sur cette fiche qu'on le regarde
+    if (!same.length && isChannel(a.dataset.platform) && hostServiceFor(a.dataset.platform)?.id === 'canal') {
+      same = offers.filter((o) => /(^|\.)canalplus\.com\//.test(o.url.replace(/^https?:\/\//, '')));
+    }
     const offer = same.find((o) => o.type === JW_KIND[a.dataset.kind]) ?? same[0];
     if (!offer) continue;
     const play = offer.deeplink && offer.deeplink !== offer.url ? offer.deeplink : autoplayLink(offer.url);

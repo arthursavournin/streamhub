@@ -53,7 +53,33 @@ export function hostServiceFor(providerName) {
   const name = String(providerName).toLowerCase();
   if (/amazon/.test(name)) return SERVICES.find((s) => s.id === 'prime');
   if (/apple/.test(name)) return SERVICES.find((s) => s.id === 'apple');
+  if (/canal/.test(name)) return SERVICES.find((s) => s.id === 'canal');
   return null;
+}
+
+// Offres que TMDB et JustWatch ne référencent pas. Canal+ propose une option HBO Max (France) : tout le catalogue
+// HBO Max se regarde alors sur Canal+ (signalé par l'utilisateur : Harry Potter, présent sur « HBO Max » et
+// « HBO Max Amazon Channel », mais pas sur Canal+ dans les données). On l'ajoute comme une chaîne de Canal+, à côté
+// de HBO Max, pour chaque titre disponible sur HBO Max : abonnements, filtres, affiches et fiche la traitent comme
+// les chaînes Prime. Identifiant inventé (pas un identifiant TMDB) ; HBO_MAX_IDS sert aux recherches TMDB.
+export const CANAL_HBO = { id: 99001899, name: 'HBO Max Canal+ Channel' };
+export const HBO_MAX_IDS = [1899];
+const isHboMax = (providerName) => serviceFor(providerName)?.id === 'hbo';
+
+export function withVirtualChannels(offers, region) {
+  if (region !== 'FR' || !offers?.flatrate) return offers;
+  const hbo = offers.flatrate.find((p) => isHboMax(p.provider_name));
+  if (!hbo || offers.flatrate.some((p) => p.provider_id === CANAL_HBO.id)) return offers;
+  const channel = { provider_id: CANAL_HBO.id, provider_name: CANAL_HBO.name, logo_path: hbo.logo_path, display_priority: hbo.display_priority };
+  return { ...offers, flatrate: [...offers.flatrate, channel] };
+}
+
+// Liste des plateformes des réglages : l'option HBO Max de Canal+ juste après HBO Max (France)
+export function withVirtualProviders(list, region) {
+  const hbo = region === 'FR' && list.find((p) => isHboMax(p.name));
+  if (!hbo || list.some((p) => p.id === CANAL_HBO.id)) return list;
+  const i = list.indexOf(hbo);
+  return [...list.slice(0, i + 1), { id: CANAL_HBO.id, name: CANAL_HBO.name, logo: hbo.logo, priority: hbo.priority }, ...list.slice(i + 1)];
 }
 
 // Page qui liste les épisodes d'une série sur la plateforme, quand on sait la construire

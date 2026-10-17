@@ -53,6 +53,9 @@ boutons **« Regarder sur… »**, rangés en trois groupes :
 
 - **Dans tes abonnements** : les plateformes que tu as cochées dans les réglages.
 - **Aussi disponible sur** : les autres plateformes où le titre est inclus (abonnement, gratuit, avec pub).
+  Une chaîne vendue sur une autre plateforme s'affiche avec sa plateforme entre parenthèses : « HBO Max (Prime
+  Video) », « HBO Max (Canal+) ». L'option HBO Max de Canal+ n'est pas référencée par TMDB ni JustWatch : StreamHub
+  la propose pour chaque titre disponible sur HBO Max (France), avec la fiche Canal+ du titre.
 - **Location et achat** : les boutiques (Apple TV, Amazon Video…), repliées par défaut.
 
 Sous chaque bouton, une indication précise ce qu'il va faire :
@@ -227,7 +230,7 @@ La roue dentée en haut à droite ouvre les réglages. Les sections sont replié
 
 | Section | Contenu |
 |---|---|
-| **Mes abonnements** | Les plateformes auxquelles tu es abonné, avec un champ pour filtrer la liste. Cocher Prime Video coche aussi les chaînes incluses avec Prime. |
+| **Mes abonnements** | Les plateformes auxquelles tu es abonné, avec un champ pour filtrer la liste. Cocher Prime Video coche aussi les chaînes incluses avec Prime. Les options payantes vendues sur une autre plateforme sont des « chaînes » à cocher à part, par exemple **HBO Max Amazon Channel** (HBO Max sur Prime Video) ou **HBO Max Canal+ Channel** (l'option HBO Max de Canal+, en France). |
 | **Synchronisation** | Créer ou utiliser un code, synchroniser maintenant, arrêter sur cet appareil. |
 | **Clés API** | Clé TMDB, clé Streaming Availability, adresse du relais, avec un bouton Tester pour chacune. |
 | **Apparence** | Effet verre : Automatique, Transparent ou Teinté (propre à chaque appareil). |

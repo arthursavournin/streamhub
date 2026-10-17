@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         StreamHub – reprise après connexion
 // @namespace    https://arthursavournin.github.io/streamhub/
-// @version      2.7
+// @version      2.8
 // @description  Ouvre le titre lancé depuis StreamHub après la connexion ou le choix du profil, au lieu de laisser sur l'accueil.
 // @author       StreamHub
 // @match        *://*/*
@@ -161,7 +161,9 @@
     [...document.querySelectorAll('#dv-web-player, .webPlayerSDKContainer, [class*="webPlayer" i]')].some(
       (el) => isVisible(el) && el.getBoundingClientRect().width > innerWidth * 0.8,
     );
-  const PLAY_TEXT = /^(?:reprendre|lecture|lire|regarder|play|resume|watch)\b/i;
+  // Disney+ : « Continuer » (série en cours), « Lecture » ou « Commencer » (jamais regardée) ; Prime Video :
+  // « Reprendre », « Lecture » ; « Recommencer » (revenir au début) n'est pas retenu
+  const PLAY_TEXT = /^(?:continuer|reprendre|lecture|lire|commencer|regarder|play|resume|continue|start|watch)\b/i;
   const NOT_PLAY = /bande|trailer|plus tard|liste|later|list|épisodes|episodes|acheter|louer|buy|rent|essai|trial|s'abonner|subscribe/i;
   function playButton() {
     const candidates = [

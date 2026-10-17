@@ -13,3 +13,4 @@ mobiletest/
 CLAUDE.md
 # Sauvegardes locales (ancien historique Git), jamais publiées
 .sauvegarde/
+__pycache__/

@@ -54,11 +54,11 @@ boutons **« Regarder sur… »**, rangés en trois groupes :
 - **Dans tes abonnements** : les plateformes que tu as cochées dans les réglages.
 - **Aussi disponible sur** : les autres plateformes où le titre est inclus (abonnement, gratuit, avec pub).
   Une chaîne vendue sur une autre plateforme s'affiche avec sa plateforme entre parenthèses : « HBO Max (Prime
-  Video) », « HBO Max (Canal+) ». L'option HBO Max de Canal+ n'est pas référencée par TMDB ni JustWatch : StreamHub
-  la propose pour chaque titre disponible sur HBO Max (France), et ouvre la fiche HBO du titre sur Canal+ (pas la
-  fiche Canal VOD, qui est une location payante), grâce à l'index du catalogue HBO Max de Canal+ qu'il publie
-  toutes les 6 heures. Un titre absent de l'index ouvre la page HBO Max de Canal+. Sur iPhone et iPad, l'appli
-  Canal+ s'ouvre sur la fiche.
+  Video) », « HBO Max (Canal+) », « Apple TV (Canal+) », « Paramount+ (Canal+) ». Les chaînes HBO Max, Apple TV et
+  Paramount+ de Canal+ ne sont pas référencées par TMDB ni JustWatch : StreamHub les propose pour chaque titre
+  disponible sur ces plateformes (France), et ouvre la fiche du titre sur Canal+ (pas la fiche Canal VOD, qui est
+  une location payante), grâce à l'index du catalogue de chaque chaîne qu'il publie toutes les 6 heures. Un titre
+  absent de l'index ouvre la page de la chaîne sur Canal+. Sur iPhone et iPad, l'appli Canal+ s'ouvre sur la fiche.
 - **Location et achat** : les boutiques (Apple TV, Amazon Video…), repliées par défaut.
 
 Sous chaque bouton, une indication précise ce qu'il va faire :
@@ -233,7 +233,7 @@ La roue dentée en haut à droite ouvre les réglages. Les sections sont replié
 
 | Section | Contenu |
 |---|---|
-| **Mes abonnements** | Les plateformes auxquelles tu es abonné, avec un champ pour filtrer la liste. Cocher Prime Video coche aussi les chaînes incluses avec Prime. Les options payantes vendues sur une autre plateforme sont des « chaînes » à cocher à part, par exemple **HBO Max Amazon Channel** (HBO Max sur Prime Video) ou **HBO Max Canal+ Channel** (l'option HBO Max de Canal+, en France). Cocher **Canal+ Ciné Séries** (France) coche aussi les plateformes de l'offre : Canal+, Canal+ Séries, Netflix, Apple TV+, Paramount+ et HBO Max (Canal+) ; Ciné+ OCS est référencé sous Canal+. Netflix, Apple TV+ et Paramount+ restent des comptes à part (activés depuis ton espace Canal+) et s'ouvrent dans leurs propres applis. |
+| **Mes abonnements** | Les plateformes auxquelles tu es abonné, avec un champ pour filtrer la liste. Cocher Prime Video coche aussi les chaînes incluses avec Prime. Les options payantes vendues sur une autre plateforme sont des « chaînes » à cocher à part, par exemple **HBO Max Amazon Channel** (HBO Max sur Prime Video) ou les chaînes de Canal+ (France) **HBO Max Canal+ Channel**, **Apple TV Canal+ Channel** et **Paramount Plus Canal+ Channel**, pour regarder ces catalogues sur Canal+. Cocher **Canal+ Ciné Séries** coche aussi les plateformes de l'offre : Canal+, Canal+ Séries, Netflix et les chaînes HBO Max, Apple TV et Paramount+ de Canal+ ; Ciné+ OCS est référencé sous Canal+. Netflix reste un compte à part (activé depuis ton espace Canal+) et s'ouvre dans l'appli Netflix. |
 | **Synchronisation** | Créer ou utiliser un code, synchroniser maintenant, arrêter sur cet appareil. |
 | **Clés API** | Clé TMDB, clé Streaming Availability, adresse du relais, avec un bouton Tester pour chacune. |
 | **Apparence** | Effet verre : Automatique, Transparent ou Teinté (propre à chaque appareil). |
@@ -316,7 +316,7 @@ Chaque plateforme s'ouvre dans son propre onglet (un seul onglet Netflix, un seu
 | **Netflix**, **Disney+** | La page du titre ou la lecture, selon le lien disponible |
 | **Prime Video** | La lecture démarre, sur le site ou dans l'appli Prime Video selon le réglage « Ouvrir les titres » |
 | **Canal+** | La fiche du titre s'ouvre et lance la lecture (son coupé au départ) |
-| **TF1+**, **M6+** | La vidéo ou la page du programme ; pour les épisodes, StreamHub retrouve leur lien grâce à son index ([partie 11](#publication-et-index-tf1-m6-hbo-max-de-canal)) |
+| **TF1+**, **M6+** | La vidéo ou la page du programme ; pour les épisodes, StreamHub retrouve leur lien grâce à son index ([partie 11](#publication-et-index-tf1-m6-chaînes-de-canal)) |
 | **Autres** | La page du titre, une recherche ou l'accueil de la plateforme |
 
 Si la plateforme te demande de te connecter ou de choisir un profil, elle oublie souvent le titre demandé : le
@@ -477,16 +477,17 @@ Puis ouvre **http://localhost:8080**. Le relais accepte les appels venant de `lo
 | `extension/` | Script « reprise après connexion » et extension Chrome |
 | `scripts/` | Index des épisodes TF1+ / M6+, publication du relais |
 
-### Publication et index (TF1+, M6+, HBO Max de Canal+)
+### Publication et index (TF1+, M6+, chaînes de Canal+)
 
 Le site est publié par `.github/workflows/pages.yml` à chaque modification de la branche `main` et **toutes les
 6 heures**. À chaque publication, `scripts/build_episode_index.py` lit les plans de site publics de TF1+ et M6+ et
 écrit `data/<plateforme>/<programme>.json` (numéro d'épisode, saison-épisode et date → lien de l'épisode) : les liens
 d'épisode de ces plateformes contiennent un identifiant interne impossible à deviner.
 
-Le même script écrit `data/canal/hbo.json` : le catalogue HBO Max de Canal+ (titre simplifié → adresse de la fiche,
-films et séries à part), lu dans les grilles de la page HBO Max de Canal+. Sur Canal+, la fiche HBO d'un titre a une
-adresse sans rapport avec sa fiche Canal VOD, et Canal+ n'autorise pas les autres sites à utiliser sa recherche.
+Le même script écrit `data/canal/hbo.json`, `appletv.json` et `paramount.json` : le catalogue de chaque chaîne de
+Canal+ (titre simplifié → adresse de la fiche, films et séries à part), lu dans les grilles de sa page sur Canal+.
+Sur Canal+, la fiche d'un titre sur une chaîne a une adresse sans rapport avec sa fiche Canal VOD, et Canal+
+n'autorise pas les autres sites à utiliser sa recherche.
 
 GitHub met en pause les tâches planifiées d'un dépôt sans commit depuis 60 jours : le workflow la réactive à chaque
 passage, pour que l'index continue de se mettre à jour.

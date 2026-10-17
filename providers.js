@@ -51,35 +51,47 @@ export function serviceFor(providerName) {
 export function hostServiceFor(providerName) {
   if (!isChannel(providerName)) return serviceFor(providerName);
   const name = String(providerName).toLowerCase();
+  if (/canal/.test(name)) return SERVICES.find((s) => s.id === 'canal'); // avant Apple : « Apple TV Canal+ Channel »
   if (/amazon/.test(name)) return SERVICES.find((s) => s.id === 'prime');
   if (/apple/.test(name)) return SERVICES.find((s) => s.id === 'apple');
-  if (/canal/.test(name)) return SERVICES.find((s) => s.id === 'canal');
   return null;
 }
 
-// Offres que TMDB et JustWatch ne référencent pas. Canal+ propose une option HBO Max (France) : tout le catalogue
-// HBO Max se regarde alors sur Canal+ (signalé par l'utilisateur : Harry Potter, présent sur « HBO Max » et
-// « HBO Max Amazon Channel », mais pas sur Canal+ dans les données). On l'ajoute comme une chaîne de Canal+, à côté
-// de HBO Max, pour chaque titre disponible sur HBO Max : abonnements, filtres, affiches et fiche la traitent comme
-// les chaînes Prime. Identifiant inventé (pas un identifiant TMDB) ; HBO_MAX_IDS sert aux recherches TMDB.
-export const CANAL_HBO = { id: 99001899, name: 'HBO Max Canal+ Channel' };
-export const HBO_MAX_IDS = [1899];
-// Offre Canal+ Ciné Séries (France) : le socle Canal+ avec Netflix, Apple TV+, HBO Max, Paramount+ et Ciné+ OCS
+// Offres que TMDB et JustWatch ne référencent pas : les chaînes que Canal+ propose dans son abonnement (France).
+// Avec elles, le catalogue de HBO Max, Apple TV ou Paramount+ se regarde sur Canal+, souvent sans compte chez la
+// plateforme elle-même (signalé par l'utilisateur : Harry Potter, présent sur « HBO Max » et « HBO Max Amazon
+// Channel », mais pas sur Canal+ dans les données). Chacune est ajoutée comme une chaîne de Canal+, à côté de la
+// plateforme, pour chaque titre disponible sur celle-ci : abonnements, filtres, affiches et fiche la traitent comme
+// les chaînes Prime. Identifiants inventés (pas des identifiants TMDB) ; tmdbIds sert aux recherches TMDB, key à
+// l'index de la chaîne publié avec StreamHub (data/canal/<key>.json), hub à sa page sur Canal+.
+export const CANAL_CHANNELS = [
+  { key: 'hbo', id: 99001899, name: 'HBO Max Canal+ Channel', service: 'hbo', tmdbIds: [1899], hub: '/chaines/hbo-max/', label: 'HBO Max' },
+  { key: 'appletv', id: 99000350, name: 'Apple TV Canal+ Channel', service: 'apple', tmdbIds: [350], hub: '/chaines/apple-tv/', label: 'Apple TV' },
+  { key: 'paramount', id: 99000531, name: 'Paramount Plus Canal+ Channel', service: 'paramount', tmdbIds: [531], hub: '/chaines/paramount-plus/', label: 'Paramount+' },
+];
+// La plateforme d'origine : même service (« HBO Max », « Paramount Plus Premium »…), jamais une chaîne (« HBO Max
+// Amazon Channel »), ni la boutique « Apple TV Store »
+const isBaseOf = (channel, id, name) =>
+  channel.tmdbIds.includes(id) || (channel.service !== 'apple' && serviceFor(name)?.id === channel.service);
+// Offre Canal+ Ciné Séries (France) : le socle Canal+ avec Netflix, Apple TV, HBO Max, Paramount+ et Ciné+ OCS
 // (référencé sous Canal+ dans les données). Case des réglages, juste après Canal+ : la cocher coche ces plateformes.
-// Identifiants TMDB (= JustWatch) : Canal+ 381, Canal+ Séries 345, Netflix 8, Apple TV 350, Paramount Plus 531.
-export const CANAL_CINE_SERIES = { id: 99000381, name: 'Canal+ Ciné Séries', includes: [381, 345, 8, 350, 531, CANAL_HBO.id] };
-const isHboMax = (providerName) => serviceFor(providerName)?.id === 'hbo';
+// Netflix y est un vrai compte (appli Netflix) ; Apple TV, HBO Max et Paramount+ se regardent sur Canal+.
+// Identifiants TMDB (= JustWatch) : Canal+ 381, Canal+ Séries 345, Netflix 8.
+export const CANAL_CINE_SERIES = { id: 99000381, name: 'Canal+ Ciné Séries', includes: [381, 345, 8, ...CANAL_CHANNELS.map((c) => c.id)] };
 
 export function withVirtualChannels(offers, region) {
   if (region !== 'FR' || !offers?.flatrate) return offers;
-  const hbo = offers.flatrate.find((p) => isHboMax(p.provider_name));
-  if (!hbo || offers.flatrate.some((p) => p.provider_id === CANAL_HBO.id)) return offers;
-  const channel = { provider_id: CANAL_HBO.id, provider_name: CANAL_HBO.name, logo_path: hbo.logo_path, display_priority: hbo.display_priority };
-  return { ...offers, flatrate: [...offers.flatrate, channel] };
+  let flatrate = offers.flatrate;
+  for (const channel of CANAL_CHANNELS) {
+    const base = flatrate.find((p) => isBaseOf(channel, p.provider_id, p.provider_name));
+    if (!base || flatrate.some((p) => p.provider_id === channel.id)) continue;
+    flatrate = [...flatrate, { provider_id: channel.id, provider_name: channel.name, logo_path: base.logo_path, display_priority: base.display_priority }];
+  }
+  return flatrate === offers.flatrate ? offers : { ...offers, flatrate };
 }
 
-// Liste des plateformes des réglages (France) : l'offre Canal+ Ciné Séries juste après Canal+, l'option HBO Max de
-// Canal+ juste après HBO Max
+// Liste des plateformes des réglages (France) : l'offre Canal+ Ciné Séries juste après Canal+, chaque chaîne de
+// Canal+ juste après sa plateforme
 export function withVirtualProviders(list, region) {
   if (region !== 'FR') return list;
   const after = (items, base, extra) => {
@@ -89,8 +101,10 @@ export function withVirtualProviders(list, region) {
   let out = list;
   const canal = out.find((p) => p.id === 381);
   if (canal) out = after(out, canal, { id: CANAL_CINE_SERIES.id, name: CANAL_CINE_SERIES.name, logo: canal.logo, priority: canal.priority });
-  const hbo = out.find((p) => isHboMax(p.name));
-  if (hbo) out = after(out, hbo, { id: CANAL_HBO.id, name: CANAL_HBO.name, logo: hbo.logo, priority: hbo.priority });
+  for (const channel of CANAL_CHANNELS) {
+    const base = out.find((p) => isBaseOf(channel, p.id, p.name));
+    if (base) out = after(out, base, { id: channel.id, name: channel.name, logo: base.logo, priority: base.priority });
+  }
   return out;
 }
 

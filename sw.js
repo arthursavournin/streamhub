@@ -1,6 +1,6 @@
 // Service worker : rend l'appli installable et garde l'interface en cache (hors ligne).
 // Les appels aux API passent toujours par le réseau.
-const SHELL_CACHE = 'streamhub-shell-v1.2.1';
+const SHELL_CACHE = 'streamhub-shell-v1.3.0';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'api.js', 'store.js', 'providers.js', 'nav.js', 'library.js', 'episodes.js', 'aliases.js',
   'sync.js', 'icon.svg?v=3', 'icon-192.png?v=3', 'apple-touch-icon.png?v=3', 'manifest.webmanifest?v=3'];
 

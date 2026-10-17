@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Construit l'index des épisodes TF1+ et M6+, et celui du catalogue HBO Max de Canal+, utilisés par StreamHub.
+"""Construit l'index des épisodes TF1+ et M6+, et ceux des chaînes de Canal+ (HBO Max, Apple TV, Paramount+),
+utilisés par StreamHub.
 
 Sur ces plateformes, le lien d'un épisode contient un identifiant interne impossible à deviner :
   TF1+ : https://www.tf1.fr/tf1/demain-nous-appartient/videos/…-episode-2299-33917459.html
@@ -14,11 +15,11 @@ et elles interdisent aux autres sites de lire leurs pages. Ce script lit leurs p
 
 Lien complet = base + fin du lien.
 
-Canal+ (option HBO Max) : un titre HBO Max a sur Canal+ sa propre fiche, sans rapport avec la fiche Canal VOD
-(Harry Potter : /cinema/harry-potter-a-l-ecole-des-sorciers/h/40438941_50889, contre …/h/435039_40099 en VOD), et
-Canal+ interdit aux autres sites d'utiliser sa recherche. On lit donc les grilles de « Nos catégories » (Films, Séries,
-Documentaires, Tous les programmes…) de la page HBO Max de Canal+ (API publique du site) et on écrit
-data/canal/hbo.json :
+Chaînes de Canal+ (HBO Max, Apple TV, Paramount+, accessibles par l'abonnement Canal+) : un titre y a sa propre
+fiche Canal+, sans rapport avec la fiche Canal VOD (Harry Potter : /cinema/harry-potter-a-l-ecole-des-sorciers/h/
+40438941_50889 sur HBO Max, contre …/h/435039_40099 en VOD), et Canal+ interdit aux autres sites d'utiliser sa
+recherche. On lit donc les grilles de catalogue (Films, Séries, Tous les programmes…) de la page de chaque chaîne sur
+Canal+ (API publique du site) et on écrit data/canal/<chaîne>.json (hbo, appletv, paramount) :
 
     {"movie": {"harrypotteralecoledessorciers": "/cinema/…/h/40438941_50889"},  # titre simplifié → chemin
      "tv": {"thelastofus": "/series/the-last-of-us/h/40427680_50889"}}
@@ -119,9 +120,10 @@ def m6_videos():
 
 
 # Canal+ : jeton public du site (portail France, visiteur non connecté), visible dans les adresses de son API.
-# S'il change, l'index n'est pas construit et StreamHub ouvre la page HBO Max de Canal+.
+# S'il change, les index ne sont pas construits et StreamHub ouvre la page de la chaîne sur Canal+.
 CANAL_TOKEN = 'b63a43e7548cb1a6e7c7319084f48af8'
-CANAL_HBO_PAGE = f'https://hodor.canalplus.pro/api/v2/mycanal/page/{CANAL_TOKEN}/125873.json?aegon=true'
+# Pages des chaînes sur Canal+ (/chaines/hbo-max/, /chaines/apple-tv/, /chaines/paramount-plus/)
+CANAL_CHANNELS = {'hbo': 125873, 'appletv': 119267, 'paramount': 116426}
 # L'API refuse les requêtes qui ne ressemblent pas à celles d'un navigateur sur canalplus.com
 CANAL_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -151,17 +153,17 @@ def simplify(title):
     return re.sub(r'[^a-z0-9]', '', ''.join(c for c in text if not unicodedata.combining(c)))
 
 
-def canal_hbo(out):
-    """Catalogue HBO Max de Canal+ : titre simplifié → chemin de la fiche, films et séries à part."""
-    hub = canal_json(CANAL_HBO_PAGE)
-    # Grilles complètes (« contentGrid ») de la page : une par catégorie. « Tous les programmes » ne contient
-    # presque que des séries et émissions : les films sont dans la grille « Films ».
+def canal_channel(out, key, page_id):
+    """Catalogue d'une chaîne de Canal+ : titre simplifié → chemin de la fiche, films et séries à part."""
+    hub = canal_json(f'https://hodor.canalplus.pro/api/v2/mycanal/page/{CANAL_TOKEN}/{page_id}.json?aegon=true')
+    # Grilles complètes (« contentGrid ») de la page : une par catégorie. Sur HBO Max, « Tous les programmes » ne
+    # contient presque que des séries et émissions : les films sont dans la grille « Films ».
     grids = list(dict.fromkeys(
         c['onClick']['URLPage'] for strate in hub.get('strates', []) for c in strate.get('contents', [])
         if (c.get('onClick') or {}).get('displayTemplate') == 'contentGrid' and c['onClick'].get('URLPage')
     ))
     if not grids:
-        raise RuntimeError('aucune grille de catégorie sur la page HBO Max de Canal+')
+        raise RuntimeError(f'aucune grille de catégorie sur la page {key} de Canal+')
     index = {'movie': {}, 'tv': {}}
     pages = 0
     for url in grids:
@@ -170,20 +172,20 @@ def canal_hbo(out):
             pages += 1
             for content in grid.get('contents', []):
                 path = (content.get('onClick') or {}).get('path', '')
-                key = simplify(content.get('title', ''))
-                if not key or not re.search(r'/h/\d+_\d+$', path):
+                title = simplify(content.get('title', ''))
+                if not title or not re.search(r'/h/\d+_\d+$', path):
                     continue
                 kind = 'movie' if path.startswith('/cinema/') else 'tv'
-                index[kind].setdefault(key, path)
+                index[kind].setdefault(title, path)
             paging = grid.get('paging') or {}
             url = paging.get('URLPage') if paging.get('hasNextPage') else None
             time.sleep(0.3)
     total = len(index['movie']) + len(index['tv'])
     if total < 50:
-        raise RuntimeError(f'catalogue HBO Max de Canal+ incomplet ({total} titres)')
+        raise RuntimeError(f'catalogue {key} de Canal+ incomplet ({total} titres)')
     (out / 'canal').mkdir(parents=True, exist_ok=True)
-    (out / 'canal' / 'hbo.json').write_text(json.dumps(index, ensure_ascii=False, separators=(',', ':')))
-    print(f'canal/hbo : {total} titres ({pages} pages)', flush=True)
+    (out / 'canal' / f'{key}.json').write_text(json.dumps(index, ensure_ascii=False, separators=(',', ':')))
+    print(f'canal/{key} : {total} titres ({pages} pages)', flush=True)
 
 
 def main():
@@ -195,11 +197,12 @@ def main():
         except Exception as err:  # une plateforme en panne ne bloque pas l'autre
             print(f'::warning::Index {name} non construit : {err}', flush=True)
             failed = True
-    try:
-        canal_hbo(out)
-    except Exception as err:
-        print(f'::warning::Index canal/hbo non construit : {err}', flush=True)
-        failed = True
+    for key, page_id in CANAL_CHANNELS.items():
+        try:
+            canal_channel(out, key, page_id)
+        except Exception as err:  # une chaîne en panne ne bloque pas les autres
+            print(f'::warning::Index canal/{key} non construit : {err}', flush=True)
+            failed = True
     sys.exit(1 if failed else 0)
 
 

@@ -1,14 +1,14 @@
 import { loadSettings, saveSettings, relayUrl, HISTORY_MAX } from './store.js';
 import { makeApi, img, testTmdbKey, testSaKey, testRelay } from './api.js';
 import { syncNow, syncState, createCode, joinCode, leave, startAutoSync } from './sync.js';
-import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, CANAL_HBO, HBO_MAX_IDS, CANAL_CINE_SERIES } from './providers.js';
-import { INDEXED_PLATFORMS, platformEpisodeUrl, canalHboPath } from './episodes.js';
+import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, CANAL_CHANNELS, CANAL_CINE_SERIES } from './providers.js';
+import { INDEXED_PLATFORMS, platformEpisodeUrl, canalChannelPath } from './episodes.js';
 import { aliasMatches } from './aliases.js';
 import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.2.1';
+const APP_VERSION = '1.3.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -138,12 +138,12 @@ function matchesFilter(offers, filter = state.filter) {
   return list.some((p) => p.provider_id === id || (service && serviceFor(p.provider_name)?.id === service));
 }
 
-// Pour les recherches TMDB : les cases inventées par StreamHub correspondent à de vraies plateformes (option HBO Max
-// de Canal+ → catalogue HBO Max ; Canal+ Ciné Séries → Canal+, ses autres plateformes étant cochées avec elle)
+// Pour les recherches TMDB : les cases inventées par StreamHub correspondent à de vraies plateformes (chaîne de Canal+
+// → catalogue de la plateforme ; Canal+ Ciné Séries → Canal+, ses autres plateformes étant cochées avec elle)
 function activeProviderIds(filter = state.filter) {
   if (filter === 'all') return [];
   const ids = filter === 'mine' ? myIds() : [Number(filter)];
-  const real = (id) => (id === CANAL_HBO.id ? HBO_MAX_IDS : id === CANAL_CINE_SERIES.id ? [381] : [id]);
+  const real = (id) => CANAL_CHANNELS.find((c) => c.id === id)?.tmdbIds ?? (id === CANAL_CINE_SERIES.id ? [381] : [id]);
   return [...new Set(ids.flatMap(real))];
 }
 
@@ -877,7 +877,7 @@ async function openDetail(type, id, opener) {
     current.item = item;
     if (type === 'tv') current.seasons = tmdbSeasons(item);
     renderDetail(item, type);
-    applyCanalHbo(); // index HBO Max de Canal+ (fichier publié avec StreamHub, sans attendre les liens directs)
+    applyCanalChannels(); // index des chaînes de Canal+ (fichiers publiés avec StreamHub, sans attendre les liens directs)
     if (type === 'tv') loadEpisodeGroups(item, key); // en parallèle des liens directs
     // Liens directs : Streaming Availability et JustWatch (relais) interrogés en même temps. Pour une série,
     // Streaming Availability peut mettre plusieurs secondes ; un clic pendant ce temps attend le lien (onLaunch).
@@ -1037,13 +1037,14 @@ const SHORT_PLATFORM_NAMES = {
   netflixbasicwithads: 'Netflix avec pub',
   netflixstandardwithads: 'Netflix avec pub',
   appletvplus: 'Apple TV+',
+  paramountplus: 'Paramount+',
 };
 // Chaînes vendues sur une autre plateforme : « HBO Max Amazon Channel » → « HBO Max (Prime Video) »,
 // « HBO Max Canal+ Channel » → « HBO Max (Canal+) »
 const CHANNEL_HOSTS = { amazon: 'Prime Video', 'apple tv': 'Apple TV', 'canal+': 'Canal+' };
 const channelName = (name) => {
   const m = /^(.*?)\s+(Amazon|Apple TV|Canal\+)\s+Channels?$/i.exec(String(name ?? ''));
-  return m ? `${m[1]} (${CHANNEL_HOSTS[m[2].toLowerCase()]})` : null;
+  return m ? `${SHORT_PLATFORM_NAMES[squash(m[1])] ?? m[1]} (${CHANNEL_HOSTS[m[2].toLowerCase()]})` : null;
 };
 const shortPlatformName = (name) => SHORT_PLATFORM_NAMES[squash(name)] ?? channelName(name) ?? name;
 // Logo d'une plateforme : celui de tes abonnements (Réglages), sinon celui du bouton de la fiche ouverte
@@ -1767,27 +1768,30 @@ function applyDirectLinks(options) {
     a.dataset.direct = 'sa';
     $('.watch-hint', a).textContent = play ? 'Lecture directe' : 'Fiche du titre';
   }
-  applyCanalHbo();
+  applyCanalChannels();
   applySeriesResume();
   refreshLikeButton(); // les boutons « Liker aussi » pointent maintenant vers la page du titre
 }
 
-// Option HBO Max de Canal+ : la fiche HBO du titre sur Canal+, d'après l'index publié avec StreamHub (la fiche Canal
-// VOD qu'on trouve ailleurs est une autre offre, payante à l'unité : constaté par l'utilisateur avec Harry Potter).
-// Titre absent de l'index : la page HBO Max de Canal+. Sur iPhone, l'appli Canal+ s'ouvre sur la fiche.
-function applyCanalHbo() {
+// Chaînes de Canal+ (HBO Max, Apple TV, Paramount+) : la fiche du titre sur la chaîne, d'après l'index publié avec
+// StreamHub (la fiche Canal VOD qu'on trouve ailleurs est une autre offre, payante à l'unité : constaté par
+// l'utilisateur avec Harry Potter). Titre absent de l'index : la page de la chaîne sur Canal+. Sur iPhone, l'appli
+// Canal+ s'ouvre sur la fiche.
+function applyCanalChannels() {
   if (!current?.item) return;
-  const a = el.detail.querySelector(`a.watch[data-platform="${CANAL_HBO.name}"]`);
-  if (!a) return;
   const key = current.key;
   const titles = [titleOf(current.item), originalTitleOf(current.item)];
-  const path = canalHboPath(current.type, titles, () => current?.key === key && (applyCanalHbo(), applySeriesResume()));
-  if (path === undefined) return; // index en cours de chargement
-  const page = path ? `https://www.canalplus.com${path}` : 'https://www.canalplus.com/chaines/hbo-max/';
-  a.href = (path && autoplayLink(page)) || page; // lecture automatique, comme pour Canal+
-  a.dataset.page = page;
-  a.dataset.direct = 'canal-hbo';
-  $('.watch-hint', a).textContent = path ? 'Lecture directe' : 'Page HBO Max de Canal+';
+  for (const channel of CANAL_CHANNELS) {
+    const a = el.detail.querySelector(`a.watch[data-platform="${channel.name}"]`);
+    if (!a) continue;
+    const path = canalChannelPath(channel.key, current.type, titles, () => current?.key === key && (applyCanalChannels(), applySeriesResume()));
+    if (path === undefined) continue; // index en cours de chargement
+    const page = `https://www.canalplus.com${path ?? channel.hub}`;
+    a.href = (path && autoplayLink(page)) || page; // lecture automatique, comme pour Canal+
+    a.dataset.page = page;
+    a.dataset.direct = 'canal-channel';
+    $('.watch-hint', a).textContent = path ? 'Lecture directe' : `Page ${channel.label} de Canal+`;
+  }
 }
 
 // Séries : « Regarder sur… » reprend où tu t'es arrêté, ou commence à l'épisode 1 si tu n'as jamais regardé la série.
@@ -1839,7 +1843,7 @@ function applyRelayLinks(offers, type) {
     const entry = current.entries.find((e) => e.name === a.dataset.platform);
     if (entry) entry.href = offer.url;
   }
-  applyCanalHbo();
+  applyCanalChannels();
   applySeriesResume();
   refreshLikeButton();
   if (type === 'tv') applySeasonLinks();

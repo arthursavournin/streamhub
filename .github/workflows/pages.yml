@@ -32,7 +32,7 @@ jobs:
       - name: Copier le site
         run: |
           mkdir -p _site
-          rsync -a --exclude '.git' --exclude '.github' --exclude 'scripts' --exclude 'extension' --exclude 'relay' --exclude 'CLAUDE.md' --exclude '_site' ./ _site/
+          rsync -a --exclude '.git' --exclude '.github' --exclude 'scripts' --exclude 'extension' --exclude 'relay' --exclude 'ios' --exclude 'CLAUDE.md' --exclude '_site' ./ _site/
           # Le script « reprise après connexion » s'installe depuis le site (Safari + appli Userscripts)
           cp extension/streamhub-reprise.user.js _site/
 

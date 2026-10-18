@@ -14,3 +14,8 @@ CLAUDE.md
 # Sauvegardes locales (ancien historique Git), jamais publiées
 .sauvegarde/
 __pycache__/
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+ios/build/

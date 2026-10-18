@@ -116,18 +116,46 @@ struct TitleRow: View {
     }
 }
 
-// Rangée du catalogue (TMDB), chargée quand elle apparaît
+// Rangée du catalogue (TMDB), chargée quand elle apparaît. Pendant le chargement, une rangée provisoire tient la
+// place : une vue vide n'apparaît jamais à l'écran, et sa tâche de chargement ne partirait pas.
 private struct CatalogRow: View {
     @Environment(AppModel.self) private var model
     let row: HomeRow
     @State private var items: [TMDBTitle] = []
+    @State private var loadedKey: String?
 
     var body: some View {
-        TitleRow(title: row.title, items: items)
-            .frame(minHeight: items.isEmpty ? 1 : nil)
-            .task(id: model.catalogKey) {
-                items = (try? await model.fetch(row)) ?? items
+        Group {
+            if loadedKey == nil {
+                PlaceholderRow(title: row.title)
+            } else {
+                TitleRow(title: row.title, items: items)
             }
+        }
+        .task(id: model.catalogKey) {
+            let key = model.catalogKey
+            items = (try? await model.fetch(row)) ?? items
+            loadedKey = key
+        }
+    }
+}
+
+// Rangée grise en attendant les affiches
+private struct PlaceholderRow: View {
+    let title: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionTitle(text: title)
+            HStack(spacing: 10) {
+                ForEach(0..<4, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: 10).fill(Color.appSurface).frame(width: 118, height: 177)
+                }
+            }
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .clipped()
+        }
     }
 }
 

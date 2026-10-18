@@ -58,9 +58,9 @@ private struct HeroView: View {
     var body: some View {
         let ref = title.ref
         ZStack(alignment: .bottom) {
-            RemoteImage(url: imageURL(title.posterPath, size: "w780"))
+            Color.appSurface
                 .frame(height: 520)
-                .frame(maxWidth: .infinity)
+                .overlay { RemoteImage(url: imageURL(title.posterPath, size: "w780")) }
                 .clipped()
             LinearGradient(colors: [.clear, .appBackground.opacity(0.6), .appBackground], startPoint: .center, endPoint: .bottom)
             VStack(spacing: 14) {

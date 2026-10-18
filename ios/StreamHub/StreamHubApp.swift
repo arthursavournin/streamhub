@@ -45,6 +45,14 @@ struct RootView: View {
             }
         }
         .background(Color.appBackground)
+        #if DEBUG
+        // Tests dans le simulateur : code de synchronisation passé au lancement (STREAMHUB_SYNC_CODE)
+        .task {
+            if let code = ProcessInfo.processInfo.environment["STREAMHUB_SYNC_CODE"], model.store.syncMeta.code == nil {
+                try? await model.sync.join(code)
+            }
+        }
+        #endif
         .alert(
             model.question.map { "Tu as regardé « \($0.entry.title) » ?" } ?? "",
             isPresented: Binding(get: { model.question != nil }, set: { if !$0 { model.question = nil } })

@@ -22,18 +22,19 @@ struct PosterView: View {
     var width: CGFloat? = 118
 
     var body: some View {
-        ZStack {
-            Color.appSurface
-            Text(ref.title)
-                .font(.caption.weight(.semibold))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .padding(8)
-            RemoteImage(url: imageURL(ref.poster))
-        }
-        .frame(width: width)
-        .aspectRatio(2 / 3, contentMode: .fit)
-        .clipShape(.rect(cornerRadius: 10))
+        // Cadre 2:3 fixé d'abord, contenu posé dessus : la taille ne dépend pas de l'image (chargée ou non)
+        Color.appSurface
+            .aspectRatio(2 / 3, contentMode: .fit)
+            .frame(width: width, height: width.map { $0 * 1.5 })
+            .overlay {
+                Text(ref.title)
+                    .font(.caption.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .padding(8)
+            }
+            .overlay { RemoteImage(url: imageURL(ref.poster)) }
+            .clipShape(.rect(cornerRadius: 10))
         .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.white.opacity(0.08)))
         .accessibilityLabel(ref.title)
     }

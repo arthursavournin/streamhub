@@ -77,9 +77,10 @@ struct DetailView: View {
 
     private var header: some View {
         ZStack(alignment: .bottomLeading) {
-            RemoteImage(url: imageURL(details?.backdropPath, size: "w1280"))
+            // L'image remplit le cadre sans l'élargir (sinon toute la page déborde de l'écran)
+            Color.appSurface
                 .frame(height: 300)
-                .frame(maxWidth: .infinity)
+                .overlay { RemoteImage(url: imageURL(details?.backdropPath, size: "w1280")) }
                 .clipped()
             LinearGradient(colors: [.clear, .appBackground], startPoint: .center, endPoint: .bottom)
             HStack(alignment: .bottom, spacing: 14) {
@@ -128,6 +129,8 @@ struct DetailView: View {
         let liked = model.store.contains(.likes, full)
         return VStack(alignment: .leading, spacing: 14) {
             Text(metaLine(d)).font(.subheadline).foregroundStyle(.secondary)
+            // Boutons sur une ligne, qui défile si l'écran est trop étroit
+            ScrollView(.horizontal) {
             HStack(spacing: 10) {
                 Button {
                     model.store.toggle(.watchlist, full, date: d.date)
@@ -152,7 +155,12 @@ struct DetailView: View {
                 }
             }
             .labelStyle(.titleAndIcon)
+            .lineLimit(1)
             .controlSize(.regular)
+            .padding(.horizontal, 16)
+            }
+            .scrollIndicators(.hidden)
+            .padding(.horizontal, -16)
         }
         .padding(.horizontal, 16)
     }

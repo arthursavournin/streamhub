@@ -35,6 +35,9 @@ appli sur téléphone, tablette et ordinateur.
 - **Accueil** : une affiche mise en avant et des rangées façon Netflix : Top 50 du moment, Reprendre, Ma liste,
   Nouveautés, Les mieux notés, puis une rangée par genre (Action & aventure, Comédie, Horreur, Science-fiction &
   fantastique, Thriller & policier, Drame, Animation, Animés japonais, Romance, Famille, Documentaires).
+  Le **Top 50 du moment** reprend le classement « populaire » de JustWatch dans ton pays (ce que ses utilisateurs
+  consultent en ce moment), mis à jour toutes les 6 heures et limité à tes abonnements : ce n'est pas un classement
+  de tous les temps.
 - **Films** et **Séries** : les mêmes rangées, réservées aux films ou aux séries.
 - **Bibliothèque** : tout le catalogue en grille, avec des filtres (Tout / Films / Séries, plateforme, genre) et un
   tri (Populaires, Mieux notés, Plus récents). Le lien « Tout voir » de chaque rangée ouvre la Bibliothèque déjà
@@ -477,7 +480,7 @@ Puis ouvre **http://localhost:8080**. Le relais accepte les appels venant de `lo
 | `extension/` | Script « reprise après connexion » et extension Chrome |
 | `scripts/` | Index des épisodes TF1+ / M6+, publication du relais |
 
-### Publication et index (TF1+, M6+, chaînes de Canal+)
+### Publication et index (TF1+, M6+, chaînes de Canal+, top du moment)
 
 Le site est publié par `.github/workflows/pages.yml` à chaque modification de la branche `main` et **toutes les
 6 heures**. À chaque publication, `scripts/build_episode_index.py` lit les plans de site publics de TF1+ et M6+ et
@@ -488,6 +491,10 @@ Le même script écrit `data/canal/hbo.json`, `appletv.json` et `paramount.json`
 Canal+ (titre simplifié → adresse de la fiche, films et séries à part), lu dans les grilles de sa page sur Canal+.
 Sur Canal+, la fiche d'un titre sur une chaîne a une adresse sans rapport avec sa fiche Canal VOD, et Canal+
 n'autorise pas les autres sites à utiliser sa recherche.
+
+Il écrit enfin `data/top/<pays>.json` : le classement « populaire » de JustWatch (environ 500 titres en streaming par
+abonnement ou gratuits, avec leurs plateformes) pour chaque pays des réglages. Le Top 50 du moment en garde les
+premiers titres disponibles sur tes abonnements.
 
 GitHub met en pause les tâches planifiées d'un dépôt sans commit depuis 60 jours : le workflow la réactive à chaque
 passage, pour que l'index continue de se mettre à jour.

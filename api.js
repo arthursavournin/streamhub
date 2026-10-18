@@ -78,6 +78,11 @@ export function makeApi(settings) {
       return withVirtualProviders([...byId.values()].sort((a, b) => a.priority - b.priority), region);
     },
 
+    // Fiche courte d'un titre (affiche, titre, date) : pour les titres venus du classement du moment
+    title(type, id) {
+      return tmdb(`/${type}/${id}`, { language });
+    },
+
     async genres(type) {
       const data = await tmdb(`/genre/${type}/list`, { language });
       return data.genres;

@@ -216,6 +216,13 @@ struct TMDBClient {
         return page.results.map { var t = $0; t.mediaType = type.rawValue; return t }
     }
 
+    // Fiche courte d'un titre (affiche, titre, date), pour les titres venus du classement du moment
+    func title(_ type: MediaType, _ id: Int) async throws -> TMDBTitle {
+        var title: TMDBTitle = try await get("/\(type.rawValue)/\(id)", ["language": language])
+        title.mediaType = type.rawValue
+        return title
+    }
+
     // Films et séries (pas les personnes)
     func search(_ query: String) async throws -> [TMDBTitle] {
         let page: Page<TMDBTitle> = try await get("/search/multi", ["query": query, "language": language, "include_adult": "false"])

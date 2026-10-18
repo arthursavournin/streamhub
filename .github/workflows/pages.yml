@@ -1,4 +1,4 @@
-# Publie StreamHub sur GitHub Pages, avec l'index des épisodes TF1+ et M6+ et celui du catalogue HBO Max de Canal+
+# Publie StreamHub sur GitHub Pages, avec l'index des épisodes TF1+ et M6+, ceux des chaînes de Canal+ et le top du moment
 # (scripts/build_episode_index.py).
 # Tourne à chaque modification du code et toutes les 6 heures, pour suivre les nouveaux épisodes et titres.
 name: Publier StreamHub

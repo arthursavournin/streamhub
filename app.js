@@ -1,14 +1,14 @@
 import { loadSettings, saveSettings, relayUrl, HISTORY_MAX } from './store.js';
 import { makeApi, img, testTmdbKey, testSaKey, testRelay } from './api.js';
 import { syncNow, syncState, createCode, joinCode, leave, startAutoSync } from './sync.js';
-import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, providerLogo, CANAL_CHANNELS, CANAL_CINE_SERIES } from './providers.js';
+import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, providerLogo, CANAL_CHANNELS, CANAL_CINE_SERIES, withVirtualChannels } from './providers.js';
 import { INDEXED_PLATFORMS, platformEpisodeUrl, canalChannelPath } from './episodes.js';
 import { aliasMatches } from './aliases.js';
 import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.3.2';
+const APP_VERSION = '1.4.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -620,9 +620,10 @@ async function rowsFor(view) {
   const filter = defaultFilter();
   if (view === 'home') {
     return [
-      // Pas de vrai classement « le plus regardé en France » disponible : les plus populaires du moment
-      // (TMDB) parmi ce qui est disponible en France sur tes plateformes, films et séries mélangés
-      { hero: true, title: 'Top 50 du moment', type: 'all', sort: 'popularity', filter, pages: 2, limit: 50, ranked: true },
+      // Classement « populaire » de JustWatch dans ton pays (activité récente, publié avec le site toutes les 6 heures),
+      // limité à tes plateformes. Avant : popularité TMDB, qui mettait en tête de vieilles séries très consultées
+      // (New York Police Judiciaire, Les Simpson), signalé par l'utilisateur. Sans classement : popularité TMDB.
+      { hero: true, top: true, title: 'Top 50 du moment', type: 'all', sort: 'popularity', filter, pages: 2, limit: 50, ranked: true },
       { title: 'Reprendre', local: 'history' },
       { title: 'Ma liste', local: 'watchlist' },
       { title: 'Nouveautés', type: 'all', sort: 'recent', filter },
@@ -651,8 +652,35 @@ async function rowsFor(view) {
   ];
 }
 
+// Classement du moment (data/top/<pays>.json, voir scripts/build_episode_index.py), null s'il manque
+const topFiles = new Map();
+function topRanking(region) {
+  if (!topFiles.has(region)) {
+    topFiles.set(region, fetch(`data/top/${region}.json`).then((res) => (res.ok ? res.json() : null)).catch(() => null));
+  }
+  return topFiles.get(region);
+}
+
+// Les premiers titres du classement disponibles dans la sélection (tes abonnements, une plateforme ou tout)
+async function fetchTop(row) {
+  const ranking = await topRanking(settings.region);
+  if (!ranking?.titles?.length) return null;
+  const offersOf = (t) =>
+    withVirtualChannels({ flatrate: t.p.map((id) => ({ provider_id: id, provider_name: ranking.names[id] ?? '' })) }, settings.region);
+  const picked = ranking.titles.filter((t) => matchesFilter(offersOf(t), row.filter)).slice(0, row.limit);
+  if (!picked.length) return null;
+  const items = await Promise.all(
+    picked.map((t) => api.title(t.t, t.id).then((m) => ({ ...m, media_type: t.t })).catch(() => null)),
+  );
+  return items.filter(Boolean);
+}
+
 // Les titres d'une rangée, vérifiés comme dans la Bibliothèque (vraiment inclus dans la plateforme choisie)
 async function fetchRow(row) {
+  if (row.top) {
+    const top = await fetchTop(row);
+    if (top?.length) return top;
+  }
   let items;
   if (row.type === 'trending') {
     items = (await api.trending()).results;

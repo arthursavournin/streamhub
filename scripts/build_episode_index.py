@@ -24,6 +24,13 @@ Canal+ (API publique du site) et on écrit data/canal/<chaîne>.json (hbo, apple
     {"movie": {"harrypotteralecoledessorciers": "/cinema/…/h/40438941_50889"},  # titre simplifié → chemin
      "tv": {"thelastofus": "/series/the-last-of-us/h/40427680_50889"}}
 
+Top du moment : le classement « populaire » de JustWatch pour chaque pays (activité récente de ses utilisateurs, titres
+en streaming par abonnement ou gratuits), avec les plateformes de chaque titre. StreamHub en garde les 50 premiers
+disponibles sur tes abonnements. data/top/<pays>.json :
+
+    {"names": {"8": "Netflix", …},                       # identifiant de plateforme (= TMDB) → nom
+     "titles": [{"t": "tv", "id": 1399, "p": [8, 119]}]}  # dans l'ordre du classement
+
 Lancé par .github/workflows/pages.yml toutes les 6 heures.
 
 Usage : build_episode_index.py <dossier de sortie>
@@ -188,9 +195,67 @@ def canal_channel(out, key, page_id):
     print(f'canal/{key} : {total} titres ({pages} pages)', flush=True)
 
 
+JUSTWATCH = 'https://apis.justwatch.com/graphql'
+TOP_COUNTRIES = ['FR', 'BE', 'CH', 'LU', 'CA', 'GB', 'US', 'DE', 'ES', 'IT']  # les pays proposés dans les réglages
+TOP_SIZE = 500
+TOP_QUERY = '''query Top($country: Country!, $after: String) {
+  popularTitles(country: $country, first: 100, after: $after, sortBy: POPULAR,
+                filter: {monetizationTypes: [FLATRATE, FREE, ADS]}) {
+    pageInfo { endCursor hasNextPage }
+    edges { node {
+      objectType
+      content(country: $country, language: "fr") { externalIds { tmdbId } }
+      offers(country: $country, platform: WEB) { monetizationType package { packageId clearName } }
+    } }
+  }
+}'''
+
+
+def top(out, country):
+    names, titles, after = {}, [], None
+    while len(titles) < TOP_SIZE:
+        body = json.dumps({'query': TOP_QUERY, 'variables': {'country': country, 'after': after}}).encode()
+        req = urllib.request.Request(JUSTWATCH, data=body, headers={'User-Agent': UA, 'Content-Type': 'application/json'})
+        with urllib.request.urlopen(req, timeout=120) as res:
+            data = json.load(res)
+        if data.get('errors'):
+            raise RuntimeError(data['errors'][0].get('message', 'erreur JustWatch'))
+        page = data['data']['popularTitles']
+        for edge in page['edges']:
+            node = edge['node']
+            tmdb = ((node.get('content') or {}).get('externalIds') or {}).get('tmdbId')
+            kind = {'MOVIE': 'movie', 'SHOW': 'tv'}.get(node.get('objectType'))
+            packages = []
+            for offer in node.get('offers') or []:
+                if offer.get('monetizationType') not in ('FLATRATE', 'FREE', 'ADS') or not offer.get('package'):
+                    continue
+                pid = offer['package']['packageId']
+                names[str(pid)] = offer['package']['clearName']
+                if pid not in packages:
+                    packages.append(pid)
+            if tmdb and tmdb.isdigit() and kind and packages:
+                titles.append({'t': kind, 'id': int(tmdb), 'p': packages})
+        if not page['pageInfo']['hasNextPage']:
+            break
+        after = page['pageInfo']['endCursor']
+        time.sleep(0.5)
+    if len(titles) < 50:
+        raise RuntimeError(f'classement {country} incomplet ({len(titles)} titres)')
+    (out / 'top').mkdir(parents=True, exist_ok=True)
+    (out / 'top' / f'{country}.json').write_text(
+        json.dumps({'names': names, 'titles': titles}, ensure_ascii=False, separators=(',', ':')))
+    print(f'top/{country} : {len(titles)} titres', flush=True)
+
+
 def main():
     out = Path(sys.argv[1])
     failed = False
+    for country in TOP_COUNTRIES:
+        try:
+            top(out, country)
+        except Exception as err:  # un pays en panne ne bloque pas les autres
+            print(f'::warning::Top {country} non construit : {err}', flush=True)
+            failed = True
     for name, videos in [('tf1', tf1_videos), ('m6', m6_videos)]:
         try:
             build(videos(), out / name)

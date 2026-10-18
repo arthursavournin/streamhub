@@ -37,6 +37,7 @@ final class AppModel {
     // ---------- Rangées de l'accueil ----------
 
     func fetch(_ row: HomeRow) async throws -> [TMDBTitle] {
+        if row.ranked, let top = await fetchTop(limit: row.limit), !top.isEmpty { return top }
         guard case .catalog(let types, let sort, let genres, let extra, let pages) = row.kind else { return [] }
         let providers = Links.tmdbProviderIDs(store.providers)
         let shown = types.filter { genres.isEmpty || genres[$0] != nil }
@@ -69,6 +70,48 @@ final class AppModel {
             items.sort { score($0) > score($1) }
         }
         return Array(items.prefix(row.limit))
+    }
+
+    // ---------- Top du moment ----------
+
+    // Classement « populaire » de JustWatch dans le pays (data/top/<pays>.json, publié avec le site toutes les 6 heures)
+    private struct Ranking: Decodable {
+        struct Title: Decodable {
+            let t: String
+            let id: Int
+            let p: [Int]
+        }
+        let names: [String: String]
+        let titles: [Title]
+    }
+
+    // Les premiers titres du classement disponibles sur tes abonnements (tout le classement sans abonnement coché) ;
+    // nil sans classement (on retombe alors sur la popularité TMDB)
+    private func fetchTop(limit: Int) async -> [TMDBTitle]? {
+        let region = store.region
+        guard let url = URL(string: "data/top/\(region).json", relativeTo: AppStore.site),
+              let (data, response) = try? await URLSession.shared.data(from: url),
+              (response as? HTTPURLResponse)?.statusCode == 200,
+              let ranking = try? JSONDecoder().decode(Ranking.self, from: data) else { return nil }
+        let providers = store.providers
+        let picked = ranking.titles.filter { title in
+            guard !providers.isEmpty else { return true }
+            let offers = Offers(flatrate: title.p.map { ProviderOffer(providerId: $0, providerName: ranking.names[String($0)] ?? "") })
+            return Platforms.withVirtualChannels(offers, region: region).streamable.contains { Links.isMine($0, providers: providers) }
+        }.prefix(limit)
+        let tmdb = tmdb
+        let found = await withTaskGroup(of: (Int, TMDBTitle?).self) { group in
+            for (i, title) in picked.enumerated() {
+                group.addTask {
+                    let type = MediaType(rawValue: title.t) ?? .movie
+                    return (i, try? await tmdb.title(type, title.id))
+                }
+            }
+            var all: [(Int, TMDBTitle?)] = []
+            for await result in group { all.append(result) }
+            return all.sorted { $0.0 < $1.0 }.compactMap(\.1)
+        }
+        return found.isEmpty ? nil : found
     }
 
     private static let day: DateFormatter = {
@@ -131,7 +174,7 @@ struct HomeRow: Identifiable {
 
     // Comme l'accueil du site (rowsFor('home'))
     static let home: [HomeRow] = [
-        HomeRow(title: "Top du moment", kind: .catalog(types: both, sort: .popularity, pages: 2), limit: 30, ranked: true),
+        HomeRow(title: "Top 50 du moment", kind: .catalog(types: both, sort: .popularity, pages: 2), limit: 50, ranked: true),
         HomeRow(title: "Reprendre", kind: .local(.history)),
         HomeRow(title: "Ma liste", kind: .local(.watchlist)),
         HomeRow(title: "Nouveautés", kind: .catalog(types: both, sort: .recent)),

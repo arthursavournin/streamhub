@@ -28,18 +28,21 @@ struct StreamHubApp: App {
 
 struct RootView: View {
     @Environment(AppModel.self) private var model
+    @State private var tab = 1 // l'appli s'ouvre sur l'accueil
 
     var body: some View {
         @Bindable var model = model
         Group {
             if model.isConfigured {
-                TabView {
-                    Tab("Accueil", systemImage: "house.fill") { HomeView() }
-                    Tab("Ma liste", systemImage: "bookmark.fill") { LibraryView() }
-                    Tab("Réglages", systemImage: "gearshape.fill") { SettingsView() }
-                    Tab(role: .search) { SearchView() }
+                // Ordre demandé par l'utilisateur : Recherche, Accueil, Ma liste, Réglages. La recherche est un onglet
+                // ordinaire (l'onglet de recherche d'iOS est toujours placé à droite) et la barre ne se réduit pas
+                // au défilement (réduite, iOS met le bouton de recherche à droite).
+                TabView(selection: $tab) {
+                    Tab("Recherche", systemImage: "magnifyingglass", value: 0) { SearchView() }
+                    Tab("Accueil", systemImage: "house.fill", value: 1) { HomeView() }
+                    Tab("Ma liste", systemImage: "bookmark.fill", value: 2) { LibraryView() }
+                    Tab("Réglages", systemImage: "gearshape.fill", value: 3) { SettingsView() }
                 }
-                .tabBarMinimizeBehavior(.onScrollDown)
             } else {
                 WelcomeView()
             }

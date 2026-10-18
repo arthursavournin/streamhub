@@ -83,6 +83,15 @@ export function makeApi(settings) {
       return tmdb(`/${type}/${id}`, { language });
     },
 
+    // Sagas (« Harry Potter - Saga ») : recherche par nom, et films d'une saga
+    async searchCollections(query) {
+      return (await tmdb('/search/collection', { query, language })).results ?? [];
+    },
+
+    collection(id) {
+      return tmdb(`/collection/${id}`, { language });
+    },
+
     async genres(type) {
       const data = await tmdb(`/genre/${type}/list`, { language });
       return data.genres;

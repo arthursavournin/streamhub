@@ -45,6 +45,11 @@ appli sur téléphone, tablette et ordinateur.
 - **Mon espace** : tes listes (Ma liste, J'aime, Historique, Téléchargements) et tes plateformes.
 - **Recherche** : par titre, mais aussi par surnom ou sigle (« DNA » trouve *Demain nous appartient*, grâce à une
   liste intégrée et à Wikidata).
+  - **Fautes de frappe** : « hary poter » affiche quand même les films Harry Potter, avec « Tu voulais dire
+    « Harry Potter » ? » pour corriger la recherche (la recherche est comparée à environ 28 000 titres populaires).
+  - **Numéro de film** : « harry potter 1 » ne donne que le premier film de la saga (pas *Les Reliques de la Mort,
+    1re partie*, qui est le 7e) ; « toy story 3 » donne *Toy Story 3*.
+  - **Sagas dans l'ordre** : les films d'une même saga sont regroupés et rangés dans l'ordre de sortie (1, 2, 3).
 
 Par défaut, StreamHub ne montre que les titres disponibles sur **tes abonnements** ; un lien permet d'afficher aussi
 les autres.
@@ -474,6 +479,7 @@ Puis ouvre **http://localhost:8080**. Le relais accepte les appels venant de `lo
 | `sync.js` | Synchronisation chiffrée entre appareils (via le relais) |
 | `episodes.js` | Liens directs vers les épisodes TF1+ et M6+ (index publié dans `data/`) |
 | `aliases.js` | Recherche par surnom ou sigle (liste intégrée + Wikidata) |
+| `search.js` | Correction des fautes de frappe, numéro de film, ordre des sagas |
 | `nav.js` | Navigation aux flèches (clavier, télécommande) |
 | `sw.js`, `manifest.webmanifest`, icônes | Installation en appli (PWA), cache hors ligne et mises à jour |
 | `relay/worker.js` | Relais Cloudflare Workers (liens JustWatch, synchronisation) |
@@ -491,6 +497,9 @@ Le même script écrit `data/canal/hbo.json`, `appletv.json` et `paramount.json`
 Canal+ (titre simplifié → adresse de la fiche, films et séries à part), lu dans les grilles de sa page sur Canal+.
 Sur Canal+, la fiche d'un titre sur une chaîne a une adresse sans rapport avec sa fiche Canal VOD, et Canal+
 n'autorise pas les autres sites à utiliser sa recherche.
+
+Il écrit aussi `data/search/titles.json` : environ 28 000 titres populaires (exports quotidiens publics de TMDB et
+titres français de JustWatch), auxquels la recherche compare ce que tu tapes pour proposer une correction.
 
 Il écrit enfin `data/top/<pays>.json` : le classement « populaire » de JustWatch (environ 500 titres en streaming par
 abonnement ou gratuits, avec leurs plateformes) pour chaque pays des réglages. Le Top 50 du moment en garde les

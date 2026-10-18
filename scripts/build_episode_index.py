@@ -31,12 +31,21 @@ disponibles sur tes abonnements. data/top/<pays>.json :
     {"names": {"8": "Netflix", …},                       # identifiant de plateforme (= TMDB) → nom
      "titles": [{"t": "tv", "id": 1399, "p": [8, 119]}]}  # dans l'ordre du classement
 
+Correction de la recherche : les titres les plus populaires (exports quotidiens publics de TMDB, titres originaux ; titres
+français populaires de JustWatch), avec un poids de popularité. StreamHub compare la recherche à ces titres pour
+proposer « Tu voulais dire… ? » (« hary poter » → « Harry Potter »). data/search/titles.json :
+
+    [["Harry Potter à l'école des sorciers", 80], …]   # du plus populaire au moins populaire
+
 Lancé par .github/workflows/pages.yml toutes les 6 heures.
 
 Usage : build_episode_index.py <dossier de sortie>
 """
 import concurrent.futures
+import datetime
+import gzip
 import json
+import math
 import re
 import sys
 import time
@@ -247,9 +256,77 @@ def top(out, country):
     print(f'top/{country} : {len(titles)} titres', flush=True)
 
 
+SEARCH_SIZES = {'movie': 25000, 'tv_series': 10000}  # titres gardés dans les exports TMDB
+SEARCH_JW_PAGES = 20  # titres populaires de JustWatch en France (100 par page)
+
+
+def simple_title(title):
+    # « Grey's Anatomy » → « greys anatomy » (comme la recherche de StreamHub)
+    text = unicodedata.normalize('NFD', title).encode('ascii', 'ignore').decode().lower()
+    return ' '.join(re.findall(r'[a-z0-9]+', re.sub(r"['’]", '', text)))
+
+
+def tmdb_export(kind):
+    # Export publié chaque jour vers 8 h (UTC) : celui de la veille, sinon de l'avant-veille
+    for days in (1, 2):
+        day = (datetime.date.today() - datetime.timedelta(days=days)).strftime('%m_%d_%Y')
+        try:
+            req = urllib.request.Request(f'https://files.tmdb.org/p/exports/{kind}_ids_{day}.json.gz', headers={'User-Agent': UA})
+            with urllib.request.urlopen(req, timeout=300) as res:
+                return [json.loads(line) for line in gzip.decompress(res.read()).decode().splitlines() if line.strip()]
+        except urllib.error.HTTPError:
+            continue
+    raise RuntimeError(f'export TMDB {kind} introuvable')
+
+
+def search_titles(out):
+    titles = {}  # titre simplifié → (titre, poids)
+
+    def add(title, weight):
+        key = simple_title(title or '')
+        if len(key) >= 3 and weight > titles.get(key, ('', 0))[1]:
+            titles[key] = (title.strip(), weight)
+
+    for kind, size in SEARCH_SIZES.items():
+        rows = [r for r in tmdb_export(kind) if not r.get('adult')]
+        rows.sort(key=lambda r: -r.get('popularity', 0))
+        name = 'original_title' if kind == 'movie' else 'original_name'
+        for r in rows[:size]:
+            add(r.get(name), math.log1p(r.get('popularity', 0)))
+    query = '''query($after: String) { popularTitles(country: FR, first: 100, after: $after, sortBy: POPULAR) {
+      pageInfo { endCursor hasNextPage } edges { node { content(country: FR, language: "fr") { title originalTitle } } } } }'''
+    after = None
+    for page in range(SEARCH_JW_PAGES):
+        body = json.dumps({'query': query, 'variables': {'after': after}}).encode()
+        req = urllib.request.Request(JUSTWATCH, data=body, headers={'User-Agent': UA, 'Content-Type': 'application/json'})
+        with urllib.request.urlopen(req, timeout=120) as res:
+            data = json.load(res)['data']['popularTitles']
+        for i, edge in enumerate(data['edges']):
+            content = edge['node']['content'] or {}
+            weight = 8 - 4 * (page * 100 + i) / (SEARCH_JW_PAGES * 100)  # les titres français populaires passent devant
+            add(content.get('title'), weight)
+            add(content.get('originalTitle'), weight)
+        if not data['pageInfo']['hasNextPage']:
+            break
+        after = data['pageInfo']['endCursor']
+        time.sleep(0.5)
+    ranked = sorted(titles.values(), key=lambda t: -t[1])
+    if len(ranked) < 10000:
+        raise RuntimeError(f'liste de titres incomplète ({len(ranked)})')
+    (out / 'search').mkdir(parents=True, exist_ok=True)
+    (out / 'search' / 'titles.json').write_text(
+        json.dumps([[t, max(1, round(w * 10))] for t, w in ranked], ensure_ascii=False, separators=(',', ':')))
+    print(f'search/titles : {len(ranked)} titres', flush=True)
+
+
 def main():
     out = Path(sys.argv[1])
     failed = False
+    try:
+        search_titles(out)
+    except Exception as err:
+        print(f'::warning::Liste de titres de la recherche non construite : {err}', flush=True)
+        failed = True
     for country in TOP_COUNTRIES:
         try:
             top(out, country)

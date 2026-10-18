@@ -4,11 +4,12 @@ import { syncNow, syncState, createCode, joinCode, leave, startAutoSync } from '
 import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, providerLogo, CANAL_CHANNELS, CANAL_CINE_SERIES, withVirtualChannels } from './providers.js';
 import { INDEXED_PLATFORMS, platformEpisodeUrl, canalChannelPath } from './episodes.js';
 import { aliasMatches } from './aliases.js';
+import { loadTitles, suggest, splitNumber, arrangeSagas } from './search.js';
 import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.5.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -58,6 +59,7 @@ const state = {
   totalPages: 1,
   pagesByType: {}, // en mode « Tout », nombre de pages disponibles côté films et côté séries
   hidden: 0,
+  suggestion: null, // « Tu voulais dire… ? » de la recherche en cours
   loading: false,
   token: 0,
 };
@@ -239,6 +241,7 @@ function reload() {
   state.totalPages = 1;
   state.pagesByType = {};
   state.hidden = 0;
+  state.suggestion = null;
   state.loading = false;
   el.grid.innerHTML = '';
   el.sort.disabled = Boolean(state.query);
@@ -266,12 +269,22 @@ async function loadMore() {
     let results;
     let totalPages;
     if (state.query) {
-      const [res, aliases] = await Promise.all([
+      // Première page : on cherche aussi la correction proposée (« hary poter » → « Harry Potter ») et, pour
+      // « harry potter 1 », le nom sans le numéro ; puis les sagas sont rangées dans l'ordre (voir search.js)
+      const { text, number } = splitNumber(state.query);
+      const suggestion = page === 1 ? suggest(state.query, await loadTitles()) : null;
+      if (page === 1) state.suggestion = suggestion;
+      const extra = page === 1 ? [suggestion, number && text].filter(Boolean) : [];
+      const [res, aliases, ...more] = await Promise.all([
         api.search(state.type, state.query, page),
         page === 1 ? aliasMatches(state.query).catch(() => []) : [],
+        ...extra.map((q) => api.search(state.type, q, 1).catch(() => ({ results: [] }))),
       ]);
       totalPages = res.total_pages;
-      results = [...(await aliasResults(aliases, res.results)), ...res.results];
+      // Correction en tête : la recherche telle quelle contient une faute
+      const found = suggestion ? [...more.flatMap((r) => r.results), ...res.results] : [...res.results, ...more.flatMap((r) => r.results)];
+      results = [...(await aliasResults(aliases, found)), ...found];
+      if (page === 1) results = await arrangeSagas(results, suggestion ?? state.query, api).catch(() => results);
       if (state.genre) results = results.filter((m) => m.genre_ids?.includes(genreIdFor(m.media_type)));
     } else {
       // Un type est ignoré si le genre choisi n'existe pas pour lui, ou s'il n'a plus de pages
@@ -347,10 +360,13 @@ function updateStatus() {
     const hidden = state.hidden
       ? ` <button type="button" class="link" data-filter="all">${state.hidden} autre${state.hidden > 1 ? 's' : ''} hors de tes abonnements — tout afficher</button>`
       : '';
+    const didYouMean = state.suggestion
+      ? ` <button type="button" class="link" data-suggestion>Tu voulais dire « ${esc(state.suggestion)} » ?</button>`
+      : '';
     setStatus(
       count
-        ? `<p>Résultats pour « ${esc(state.query)} ».${hidden}</p>`
-        : `<div class="empty"><p>${words().none} ${words().found} pour « ${esc(state.query)} »${state.hidden ? ' sur tes abonnements' : ''}.</p>${hidden}</div>`,
+        ? `<p>Résultats pour « ${esc(state.query)} ».${didYouMean}${hidden}</p>`
+        : `<div class="empty"><p>${words().none} ${words().found} pour « ${esc(state.query)} »${state.hidden ? ' sur tes abonnements' : ''}.${didYouMean}</p>${hidden}</div>`,
     );
   } else if (!count) {
     setStatus(`<div class="empty"><p>${words().none} ne correspond à ces filtres.</p></div>`);
@@ -2354,6 +2370,14 @@ document.addEventListener('click', (e) => {
 
   const typeBtn = target.closest('[data-type]');
   if (typeBtn && el.typeSwitch.contains(typeBtn)) return setType(typeBtn.dataset.type);
+
+  // « Tu voulais dire… ? » : la recherche est corrigée et relancée
+  if (target.closest('[data-suggestion]') && state.suggestion) {
+    el.search.value = state.suggestion;
+    state.query = state.suggestion;
+    showView('library');
+    return;
+  }
 
   const filter = target.closest('[data-filter]');
   if (filter) {

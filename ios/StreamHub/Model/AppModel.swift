@@ -125,8 +125,14 @@ final class AppModel {
 
     // iOS ouvre l'appli de la plateforme quand elle reconnaît l'adresse (lien universel) ; sinon le site s'ouvre dans
     // Safari, où tu es peut-être déjà connecté. Épisodes M6+ : l'adresse propre à l'appli d'abord.
-    func open(_ watch: WatchEntry, for ref: TitleRef, date: String?) async {
+    // episode : saison et épisode lancés (gardés dans l'historique, comme sur le site)
+    func open(_ watch: WatchEntry, for ref: TitleRef, date: String?, episode: Episode? = nil) async {
         var entry = LibraryEntry(ref: ref, date: date)
+        if let episode {
+            entry.raw["season"] = .int(Int64(episode.seasonNumber))
+            entry.raw["episode"] = .int(Int64(episode.episodeNumber))
+            if let name = episode.name { entry.raw["episodeName"] = .string(name) }
+        }
         entry.raw["platform"] = .string(watch.name)
         if let service = watch.service { entry.raw["service"] = .string(service) }
         entry.raw["href"] = .string(watch.page ?? watch.href)

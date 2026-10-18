@@ -8,6 +8,7 @@ struct DetailView: View {
     @State private var details: TitleDetails?
     @State private var entries: [WatchEntry] = []
     @State private var resolving: Task<[WatchEntry], Never>?
+    @State private var saSeasons: [SASeason] = []
     @State private var linksReady = false
     @State private var error: String?
     @State private var opening: String?
@@ -20,6 +21,14 @@ struct DetailView: View {
                     actions(details)
                     watchSection(details)
                     about(details)
+                    if ref.type == .tv {
+                        SeasonsSection(
+                            details: details, entries: entries, saSeasons: saSeasons, linksReady: linksReady,
+                            lastWatched: model.store.entries(.history).first { $0.key == LibraryEntry.key(.tv, ref.id) }
+                        ) { link, episode in
+                            Task { await model.open(link.entry, for: ref, date: details.date, episode: episode) }
+                        }
+                    }
                 } else if let error {
                     EmptyMessage(title: "Fiche indisponible", systemImage: "exclamationmark.triangle", message: error)
                 } else {
@@ -43,9 +52,12 @@ struct DetailView: View {
             entries = Links.entries(for: details, type: ref.type, region: model.store.region, providers: model.store.providers)
             let resolver = model.resolver
             let initial = entries
-            let task = Task { await resolver.resolve(initial, details: details, type: ref.type) }
+            let full = Task { await resolver.resolve(initial, details: details, type: ref.type) }
+            let task = Task { await full.value.entries }
             resolving = task
-            entries = await task.value
+            let result = await full.value
+            entries = result.entries
+            saSeasons = result.seasons
             linksReady = true
         } catch {
             self.error = error.localizedDescription

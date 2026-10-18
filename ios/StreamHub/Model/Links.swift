@@ -88,7 +88,7 @@ struct LinkResolver {
     let relayURL: String
     let region: String
 
-    private static var saCache: [String: [SAOption]] = [:]
+    private static var saCache: [String: (options: [SAOption], seasons: [SASeason])] = [:]
     private static var relayCache: [String: [RelayOffer]] = [:]
     private static var canalIndex: [String: [String: [String: String]]] = [:]
 
@@ -108,43 +108,59 @@ struct LinkResolver {
         let deeplink: String?
     }
 
-    func resolve(_ entries: [WatchEntry], details: TitleDetails, type: MediaType) async -> [WatchEntry] {
+    // Boutons avec leurs liens directs, et liens Streaming Availability de chaque saison et épisode (séries)
+    func resolve(_ entries: [WatchEntry], details: TitleDetails, type: MediaType) async -> (entries: [WatchEntry], seasons: [SASeason]) {
         async let sa = streamingOptions(type: type, id: details.id)
         async let relay = relayOffers(type: type, id: details.id, title: details.displayTitle)
         var out = entries
-        apply(sa: await sa, to: &out)
+        let found = await sa
+        apply(sa: found.options, to: &out)
         apply(relay: await relay, to: &out)
         await applyCanalChannels(&out, details: details, type: type)
         if type == .tv { applySeriesResume(&out) }
-        return out
+        return (out, found.seasons)
     }
 
     // ---------- Streaming Availability ----------
 
-    private func streamingOptions(type: MediaType, id: Int) async -> [SAOption] {
-        guard !saKey.isEmpty else { return [] }
+    // Pour une série, on récupère aussi les liens de chaque saison et de chaque épisode
+    private func streamingOptions(type: MediaType, id: Int) async -> (options: [SAOption], seasons: [SASeason]) {
+        guard !saKey.isEmpty else { return ([], []) }
         let country = region.lowercased()
         let cacheKey = "\(type.rawValue):\(country):\(id)"
         if let cached = Self.saCache[cacheKey] { return cached }
         let host = "streaming-availability.p.rapidapi.com"
-        guard let url = URL(string: "https://\(host)/shows/\(type.rawValue)/\(id)?country=\(country)") else { return [] }
+        let granularity = type == .tv ? "&series_granularity=episode" : ""
+        guard let url = URL(string: "https://\(host)/shows/\(type.rawValue)/\(id)?country=\(country)\(granularity)") else { return ([], []) }
         var request = URLRequest(url: url)
         request.setValue(saKey, forHTTPHeaderField: "X-RapidAPI-Key")
         request.setValue(host, forHTTPHeaderField: "X-RapidAPI-Host")
-        guard let (data, response) = try? await URLSession.shared.data(for: request) else { return [] }
+        guard let (data, response) = try? await URLSession.shared.data(for: request) else { return ([], []) }
         let status = (response as? HTTPURLResponse)?.statusCode
-        if status == 404 { Self.saCache[cacheKey] = []; return [] }
-        guard status == 200, let json = try? JSONDecoder().decode(JSON.self, from: data) else { return [] }
-        let options = (json["streamingOptions"]?[country]?.array ?? []).map { o in
-            SAOption(
-                service: o["service"]?["id"]?.string, name: o["service"]?["name"]?.string,
-                type: o["type"]?.string ?? "", link: o["link"]?.string,
-                videoLink: o["videoLink"]?.string ?? Platforms.autoplayLink(o["link"]?.string),
-                addon: o["addon"]?["name"]?.string
-            )
+        if status == 404 { Self.saCache[cacheKey] = ([], []); return ([], []) }
+        guard status == 200, let json = try? JSONDecoder().decode(JSON.self, from: data) else { return ([], []) }
+        let pick = { (options: JSON?) in
+            (options?[country]?.array ?? []).map { o in
+                SAOption(
+                    service: o["service"]?["id"]?.string, name: o["service"]?["name"]?.string,
+                    type: o["type"]?.string ?? "", link: o["link"]?.string,
+                    videoLink: o["videoLink"]?.string ?? Platforms.autoplayLink(o["link"]?.string),
+                    addon: o["addon"]?["name"]?.string
+                )
+            }
         }
-        Self.saCache[cacheKey] = options
-        return options
+        let seasons = (json["seasons"]?.array ?? []).enumerated().map { i, s in
+            // Le numéro n'est pas un champ documenté : on le lit dans le titre (« Season 2 »), sinon l'ordre
+            let number = (s["title"]?.string?.firstMatch(of: #/\d+/#)).flatMap { Int($0.0) } ?? i + 1
+            var episodes: [Int: [SAOption]] = [:]
+            for (j, e) in (s["episodes"]?.array ?? []).enumerated() {
+                episodes[e["episodeNumber"]?.int ?? j + 1] = pick(e["streamingOptions"])
+            }
+            return SASeason(number: number, options: pick(s["streamingOptions"]), episodes: episodes)
+        }
+        let result = (pick(json["streamingOptions"]), seasons)
+        Self.saCache[cacheKey] = result
+        return result
     }
 
     // L'offre qui correspond à un bouton. Le bouton « Prime Video » mène à l'offre Prime, jamais à une chaîne ; le

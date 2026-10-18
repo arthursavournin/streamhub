@@ -84,12 +84,13 @@ nonisolated struct TitleDetails: Decodable, Sendable {
     let createdBy: [Person]?
     let credits: Credits?
     let videos: Videos?
+    let seasons: [SeasonSummary]?
     var watchProviders: WatchProviders?
 
     enum CodingKeys: String, CodingKey {
         case id, title, name, originalTitle, originalName, overview, tagline, posterPath, backdropPath, releaseDate
         case firstAirDate, lastAirDate, inProduction, runtime, numberOfSeasons, numberOfEpisodes, voteAverage, voteCount
-        case genres, createdBy, credits, videos
+        case genres, createdBy, credits, videos, seasons
         case watchProviders = "watch/providers"
     }
 
@@ -223,6 +224,11 @@ struct TMDBClient {
         var title: TMDBTitle = try await get("/\(type.rawValue)/\(id)", ["language": language])
         title.mediaType = type.rawValue
         return title
+    }
+
+    // Détail d'une saison : épisodes avec résumé, image, date, durée
+    func season(_ tvID: Int, _ number: Int) async throws -> SeasonDetails {
+        try await get("/tv/\(tvID)/season/\(number)", ["language": language])
     }
 
     // ---------- Sagas ----------

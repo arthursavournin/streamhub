@@ -34,15 +34,18 @@ struct RootView: View {
         @Bindable var model = model
         Group {
             if model.isConfigured {
-                // Ordre demandé par l'utilisateur : Recherche, Accueil, Ma liste, Réglages. La recherche est un onglet
-                // ordinaire (l'onglet de recherche d'iOS est toujours placé à droite) et la barre ne se réduit pas
-                // au défilement (réduite, iOS met le bouton de recherche à droite).
+                // Demande de l'utilisateur : barre entière Recherche, Accueil, Ma liste, Réglages, et barre réduite au
+                // défilement avec la loupe à gauche et l'onglet en cours à droite. iOS place toujours l'onglet de
+                // recherche à droite : la barre est donc affichée de droite à gauche (onglets écrits dans l'ordre inverse),
+                // et chaque écran remis de gauche à droite.
                 TabView(selection: $tab) {
-                    Tab("Recherche", systemImage: "magnifyingglass", value: 0) { SearchView() }
-                    Tab("Accueil", systemImage: "house.fill", value: 1) { HomeView() }
-                    Tab("Ma liste", systemImage: "bookmark.fill", value: 2) { LibraryView() }
-                    Tab("Réglages", systemImage: "gearshape.fill", value: 3) { SettingsView() }
+                    Tab("Réglages", systemImage: "gearshape.fill", value: 3) { SettingsView().leftToRight() }
+                    Tab("Ma liste", systemImage: "bookmark.fill", value: 2) { LibraryView().leftToRight() }
+                    Tab("Accueil", systemImage: "house.fill", value: 1) { HomeView().leftToRight() }
+                    Tab(value: 0, role: .search) { SearchView().leftToRight() }
                 }
+                .tabBarMinimizeBehavior(.onScrollDown)
+                .environment(\.layoutDirection, .rightToLeft)
             } else {
                 WelcomeView()
             }
@@ -72,4 +75,8 @@ extension Color {
     static let appBackground = Color(red: 0x07 / 255, green: 0x0d / 255, blue: 0x1a / 255)
     static let appSurface = Color(red: 0x0e / 255, green: 0x17 / 255, blue: 0x29 / 255)
     static let mine = Color(red: 0x9c / 255, green: 0xcb / 255, blue: 0xff / 255)
+}
+
+extension View {
+    func leftToRight() -> some View { environment(\.layoutDirection, .leftToRight) }
 }

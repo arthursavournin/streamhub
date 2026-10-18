@@ -14,6 +14,8 @@ nonisolated struct TMDBTitle: Decodable, Identifiable, Hashable, Sendable {
     var mediaType: String?
     let title: String?
     let name: String?
+    let originalTitle: String?
+    let originalName: String?
     let posterPath: String?
     let backdropPath: String?
     let overview: String?
@@ -221,6 +223,35 @@ struct TMDBClient {
         var title: TMDBTitle = try await get("/\(type.rawValue)/\(id)", ["language": language])
         title.mediaType = type.rawValue
         return title
+    }
+
+    // ---------- Sagas ----------
+
+    nonisolated struct Collection: Decodable, Sendable {
+        let id: Int
+        let name: String
+        let parts: [TMDBTitle]
+    }
+
+    nonisolated struct CollectionRef: Decodable, Sendable {
+        let id: Int
+        let name: String
+    }
+
+    // Saga d'un film (« Harry Potter - Saga »), nil s'il n'en fait pas partie
+    func collectionID(ofMovie id: Int) async throws -> Int? {
+        nonisolated struct Info: Decodable { let belongsToCollection: CollectionRef? }
+        let info: Info = try await get("/movie/\(id)", ["language": language])
+        return info.belongsToCollection?.id
+    }
+
+    func searchCollections(_ query: String) async throws -> [CollectionRef] {
+        let page: Page<CollectionRef> = try await get("/search/collection", ["query": query, "language": language])
+        return page.results
+    }
+
+    func collection(_ id: Int) async throws -> Collection {
+        try await get("/collection/\(id)", ["language": language])
     }
 
     // Films et séries (pas les personnes)

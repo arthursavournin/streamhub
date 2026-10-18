@@ -9,7 +9,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.5.1';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -1455,7 +1455,8 @@ function renderDetail(item, type) {
       ${mine.length ? `<h3>Dans tes abonnements</h3><div class="watch-list" data-section="mine">${mine.map((e) => watchButton(e, { download: type === 'movie' })).join('')}</div>` : ''}
       ${mine.length && !CAN_DOWNLOAD ? `<p class="hint download-hint">⬇ Pour ${type === 'tv' ? 'télécharger ses épisodes' : 'le télécharger'}, passe par l’appli ${esc(platformList(mine))} sur ton téléphone ou ta tablette, si le titre le permet.</p>` : ''}
       ${!mine.length && settings.providers.length ? `<p class="muted">${w.this} n’est ${w.included} dans aucun de tes abonnements.</p>` : ''}
-      ${others.length ? `<h3>${mine.length ? 'Aussi disponible sur' : 'Disponible sur'}</h3><div class="watch-list" data-section="others">${others.map(watchButton).join('')}</div>` : ''}
+      ${others.length && mine.length ? `<details class="paid"><summary>Aussi disponible sur (${others.length})</summary><div class="watch-list" data-section="others">${others.map(watchButton).join('')}</div></details>` : ''}
+      ${others.length && !mine.length ? `<h3>Disponible sur</h3><div class="watch-list" data-section="others">${others.map(watchButton).join('')}</div>` : ''}
       ${paid.length ? `<details class="paid"><summary>Location et achat (${paid.length})</summary><div class="watch-list">${paid.map(watchButton).join('')}</div></details>` : ''}`;
   }
 

@@ -60,7 +60,7 @@ Un clic sur une affiche ouvre sa fiche : résumé, année, durée ou nombre de s
 boutons **« Regarder sur… »**, rangés en trois groupes :
 
 - **Dans tes abonnements** : les plateformes que tu as cochées dans les réglages.
-- **Aussi disponible sur** : les autres plateformes où le titre est inclus (abonnement, gratuit, avec pub).
+- **Aussi disponible sur** (menu replié, à ouvrir) : les autres plateformes où le titre est inclus (abonnement, gratuit, avec pub).
   Une chaîne vendue sur une autre plateforme s'affiche avec sa plateforme entre parenthèses : « HBO Max (Prime
   Video) », « HBO Max (Canal+) », « Apple TV (Canal+) », « Paramount+ (Canal+) ». Les chaînes HBO Max, Apple TV et
   Paramount+ de Canal+ ne sont pas référencées par TMDB ni JustWatch : StreamHub les propose pour chaque titre

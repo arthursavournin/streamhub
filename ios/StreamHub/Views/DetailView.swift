@@ -197,8 +197,18 @@ struct DetailView: View {
                 Text("\(what) n’est \(ref.type == .tv ? "incluse" : "inclus") dans aucun de tes abonnements.")
                     .foregroundStyle(.secondary)
             }
-            if !others.isEmpty {
-                Text(mine.isEmpty ? "Disponible sur" : "Aussi disponible sur").font(.headline).padding(.top, 6)
+            if !others.isEmpty, !mine.isEmpty {
+                // Plateformes hors de tes abonnements : repliées, comme la location et l'achat
+                DisclosureGroup("Aussi disponible sur (\(others.count))") {
+                    VStack(spacing: 10) {
+                        ForEach(others) { entry in watchButton(entry) }
+                    }
+                    .padding(.top, 8)
+                }
+                .tint(.secondary)
+                .padding(.top, 6)
+            } else if !others.isEmpty {
+                Text("Disponible sur").font(.headline).padding(.top, 6)
                 ForEach(others) { entry in watchButton(entry) }
             }
             if !paid.isEmpty {

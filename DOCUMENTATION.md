@@ -48,7 +48,9 @@ appli sur téléphone, tablette et ordinateur.
   - **Fautes de frappe** : « hary poter » affiche quand même les films Harry Potter, avec « Tu voulais dire
     « Harry Potter » ? » pour corriger la recherche (la recherche est comparée à environ 28 000 titres populaires).
   - **Numéro de film** : « harry potter 1 » ne donne que le premier film de la saga (pas *Les Reliques de la Mort,
-    1re partie*, qui est le 7e) ; « toy story 3 » donne *Toy Story 3*.
+    1re partie*, qui est le 7e) ; « toy story 3 » donne *Toy Story 3*. Le numéro est le premier nombre après le nom,
+    et la suite peut préciser une partie : « harry potter 7 partie 2 » donne *Les Reliques de la Mort, 2e partie*,
+    « hunger games 3 partie 2 » *La Révolte, partie 2* (les films sortis en plusieurs parties partagent un numéro).
   - **Sagas dans l'ordre** : les films d'une même saga sont regroupés et rangés dans l'ordre de sortie (1, 2, 3).
 
 Par défaut, StreamHub ne montre que les titres disponibles sur **tes abonnements** ; un lien permet d'afficher aussi

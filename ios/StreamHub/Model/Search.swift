@@ -20,13 +20,52 @@ nonisolated enum Search {
         return plain.split { !($0.isASCII && ($0.isLetter || $0.isNumber)) }.joined(separator: " ")
     }
 
-    // « harry potter 12 » → (« harry potter », « 12 ») ; numéro vide sans numéro à la fin
-    static func splitNumber(_ query: String) -> (text: String, number: String) {
-        let s = simplify(query)
-        if let m = s.wholeMatch(of: #/(.*\D)\s*(\d{1,3})/#), m.1.trimmingCharacters(in: .whitespaces).count >= 2 {
-            return (m.1.trimmingCharacters(in: .whitespaces), String(m.2))
+    // ---------- Numéro et partie ----------
+
+    private static let roman = ["i": 1, "ii": 2, "iii": 3, "iv": 4, "v": 5, "vi": 6, "vii": 7, "viii": 8, "ix": 9, "x": 10]
+    private static let numberWords = [
+        "un": 1, "une": 1, "one": 1, "premier": 1, "premiere": 1, "first": 1,
+        "deux": 2, "two": 2, "deuxieme": 2, "second": 2, "seconde": 2,
+        "trois": 3, "three": 3, "troisieme": 3, "third": 3, "quatre": 4, "four": 4, "quatrieme": 4, "fourth": 4,
+    ]
+    // Mots qui annoncent une partie (« 2e partie », « Part Two », « Vol. 2 », « Chapitre 2 »)
+    private static let partWords: Set<String> = ["partie", "part", "volume", "vol", "chapitre", "chapter"]
+
+    // « 2 », « 2eme », « 2nd », « ii », « deux » → 2 ; sinon nil
+    private static func toNumber(_ word: String) -> Int? {
+        if let m = word.wholeMatch(of: #/(\d{1,3})(?:e|er|ere|eme|nd|st|rd|th)?/#) { return Int(m.1) }
+        return roman[word] ?? numberWords[word]
+    }
+
+    // Partie écrite dans des mots (« … 2eme partie », « … part two ») : numéro et début du titre avant la partie
+    private static func part(in words: [String]) -> (n: Int, prefix: String)? {
+        for (i, w) in words.enumerated() where partWords.contains(w) {
+            if i > 0, let n = toNumber(words[i - 1]) { return (n, words[..<(i - 1)].joined(separator: " ")) }
+            if i + 1 < words.count, let n = toNumber(words[i + 1]) { return (n, words[..<i].joined(separator: " ")) }
         }
-        return (s, "")
+        return nil
+    }
+
+    private static func partOf(_ item: TMDBTitle) -> (n: Int, prefix: String)? {
+        for title in [item.displayTitle, item.originalTitle ?? item.originalName ?? ""] {
+            if let p = part(in: simplify(title).split(separator: " ").map(String.init)) { return p }
+        }
+        return nil
+    }
+
+    // « harry potter 7 partie 2 » → (« harry potter », « 7 », 2, « 7 partie 2 »). Le numéro du film est le premier
+    // nombre après le nom ; la suite peut préciser une partie.
+    static func parseQuery(_ query: String) -> (text: String, number: String, part: Int?, rest: String) {
+        let words = simplify(query).split(separator: " ").map(String.init)
+        guard let i = words.indices.first(where: { $0 > 0 && words[$0].wholeMatch(of: #/\d{1,3}/#) != nil }),
+              words[..<i].joined(separator: " ").count >= 2 else { return (words.joined(separator: " "), "", nil, "") }
+        return (words[..<i].joined(separator: " "), words[i], part(in: Array(words[(i + 1)...]))?.n, words[i...].joined(separator: " "))
+    }
+
+    // (nom, numéro) : pour la recherche sans le numéro (« harry potter 1 » → « harry potter »)
+    static func splitNumber(_ query: String) -> (text: String, number: String) {
+        let q = parseQuery(query)
+        return (q.text, q.number)
     }
 
     // ---------- Fautes de frappe ----------
@@ -83,7 +122,7 @@ nonisolated enum Search {
     // Correction proposée (« Harry Potter 1 » pour « hary poter 1 »), ou nil si la recherche correspond déjà à un titre
     // (ou à son début : « harry pot »). Au plus une faute pour 4 lettres, 3 en tout ; à égalité, le plus populaire.
     static func suggest(_ query: String, in list: [Title]) -> String? {
-        let (text, number) = splitNumber(query)
+        let (text, _, _, rest) = parseQuery(query)
         let words = text.split(separator: " ").map { Array($0.utf8) }
         guard let typed = words.last else { return nil }
         let joined = words.map { String(decoding: $0, as: UTF8.self) }.joined(separator: " ")
@@ -112,18 +151,16 @@ nonisolated enum Search {
             }
         }
         guard let best else { return nil }
-        return number.isEmpty ? best.shown : "\(best.shown) \(number)"
+        return rest.isEmpty ? best.shown : "\(best.shown) \(rest)"
     }
 
     // ---------- Sagas et numéros ----------
-
-    private static let roman = ["i": 1, "ii": 2, "iii": 3, "iv": 4, "v": 5, "vi": 6, "vii": 7, "viii": 8, "ix": 9, "x": 10]
 
     // Numéro écrit juste après le nom dans le titre (« Toy Story 3 », « Rocky II »), sinon nil
     private static func numberInTitle(_ item: TMDBTitle, text: String) -> Int? {
         for title in [item.displayTitle, item.originalTitle ?? item.originalName ?? ""] {
             let s = simplify(title)
-            guard s.hasPrefix(text) else { continue }
+            guard (s + " ").hasPrefix(text + " ") else { continue } // mots entiers : « dune » n'est pas le début de « dunes »
             let next = s.dropFirst(text.count).split(separator: " ").first.map(String.init) ?? ""
             if let n = Int(next) { return n }
             if let n = roman[next] { return n }
@@ -131,11 +168,15 @@ nonisolated enum Search {
         return nil
     }
 
-    // Range les résultats : chaque saga regroupée à la place de son premier film, dans l'ordre de sortie ; avec un numéro,
-    // seuls les films dont le numéro commence par celui-ci (1, 10, 11…), sauf si aucun ne correspond.
+    // Range les résultats : chaque saga regroupée à la place de son premier film, dans l'ordre de sortie.
+    // Avec un numéro, seuls les films dont le rang dans la saga commence par celui-ci (1, 10, 11…). Avec une partie
+    // (« harry potter 7 partie 2 ») : les films en plusieurs parties partagent un numéro (Les Reliques de la Mort 1 et 2
+    // = 7), on garde le numéro et la partie demandés. Sans film correspondant, tous les résultats restent.
     @MainActor
-    static func arrangeSagas(_ results: [TMDBTitle], query: String, tmdb: TMDBClient) async -> [TMDBTitle] {
-        let (text, number) = splitNumber(query)
+    static func arrangeSagas(_ found: [TMDBTitle], query: String, tmdb: TMDBClient) async -> [TMDBTitle] {
+        let (text, number, wantedPart, _) = parseQuery(query)
+        var seen = Set<String>()
+        let results = found.filter { seen.insert("\($0.type.rawValue):\($0.id)").inserted }
         let movies = results.filter { $0.type == .movie }.prefix(20)
         var collectionIDs = Set<Int>()
         await withTaskGroup(of: Int?.self) { group in
@@ -152,11 +193,20 @@ nonisolated enum Search {
             for await c in group { if let c { collections.append(c) } }
         }
 
-        // Position de chaque film dans sa saga (films sortis, dans l'ordre de sortie)
-        var place: [Int: (collection: Int, index: Int)] = [:]
+        // Position de chaque film dans sa saga (ordre de sortie), et numéro « logique » : deux films qui se suivent avec
+        // le même début de titre et une partie (« … 1re partie », « … 2e partie ») ont le même
+        struct Place { let collection: Int; let name: String; let index: Int; let logical: Int; let part: Int? }
+        var place: [Int: Place] = [:]
         for c in collections {
             let parts = c.parts.filter { !($0.releaseDate ?? "").isEmpty }.sorted { ($0.releaseDate ?? "") < ($1.releaseDate ?? "") }
-            for (index, p) in parts.enumerated() { place[p.id] = (c.id, index) }
+            var logical = 0
+            var previous: (n: Int, prefix: String)?
+            for (index, p) in parts.enumerated() {
+                let info = partOf(p)
+                if !(info != nil && previous != nil && previous!.prefix == info!.prefix && info!.n > previous!.n) { logical += 1 }
+                previous = info
+                place[p.id] = Place(collection: c.id, name: c.name, index: index, logical: logical, part: info?.n)
+            }
         }
         let placeOf = { (m: TMDBTitle) in m.type == .movie ? place[m.id] : nil }
 
@@ -169,8 +219,24 @@ nonisolated enum Search {
                     list.append(part)
                 }
             }
-            let numberOf = { (m: TMDBTitle) -> Int? in placeOf(m).map { $0.index + 1 } ?? numberInTitle(m, text: text) }
-            let matching = list.filter { numberOf($0).map { String($0).hasPrefix(number) } ?? false }
+            // Saga du film, seulement si elle correspond au nom cherché (nom de la saga ou titre, mots entiers ; apostrophe
+            // = séparation : « d'une » ne contient pas « dune »). Pour « dune 2 », Millénium 2 ne compte pas.
+            let words = { (t: String) in " " + simplify(t.replacingOccurrences(of: "'", with: " ").replacingOccurrences(of: "’", with: " ")) + " " }
+            let sagaOf = { (m: TMDBTitle) -> Place? in
+                guard let p = placeOf(m) else { return nil }
+                let names = [p.name, m.displayTitle, m.originalTitle ?? m.originalName ?? ""]
+                return names.contains { words($0).contains(" \(text) ") } ? p : nil
+            }
+            let numberOf = { (m: TMDBTitle) -> Int? in sagaOf(m).map { $0.index + 1 } ?? numberInTitle(m, text: text) }
+            let starts = { (n: Int?) in n.map { String($0).hasPrefix(number) } ?? false }
+            var matching: [TMDBTitle] = []
+            if let wantedPart {
+                matching = list.filter { m in
+                    if let p = sagaOf(m) { return starts(p.logical) && p.part == wantedPart }
+                    return starts(numberInTitle(m, text: text)) && partOf(m)?.n == wantedPart
+                }
+            }
+            if matching.isEmpty { matching = list.filter { starts(numberOf($0)) } }
             list = matching.isEmpty ? results : matching.sorted { (numberOf($0) ?? 0) < (numberOf($1) ?? 0) }
         }
 

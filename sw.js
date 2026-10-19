@@ -1,6 +1,6 @@
 // Service worker : rend l'appli installable et garde l'interface en cache (hors ligne).
 // Les appels aux API passent toujours par le réseau.
-const SHELL_CACHE = 'streamhub-shell-v1.5.1';
+const SHELL_CACHE = 'streamhub-shell-v1.5.2';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'api.js', 'store.js', 'providers.js', 'nav.js', 'library.js', 'episodes.js', 'aliases.js', 'search.js',
   'sync.js', 'logos/hbo-max-amazon-channel.png', 'logos/hbo-max-canal-channel.png', 'logos/apple-tv-canal-channel.png',
   'logos/paramount-plus-canal-channel.png', 'icon.svg?v=3', 'icon-192.png?v=3', 'apple-touch-icon.png?v=3', 'manifest.webmanifest?v=3'];

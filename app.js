@@ -9,7 +9,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.5.3';
+const APP_VERSION = '1.6.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -119,7 +119,8 @@ const genreIdFor = (type) =>
 const SORT_KEYS = {
   popularity: (m) => m.popularity ?? 0,
   rating: (m) => m.vote_average ?? 0,
-  recent: (m) => Date.parse(dateOf(m)) || 0,
+  // Une série récente compte à la date de son dernier épisode, pas à celle de sa création
+  recent: (m) => Date.parse(m.latest_episode?.air_date ?? dateOf(m)) || 0,
 };
 
 // Une offre est « à moi » si c'est la même plateforme TMDB ou le même service (ex. Netflix / Netflix avec pub)
@@ -642,7 +643,9 @@ async function rowsFor(view) {
       { hero: true, top: true, title: 'Top 50 du moment', type: 'all', sort: 'popularity', filter, pages: 2, limit: 50, ranked: true },
       { title: 'Reprendre', local: 'history' },
       { title: 'Ma liste', local: 'watchlist' },
-      { title: 'Nouveautés', type: 'all', sort: 'recent', filter },
+      { title: 'Nouveautés', type: 'all', sort: 'recent', filter, pages: 2, limit: 30 },
+      { title: 'Nouveaux épisodes', type: 'tv', sort: 'recent', filter, pages: 2, limit: 40 },
+      { title: 'Nouveaux films', type: 'movie', sort: 'recent', filter },
       { title: 'Les mieux notés', type: 'all', sort: 'rating', filter },
       ...HOME_GENRES.map((g) => ({ ...g, type: 'all', sort: 'popularity', filter })),
     ];
@@ -652,7 +655,7 @@ async function rowsFor(view) {
     const genres = await api.genres(type).catch(() => []);
     return [
       { hero: true, title: type === 'movie' ? 'Films populaires' : 'Séries populaires', type, sort: 'popularity', filter },
-      { title: 'Nouveautés', type, sort: 'recent', filter },
+      { title: type === 'tv' ? 'Nouveaux épisodes' : 'Nouveautés', type, sort: 'recent', filter, ...(type === 'tv' ? { pages: 2, limit: 40 } : {}) },
       { title: type === 'movie' ? 'Les mieux notés' : 'Les mieux notées', type, sort: 'rating', filter },
       ...ROW_GENRES[type]
         .map((id) => genres.find((g) => g.id === id))
@@ -715,6 +718,12 @@ async function fetchRow(row) {
     );
     const seen = new Set();
     items = lists.flat().filter((m) => !seen.has(`${m.media_type}:${m.id}`) && seen.add(`${m.media_type}:${m.id}`));
+    // Séries récentes : leur dernier épisode (pour les classer parmi les films, et affiché sur l'affiche à la place de
+    // l'année de création)
+    if (row.sort === 'recent') {
+      const latest = await Promise.all(items.map((m) => (m.media_type === 'tv' ? api.title('tv', m.id).catch(() => null) : null)));
+      items = items.map((m, i) => (latest[i]?.last_episode_to_air ? { ...m, latest_episode: latest[i].last_episode_to_air } : m));
+    }
     if (types.length > 1) items.sort((a, b) => SORT_KEYS[row.sort](b) - SORT_KEYS[row.sort](a));
   }
   if (row.filter !== 'all') {
@@ -722,6 +731,14 @@ async function fetchRow(row) {
     items = items.filter((m, i) => matchesFilter(offers[i], row.filter));
   }
   return row.limit ? items.slice(0, row.limit) : items;
+}
+
+// « S1 E31 · 16 oct. » : dernier épisode d'une série récente
+function latestEpisodeMeta(m) {
+  const e = m.latest_episode;
+  if (!e?.air_date) return undefined;
+  const day = new Date(`${e.air_date}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  return esc(`S${e.season_number} E${e.episode_number} · ${day}`);
 }
 
 function meHeader() {
@@ -797,7 +814,7 @@ async function loadRow(section) {
     const track = $('.row-track', section);
     track.innerHTML = '';
     for (const [i, m] of items.entries()) {
-      const card = buildCard(m, { typeTag: true, rank: row.ranked ? i + 1 : null });
+      const card = buildCard(m, { typeTag: true, rank: row.ranked ? i + 1 : null, meta: latestEpisodeMeta(m) });
       track.append(card);
       logoObserver.observe(card);
     }

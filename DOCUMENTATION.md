@@ -33,8 +33,12 @@ appli sur téléphone, tablette et ordinateur.
 ### Parcourir le catalogue
 
 - **Accueil** : une affiche mise en avant et des rangées façon Netflix : Top 50 du moment, Reprendre, Ma liste,
-  Nouveautés, Les mieux notés, puis une rangée par genre (Action & aventure, Comédie, Horreur, Science-fiction &
+  Nouveautés, Nouveaux épisodes, Nouveaux films, Les mieux notés, puis une rangée par genre (Action & aventure, Comédie, Horreur, Science-fiction &
   fantastique, Thriller & policier, Drame, Animation, Animés japonais, Romance, Famille, Documentaires).
+  Une série compte comme nouvelle quand elle a eu un **épisode ces 7 derniers jours** (nouvelle saison ou épisode de la
+  semaine), même si elle a commencé il y a des années ; son affiche indique le dernier épisode (« S3 E2 · 16 oct. »).
+  Ces dates sont celles de la première diffusion dans le monde : un épisode diffusé aux États-Unis n'est pas forcément
+  déjà sur ta plateforme en France. Les talk-shows, infos, feuilletons quotidiens et la téléréalité n'y figurent pas.
   Le **Top 50 du moment** reprend le classement « populaire » de JustWatch dans ton pays (ce que ses utilisateurs
   consultent en ce moment), mis à jour toutes les 6 heures et limité à tes abonnements : ce n'est pas un classement
   de tous les temps.

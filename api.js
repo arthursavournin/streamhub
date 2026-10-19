@@ -100,6 +100,25 @@ export function makeApi(settings) {
     // extra : paramètres TMDB supplémentaires (ex. { with_origin_country: 'JP' })
     discover(type, { page, genre, sort, providers, extra = {} }) {
       const today = new Date().toISOString().slice(0, 10);
+      // Séries les plus récentes : celles qui ont eu un épisode ces 7 derniers jours (nouvelle saison ou épisode de la
+      // semaine), les plus populaires d'abord, sans talk-shows, infos, feuilletons quotidiens ni téléréalité. La date de
+      // première diffusion ne dit rien des nouveaux épisodes : Les Carnets de l'apothicaire (2023) en a chaque semaine.
+      if (type === 'tv' && sort === 'recent') {
+        return tmdb('/discover/tv', {
+          language,
+          page,
+          watch_region: region,
+          with_watch_providers: providers.length ? providers.join('|') : undefined,
+          with_watch_monetization_types: providers.length ? 'flatrate|free|ads' : undefined,
+          with_genres: genre,
+          without_genres: '10763,10764,10766,10767',
+          'air_date.gte': new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10),
+          'air_date.lte': today,
+          sort_by: 'popularity.desc',
+          include_adult: false,
+          ...extra,
+        });
+      }
       const sortBy = (SORTS[sort] ?? SORTS.popularity)[type];
       const dateField = type === 'tv' ? 'first_air_date' : 'primary_release_date';
       return tmdb(`/discover/${type}`, {

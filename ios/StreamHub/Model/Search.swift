@@ -28,8 +28,9 @@ nonisolated enum Search {
         "deux": 2, "two": 2, "deuxieme": 2, "second": 2, "seconde": 2,
         "trois": 3, "three": 3, "troisieme": 3, "third": 3, "quatre": 4, "four": 4, "quatrieme": 4, "fourth": 4,
     ]
-    // Mots qui annoncent une partie (« 2e partie », « Part Two », « Vol. 2 », « Chapitre 2 »)
-    private static let partWords: Set<String> = ["partie", "part", "volume", "vol", "chapitre", "chapter"]
+    // Mots qui annoncent une partie (« 2e partie », « Part Two », « Vol. 2 »). Pas « chapitre » : c'est le numéro de la
+    // suite (« Twilight, chapitre 4 : Révélation, 1re partie »).
+    private static let partWords: Set<String> = ["partie", "part", "volume", "vol"]
 
     // « 2 », « 2eme », « 2nd », « ii », « deux » → 2 ; sinon nil
     private static func toNumber(_ word: String) -> Int? {
@@ -37,13 +38,17 @@ nonisolated enum Search {
         return roman[word] ?? numberWords[word]
     }
 
-    // Partie écrite dans des mots (« … 2eme partie », « … part two ») : numéro et début du titre avant la partie
+    // Partie écrite dans des mots (« … 2eme partie », « … part two ») : numéro et début du titre avant la partie, sans ses
+    // numéros (pour reconnaître les parties d'un même film). S'il y a plusieurs mentions (« Twilight, chapitre 4 :
+    // Révélation, 1re partie »), la dernière est la partie.
     private static func part(in words: [String]) -> (n: Int, prefix: String)? {
+        var best: (n: Int, start: Int)?
         for (i, w) in words.enumerated() where partWords.contains(w) {
-            if i > 0, let n = toNumber(words[i - 1]) { return (n, words[..<(i - 1)].joined(separator: " ")) }
-            if i + 1 < words.count, let n = toNumber(words[i + 1]) { return (n, words[..<i].joined(separator: " ")) }
+            if i > 0, let n = toNumber(words[i - 1]), (best?.start ?? -1) < i - 1 { best = (n, i - 1) }
+            if i + 1 < words.count, let n = toNumber(words[i + 1]), (best?.start ?? -1) < i { best = (n, i) }
         }
-        return nil
+        guard let best else { return nil }
+        return (best.n, words[..<best.start].filter { toNumber($0) == nil }.joined(separator: " "))
     }
 
     private static func partOf(_ item: TMDBTitle) -> (n: Int, prefix: String)? {
@@ -193,18 +198,20 @@ nonisolated enum Search {
             for await c in group { if let c { collections.append(c) } }
         }
 
-        // Position de chaque film dans sa saga (ordre de sortie), et numéro « logique » : deux films qui se suivent avec
-        // le même début de titre et une partie (« … 1re partie », « … 2e partie ») ont le même
+        // Position de chaque film dans sa saga (ordre de sortie), et numéro « logique » : un film coupé en parties qui se
+        // suivent (« … 1re partie », « … 2e partie », même début de titre) n'a qu'un numéro. Le groupe doit commencer à la
+        // 1re partie : chez Dune, « Deuxième partie » et « Troisième partie » sont des suites, pas un même film.
         struct Place { let collection: Int; let name: String; let index: Int; let logical: Int; let part: Int? }
         var place: [Int: Place] = [:]
         for c in collections {
             let parts = c.parts.filter { !($0.releaseDate ?? "").isEmpty }.sorted { ($0.releaseDate ?? "") < ($1.releaseDate ?? "") }
             var logical = 0
-            var previous: (n: Int, prefix: String)?
+            var previous: (n: Int, prefix: String)? // partie du film précédent, si son groupe a commencé à la 1re partie
             for (index, p) in parts.enumerated() {
                 let info = partOf(p)
-                if !(info != nil && previous != nil && previous!.prefix == info!.prefix && info!.n > previous!.n) { logical += 1 }
-                previous = info
+                let sameFilm = info != nil && previous != nil && previous!.prefix == info!.prefix && info!.n == previous!.n + 1
+                if !sameFilm { logical += 1 }
+                previous = info != nil && (sameFilm || info!.n == 1) ? info : nil
                 place[p.id] = Place(collection: c.id, name: c.name, index: index, logical: logical, part: info?.n)
             }
         }
@@ -236,7 +243,8 @@ nonisolated enum Search {
                     return starts(numberInTitle(m, text: text)) && partOf(m)?.n == wantedPart
                 }
             }
-            if matching.isEmpty { matching = list.filter { starts(numberOf($0)) } }
+            // Sans partie : le rang, et toutes les parties du numéro (« harry potter 7 » : Reliques 1re et 2e partie)
+            if matching.isEmpty { matching = list.filter { starts(numberOf($0)) || starts(sagaOf($0)?.logical) } }
             list = matching.isEmpty ? results : matching.sorted { (numberOf($0) ?? 0) < (numberOf($1) ?? 0) }
         }
 

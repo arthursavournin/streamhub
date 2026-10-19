@@ -50,7 +50,8 @@ appli sur téléphone, tablette et ordinateur.
   - **Numéro de film** : « harry potter 1 » ne donne que le premier film de la saga (pas *Les Reliques de la Mort,
     1re partie*, qui est le 7e) ; « toy story 3 » donne *Toy Story 3*. Le numéro est le premier nombre après le nom,
     et la suite peut préciser une partie : « harry potter 7 partie 2 » donne *Les Reliques de la Mort, 2e partie*,
-    « hunger games 3 partie 2 » *La Révolte, partie 2* (les films sortis en plusieurs parties partagent un numéro).
+    « hunger games 3 partie 2 » *La Révolte, partie 2* (les films sortis en plusieurs parties partagent un numéro :
+    « harry potter 7 » donne les deux parties des *Reliques de la Mort*).
   - **Sagas dans l'ordre** : les films d'une même saga sont regroupés et rangés dans l'ordre de sortie (1, 2, 3).
 
 Par défaut, StreamHub ne montre que les titres disponibles sur **tes abonnements** ; un lien permet d'afficher aussi

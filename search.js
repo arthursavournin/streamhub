@@ -15,10 +15,11 @@ export const simplify = (text) =>
     .match(/[a-z0-9]+/g)
     ?.join(' ') ?? '';
 
-// Mots qui annoncent une partie (« 2e partie », « Part Two », « Vol. 2 », « Chapitre 2 ») et nombres écrits en lettres
-const PART = '(?:partie|part|volume|vol|chapitre|chapter)';
+// Mots qui annoncent une partie (« 2e partie », « Part Two », « Vol. 2 ») et nombres écrits en lettres. Pas « chapitre » :
+// c'est le numéro de la suite (« Twilight, chapitre 4 : Révélation, 1re partie »).
+const PART = '(?:partie|part|volume|vol)';
 const PART_AFTER = new RegExp(`(?:^| )${PART} (\\w+)`); // « partie 2 », « part two »
-const PART_BEFORE = new RegExp(`(\\w+) ${PART}(?: |$)`); // « 2eme partie », « deuxieme partie »
+const PART_BEFORE = new RegExp(`(\\w+) ${PART}(?= |$)`); // « 2eme partie », « deuxieme partie »
 const ROMAN = { i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6, vii: 7, viii: 8, ix: 9, x: 10 };
 const WORDS = {
   un: 1, une: 1, one: 1, premier: 1, premiere: 1, first: 1,
@@ -33,16 +34,21 @@ function toNumber(word) {
   return digits ? Number(digits[1]) : ROMAN[word] ?? WORDS[word] ?? null;
 }
 
-// Numéro de partie écrit dans un titre (« Les Reliques de la Mort - 2e partie » → 2), avec la position du mot de
-// partie (pour comparer le début des titres) ; null sans partie
+// Numéro de partie écrit dans un titre (« Les Reliques de la Mort - 2e partie » → 2) et début du titre avant la partie,
+// sans ses numéros (pour reconnaître les parties d'un même film) ; null sans partie. S'il y a plusieurs mentions
+// (« Twilight, chapitre 4 : Révélation, 1re partie »), la dernière est la partie.
 function partOf(title) {
   const s = simplify(title);
+  let best = null;
   for (const re of [PART_BEFORE, PART_AFTER]) {
-    const m = re.exec(s);
-    const n = m && toNumber(m[1]);
-    if (n) return { n, prefix: s.slice(0, m.index).trim() };
+    for (const m of s.matchAll(new RegExp(re.source, 'g'))) {
+      const n = toNumber(m[1]);
+      if (n && (!best || m.index > best.index)) best = { n, index: m.index };
+    }
   }
-  return null;
+  if (!best) return null;
+  const prefix = s.slice(0, best.index).split(' ').filter((w) => w && toNumber(w) == null).join(' ');
+  return { n: best.n, prefix };
 }
 
 // « harry potter 7 partie 2 » → { text: 'harry potter', number: '7', part: 2, rest: '7 partie 2' }.
@@ -52,8 +58,7 @@ export function parseQuery(query) {
   const i = words.findIndex((w, k) => k > 0 && /^\d{1,3}$/.test(w));
   if (i < 1 || words.slice(0, i).join(' ').length < 2) return { text: words.join(' '), number: '', part: null, rest: '' };
   const after = words.slice(i + 1).join(' ');
-  const m = PART_AFTER.exec(after) ?? PART_BEFORE.exec(after);
-  return { text: words.slice(0, i).join(' '), number: words[i], part: m ? toNumber(m[1]) : null, rest: words.slice(i).join(' ') };
+  return { text: words.slice(0, i).join(' '), number: words[i], part: partOf(after)?.n ?? null, rest: words.slice(i).join(' ') };
 }
 
 // Ancienne forme, gardée pour app.js : { text, number }
@@ -169,17 +174,19 @@ export async function arrangeSagas(found, query, api) {
   }
   const collections = (await Promise.all([...collectionIds].map((id) => api.collection(id).catch(() => null)))).filter(Boolean);
 
-  // Position de chaque film dans sa saga (films sortis, dans l'ordre de sortie), et son numéro « logique » : deux films
-  // qui se suivent avec le même début de titre et un numéro de partie (« … 1re partie », « … 2e partie ») ont le même
+  // Position de chaque film dans sa saga (films sortis, dans l'ordre de sortie), et son numéro « logique » : un film coupé
+  // en parties qui se suivent (« … 1re partie », « … 2e partie », même début de titre) n'a qu'un numéro. Le groupe doit
+  // commencer à la 1re partie : chez Dune, « Deuxième partie » et « Troisième partie » sont des suites, pas un même film.
   const place = new Map(); // id du film → { collection, index, logical, part }
   for (const c of collections) {
     const parts = (c.parts ?? []).filter((p) => p.release_date).sort((a, b) => a.release_date.localeCompare(b.release_date));
     let logical = 0;
-    let previous = null;
+    let previous = null; // partie du film précédent, si son groupe a commencé à la 1re partie
     parts.forEach((p, index) => {
       const info = partOfItem(p);
-      if (!(info && previous && previous.prefix === info.prefix && info.n > previous.n)) logical += 1;
-      previous = info;
+      const sameFilm = info && previous && previous.prefix === info.prefix && info.n === previous.n + 1;
+      if (!sameFilm) logical += 1;
+      previous = info && (sameFilm || info.n === 1) ? info : null;
       place.set(p.id, { collection: c, index, logical, part: info?.n ?? null });
     });
   }
@@ -204,11 +211,12 @@ export async function arrangeSagas(found, query, api) {
     };
     const numberOf = (m) => (sagaOf(m) ? sagaOf(m).index + 1 : numberInTitle(m, text));
     const starts = (n) => n != null && String(n).startsWith(number);
-    // Avec une partie : numéro logique (ou numéro dans le titre) et partie ; sinon (ou si rien ne correspond) : le rang
+    // Avec une partie : numéro logique (ou numéro dans le titre) et partie. Sinon (ou si rien ne correspond) : le rang, et
+    // toutes les parties du numéro (« harry potter 7 » : Les Reliques de la Mort 1re et 2e partie ; « 8 » : la 2e)
     let matching = part
       ? list.filter((m) => (sagaOf(m) ? starts(sagaOf(m).logical) && sagaOf(m).part === part : starts(numberInTitle(m, text)) && partOfItem(m)?.n === part))
       : [];
-    if (!matching.length) matching = list.filter((m) => starts(numberOf(m)));
+    if (!matching.length) matching = list.filter((m) => starts(numberOf(m)) || (sagaOf(m) && starts(sagaOf(m).logical)));
     if (matching.length) list = matching.sort((a, b) => (numberOf(a) ?? 0) - (numberOf(b) ?? 0));
     else list = [...results];
   }

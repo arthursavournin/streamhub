@@ -60,12 +60,22 @@ final class AppModel {
         }
         var seen = Set<String>()
         var items = lists.flatMap { $0 }.filter { seen.insert("\($0.type.rawValue):\($0.id)").inserted }
+        // Séries récentes : leur dernier épisode (pour les classer parmi les films, et affiché sur l'affiche)
+        if sort == .recent {
+            let latest = await withTaskGroup(of: (Int, LatestEpisode?).self) { group in
+                for item in items where item.type == .tv { group.addTask { (item.id, try? await tmdb.latestEpisode(item.id)) } }
+                var all: [Int: LatestEpisode] = [:]
+                for await (id, episode) in group { if let episode { all[id] = episode } }
+                return all
+            }
+            items = items.map { var m = $0; if m.type == .tv { m.latestEpisode = latest[m.id] }; return m }
+        }
         if shown.count > 1 {
             // Films et séries mélangés selon le tri choisi
             let score: (TMDBTitle) -> Double = switch sort {
             case .popularity: { $0.popularity ?? 0 }
             case .rating: { $0.voteAverage ?? 0 }
-            case .recent: { Self.day.date(from: $0.date)?.timeIntervalSince1970 ?? 0 }
+            case .recent: { Self.day.date(from: $0.recentDate)?.timeIntervalSince1970 ?? 0 }
             }
             items.sort { score($0) > score($1) }
         }
@@ -183,7 +193,9 @@ struct HomeRow: Identifiable {
         HomeRow(title: "Top 50 du moment", kind: .catalog(types: both, sort: .popularity, pages: 2), limit: 50, ranked: true),
         HomeRow(title: "Reprendre", kind: .local(.history)),
         HomeRow(title: "Ma liste", kind: .local(.watchlist)),
-        HomeRow(title: "Nouveautés", kind: .catalog(types: both, sort: .recent)),
+        HomeRow(title: "Nouveautés", kind: .catalog(types: both, sort: .recent, pages: 2), limit: 30),
+        HomeRow(title: "Nouveaux épisodes", kind: .catalog(types: [.tv], sort: .recent, pages: 2), limit: 40),
+        HomeRow(title: "Nouveaux films", kind: .catalog(types: [.movie], sort: .recent)),
         HomeRow(title: "Les mieux notés", kind: .catalog(types: both, sort: .rating)),
         HomeRow(title: "Action & aventure", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 28, .tv: 10759])),
         HomeRow(title: "Comédie", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 35, .tv: 35])),

@@ -24,10 +24,32 @@ nonisolated struct TMDBTitle: Decodable, Identifiable, Hashable, Sendable {
     let voteAverage: Double?
     let popularity: Double?
 
+    var latestEpisode: LatestEpisode? // séries récentes : dernier épisode diffusé (rempli par l'appli)
+
     var type: MediaType { MediaType(rawValue: mediaType ?? "") ?? (title != nil ? .movie : .tv) }
+    // Date qui compte pour « récent » : celle du dernier épisode pour une série, sinon la date de sortie
+    var recentDate: String { latestEpisode?.airDate ?? date }
     var displayTitle: String { title ?? name ?? "" }
     var date: String { releaseDate ?? firstAirDate ?? "" }
     var ref: TitleRef { TitleRef(type: type, id: id, title: displayTitle, poster: posterPath) }
+}
+
+nonisolated struct LatestEpisode: Codable, Hashable, Sendable {
+    let seasonNumber: Int
+    let episodeNumber: Int
+    let airDate: String?
+
+    // « S1 E31 · 16 oct. »
+    var label: String {
+        var text = "S\(seasonNumber) E\(episodeNumber)"
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        if let air = airDate, let date = f.date(from: air) {
+            text += " · " + date.formatted(.dateTime.day().month(.abbreviated).locale(Locale(identifier: "fr_FR")))
+        }
+        return text
+    }
 }
 
 nonisolated struct Page<T: Decodable & Sendable>: Decodable, Sendable {
@@ -195,6 +217,27 @@ struct TMDBClient {
 
     // extra : paramètres TMDB supplémentaires (ex. with_origin_country = JP)
     func discover(_ type: MediaType, page: Int = 1, genre: Int? = nil, sort: Sort, providers: [Int], extra: [String: String] = [:]) async throws -> [TMDBTitle] {
+        let today = String(ISO8601DateFormatter().string(from: Date()).prefix(10))
+        // Séries les plus récentes : celles qui ont eu un épisode ces 7 derniers jours (nouvelle saison ou épisode de la
+        // semaine), les plus populaires d'abord, sans talk-shows, infos, feuilletons quotidiens ni téléréalité (comme le site)
+        if type == .tv, sort == .recent {
+            var params: [String: String?] = [
+                "language": language,
+                "page": String(page),
+                "watch_region": region,
+                "with_watch_providers": providers.isEmpty ? nil : providers.map(String.init).joined(separator: "|"),
+                "with_watch_monetization_types": providers.isEmpty ? nil : "flatrate|free|ads",
+                "with_genres": genre.map(String.init),
+                "without_genres": "10763,10764,10766,10767",
+                "air_date.gte": String(ISO8601DateFormatter().string(from: Date().addingTimeInterval(-7 * 86400)).prefix(10)),
+                "air_date.lte": today,
+                "sort_by": "popularity.desc",
+                "include_adult": "false",
+            ]
+            for (k, v) in extra { params[k] = v }
+            let page: Page<TMDBTitle> = try await get("/discover/tv", params)
+            return page.results.map { var t = $0; t.mediaType = "tv"; return t }
+        }
         let sortBy = switch sort {
         case .popularity: "popularity.desc"
         case .rating: "vote_average.desc"
@@ -217,6 +260,13 @@ struct TMDBClient {
         for (k, v) in extra { params[k] = v }
         let page: Page<TMDBTitle> = try await get("/discover/\(type.rawValue)", params)
         return page.results.map { var t = $0; t.mediaType = type.rawValue; return t }
+    }
+
+    // Dernier épisode diffusé d'une série
+    func latestEpisode(_ tvID: Int) async throws -> LatestEpisode? {
+        nonisolated struct Info: Decodable { let lastEpisodeToAir: LatestEpisode? }
+        let info: Info = try await get("/tv/\(tvID)", ["language": language])
+        return info.lastEpisodeToAir
     }
 
     // Fiche courte d'un titre (affiche, titre, date), pour les titres venus du classement du moment

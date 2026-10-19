@@ -105,7 +105,7 @@ struct TitleRow: View {
                 ScrollView(.horizontal) {
                     LazyHStack(spacing: 10) {
                         ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
-                            PosterLink(ref: item.ref, rank: ranked ? i + 1 : nil)
+                            PosterLink(ref: item.ref, rank: ranked ? i + 1 : nil, caption: item.latestEpisode?.label)
                         }
                     }
                     .padding(.horizontal, 16)

@@ -46,10 +46,21 @@ struct PosterLink: View {
     let ref: TitleRef
     var width: CGFloat? = 118
     var rank: Int?
+    var caption: String? // ex. « S1 E31 · 16 oct. » : dernier épisode d'une série récente
 
     var body: some View {
         NavigationLink(value: ref) {
             PosterView(ref: ref, width: width)
+                .overlay(alignment: .bottom) {
+                    if let caption {
+                        Text(caption)
+                            .font(.caption2.weight(.semibold))
+                            .lineLimit(1)
+                            .padding(.horizontal, 6).padding(.vertical, 3)
+                            .background(.black.opacity(0.65), in: .capsule)
+                            .padding(.bottom, 6)
+                    }
+                }
                 .overlay(alignment: .bottomLeading) {
                     if let rank {
                         Text("\(rank)")

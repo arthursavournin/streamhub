@@ -1,6 +1,6 @@
 {
  "source": "https://animotaku.fr/blog/naruto-naruto-shippuden-liste-complete-episodes-sans-hors-serie/",
- "note": "Saisons [numéro, premier épisode, dernier épisode] (seasonNames : titres des saisons sur Netflix) : Naruto comme animotaku.fr (9 saisons), Naruto Shippuden et Boruto comme Netflix France (21 saisons chacun, captures de l'utilisateur) ; épisodes hors-série (filler, en rouge) d'après animotaku.fr, en numérotation absolue (celle de TMDB) ; retirés des fillers à la demande de l'utilisateur : Shippuden 494 à 500, Boruto 128 à 136 (arc « Retour vers le passé ») ; unavailable : épisodes absents d'une plateforme alors que Streaming Availability donne un lien (Boruto 11 à 15 sur Netflix France, signalé par l'utilisateur : le lien relançait le dernier épisode regardé)",
+ "note": "Saisons [numéro, premier épisode, dernier épisode] (seasonNames : titres des saisons sur Netflix) : Naruto comme animotaku.fr (9 saisons), Naruto Shippuden et Boruto comme Netflix France (21 saisons chacun, captures de l'utilisateur) ; épisodes hors-série (filler, en rouge) d'après animotaku.fr, en numérotation absolue (celle de TMDB) ; retirés des fillers à la demande de l'utilisateur : Shippuden 494 à 500, Boruto 128 à 136 (arc « Retour vers le passé ») ; unavailable (facultatif) : épisodes absents d'une plateforme alors que Streaming Availability en donne un lien, par service",
  "shows": {
   "46260": {
    "name": "Netflix - Sans filler",
@@ -446,15 +446,7 @@
      221,
      286
     ]
-   ],
-   "unavailable": {
-    "netflix": [
-     [
-      11,
-      15
-     ]
-    ]
-   }
+   ]
   }
  }
 }

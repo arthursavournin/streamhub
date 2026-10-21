@@ -33,6 +33,25 @@ nonisolated struct FillerShow: Decodable, Sendable {
     }
 }
 
+// Liens Netflix de chaque épisode (netflix-episodes.json du site : Naruto, Shippuden, Boruto), par épisode TMDB
+// « saison:épisode ». Streaming Availability ne connaît que les 15 premiers épisodes de Boruto sur Netflix.
+enum NetflixEpisodes {
+    nonisolated struct Show: Decodable, Sendable {
+        let netflix: Int
+        let episodes: [String: Int]
+    }
+    private nonisolated struct File: Decodable { let shows: [String: Show] }
+    private static var file: File?
+
+    static func show(_ tmdbID: Int) async -> Show? {
+        if file == nil, let url = URL(string: "netflix-episodes.json", relativeTo: AppStore.site),
+           let (data, response) = try? await URLSession.shared.data(from: url), (response as? HTTPURLResponse)?.statusCode == 200 {
+            file = try? JSONDecoder().decode(File.self, from: data)
+        }
+        return file?.shows[String(tmdbID)]
+    }
+}
+
 enum Fillers {
     private nonisolated struct File: Decodable { let shows: [String: FillerShow] }
     private static var file: File?

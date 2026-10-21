@@ -19,6 +19,7 @@ struct SeasonsSection: View {
     @State private var fillerShow: FillerShow? // découpage « Netflix - Sans filler » (Naruto, Naruto Shippuden)
     @State private var useFillers = true // choix du découpage : sans filler (par défaut) ou TMDB
     @State private var allEpisodes: [Episode]? // tous les épisodes TMDB, pour le découpage sans filler
+    @State private var netflixShow: NetflixEpisodes.Show? // liens Netflix de chaque épisode (Naruto, Shippuden, Boruto)
 
     private var fillerMode: Bool { fillerShow != nil && useFillers }
 
@@ -107,6 +108,7 @@ struct SeasonsSection: View {
             }
             .task(id: details.id) {
                 fillerShow = await Fillers.show(details.id)
+                netflixShow = await NetflixEpisodes.show(details.id)
                 links = [:] // liens d'épisodes recalculés avec les épisodes absents d'une plateforme
                 selectStart()
             }
@@ -114,6 +116,18 @@ struct SeasonsSection: View {
             .task(id: "\(selected ?? -1)|\(fillerMode)") { await loadSeason() }
             .task(id: "\(selected ?? -1)|\(linksReady)|\(episodes.count)|\(shown)") { await loadLinks() }
         }
+    }
+
+    // Le bouton Netflix de l'épisode, avec son lien de lecture (netflix-episodes.json), à la place de celui de Streaming
+    // Availability ou du lien vers la page de la série
+    private func withNetflix(_ links: [EpisodeLink], _ ep: Episode) -> [EpisodeLink] {
+        guard let netflixShow, let id = netflixShow.episodes["\(ep.seasonNumber):\(ep.episodeNumber)"],
+              var entry = entries.first(where: { $0.mine && $0.service == "netflix" && !Platforms.isChannel($0.name) }) else { return links }
+        entry.href = "https://www.netflix.com/watch/\(id)"
+        entry.page = "https://www.netflix.com/title/\(netflixShow.netflix)"
+        entry.direct = true
+        let others = links.filter { !($0.entry.service == "netflix" && !Platforms.isChannel($0.entry.name)) }
+        return [EpisodeLink(label: Platforms.shortName(entry.name), entry: entry)] + others
     }
 
     // Saison du dernier épisode regardé, sinon la première (découpage sans filler : la saison qui le contient)
@@ -172,7 +186,7 @@ struct SeasonsSection: View {
         for ep in episodes.prefix(shown) where links[ep.id] == nil {
             let found = await EpisodeLinks.links(for: ep, sa: saSeasons, entries: entries, titles: titles, absolute: absolute(ep), providers: providers)
             if Task.isCancelled { return }
-            links[ep.id] = found.filter { fillerShow?.isUnavailable(ep.episodeNumber, on: $0.entry.service) != true }
+            links[ep.id] = withNetflix(found.filter { fillerShow?.isUnavailable(ep.episodeNumber, on: $0.entry.service) != true }, ep)
         }
     }
 }

@@ -10,7 +10,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.11.5';
+const APP_VERSION = '1.11.6';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -1390,6 +1390,30 @@ const loadFillers = () =>
     .then((res) => (res.ok ? res.json() : null))
     .then((data) => (fillersLoaded = data))
     .catch(() => null));
+// Liens Netflix de chaque épisode (netflix-episodes.json : Naruto, Shippuden, Boruto). Streaming Availability et
+// JustWatch ne connaissent que les 15 premiers épisodes de Boruto sur Netflix, qui les a tous (signalé par
+// l'utilisateur) ; identifiants relevés depuis sa session Netflix
+let netflixData;
+let netflixLoaded = null;
+const loadNetflixEpisodes = () =>
+  (netflixData ??= fetch('netflix-episodes.json')
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data) => (netflixLoaded = data))
+    .catch(() => null));
+const netflixEpisodeId = (epEl) =>
+  netflixLoaded?.shows?.[current?.id]?.episodes?.[`${epEl.dataset.origSeason}:${epEl.dataset.origEpisode}`] ?? null;
+
+// Le bouton Netflix de l'épisode, avec son lien de lecture, à la place de celui de Streaming Availability
+function withNetflixEpisode(options, epEl) {
+  const id = netflixEpisodeId(epEl);
+  if (!id || !myServices().has('netflix')) return options;
+  const isNetflix = (o) => o.service === 'netflix' && !o.addon;
+  const base = options.find(isNetflix) ?? (current.links?.options ?? []).find(isNetflix);
+  const page = `https://www.netflix.com/title/${netflixLoaded.shows[current.id].netflix}`;
+  const netflix = { service: 'netflix', name: base?.name ?? 'Netflix', type: 'subscription', addon: null, link: page, videoLink: `https://www.netflix.com/watch/${id}` };
+  return [netflix, ...options.filter((o) => !isNetflix(o))];
+}
+
 // Épisode absent d'une plateforme alors que Streaming Availability en donne un lien (Boruto 11 à 15 sur Netflix,
 // signalé par l'utilisateur : Netflix relançait le dernier épisode regardé à la place)
 const unavailableOn = (service, episode) =>
@@ -1417,7 +1441,7 @@ async function fillerSeasons(item, def) {
 // (ex. « TF1+ »), on l'utilise d'office : ce sont les saisons que tu verras sur cette plateforme. Le découpage
 // « Sans filler » passe avant, quand la série en a un.
 async function loadEpisodeGroups(item, key) {
-  const [found, fillers] = await Promise.all([api.episodeGroups(item.id).catch(() => []), loadFillers()]);
+  const [found, fillers] = await Promise.all([api.episodeGroups(item.id).catch(() => []), loadFillers(), loadNetflixEpisodes()]);
   const def = fillers?.shows?.[item.id];
   const groups = def ? [{ id: FILLER_GROUP, name: def.name, group_count: def.seasons.length }, ...found] : found;
   if (current?.key !== key || !groups.length) return;
@@ -1577,7 +1601,10 @@ function fillEpisodeLinks(number) {
   for (const epEl of seasonEl.querySelectorAll('.episode')) {
     const box = epEl.querySelector('.episode-links');
     const saEpisode = saSeasonOf(Number(epEl.dataset.origSeason))?.episodes.find((e) => e.number === Number(epEl.dataset.origEpisode));
-    const options = streamOptions(saEpisode?.options ?? []).filter((o) => !unavailableOn(o.service, Number(epEl.dataset.origEpisode)));
+    const options = withNetflixEpisode(
+      streamOptions(saEpisode?.options ?? []).filter((o) => !unavailableOn(o.service, Number(epEl.dataset.origEpisode))),
+      epEl,
+    );
     if (options.length) {
       // Tes plateformes qui ont la série mais pas de lien pour cet épisode (Streaming Availability ne connaît que les
       // 15 premiers épisodes de Boruto sur Netflix, qui les a tous) : bouton vers la page de la série

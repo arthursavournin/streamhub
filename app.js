@@ -10,7 +10,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.9.2';
+const APP_VERSION = '1.10.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -1917,6 +1917,9 @@ function onLaunch(link, event) {
   // Lancé = regardé : dans l'historique tout de suite, sans « Tu as regardé… ? » au retour (demande de l'utilisateur)
   if (entry) {
     library.recordWatch({ ...entry, platform, page: entry.page ?? entry.href });
+    // Série : on enchaîne souvent plusieurs épisodes sur la plateforme ; au retour, « Où en es-tu ? » note le
+    // dernier épisode vraiment regardé (et propose J'aime)
+    if (entry.type === 'tv') library.addPending('progress', { ...entry, platform, page: entry.page ?? entry.href });
     updateCounts();
   }
   if (IOS_WEB_APP && /^https:\/\//.test(link.href)) {
@@ -1939,7 +1942,9 @@ function onLaunch(link, event) {
 
 // Questions posées au retour : téléchargement, like sur la plateforme (un titre lancé entre directement dans
 // l'historique depuis la version 1.9.2). watch : anciennes questions, vidées au démarrage (flushWatchPending).
-const PENDING_DELAYS = { download: 3 * 1000, platformLike: 3 * 1000, platformUnlike: 3 * 1000 };
+// « Où en es-tu ? » n'est posé qu'après 3 minutes : un retour plus rapide, c'est souvent juste pour relancer après le
+// choix du profil
+const PENDING_DELAYS = { progress: 3 * 60 * 1000, download: 3 * 1000, platformLike: 3 * 1000, platformUnlike: 3 * 1000 };
 let promptedId = null;
 
 function checkPending() {
@@ -1956,6 +1961,7 @@ function checkPending() {
   const what = `<strong>« ${esc(e.title)} »</strong>${episodeLabel(e) ? ` ${episodeLabel(e)}` : ''}`;
   const where = e.platform ? ` sur ${esc(shortPlatformName(e.platform))}` : '';
   const question = {
+    progress: `Où en es-tu de <strong>« ${esc(e.title)} »</strong>${where} ?`,
     watch: `Tu as regardé ${what}${where} ?`,
     download: `Le téléchargement de ${what} a bien démarré${where} ?`,
     platformLike: `Tu as liké <strong>« ${esc(e.title)} »</strong>${where} ?`,
@@ -1963,17 +1969,55 @@ function checkPending() {
   }[item.kind];
   const bar = $('#confirm');
   bar.dataset.pendingId = item.id;
+  const progress = item.kind === 'progress';
   bar.innerHTML = `
     <p>${question}</p>
+    ${progress ? `<div class="progress-pick">
+      <label><span>Dernier épisode regardé</span>
+        <span class="progress-selects">
+          <select data-progress-season aria-label="Saison"></select>
+          <select data-progress-episode aria-label="Épisode"></select>
+        </span></label>
+    </div>` : ''}
     <div class="confirm-actions">
-      <button type="button" class="btn primary" data-confirm="yes">Oui</button>
-      <button type="button" class="btn" data-confirm="no">Non</button>
-      ${item.kind === 'watch' ? '<button type="button" class="btn like-btn" data-confirm-like aria-pressed="false"></button><span class="platform-likes" data-platform-likes></span>' : ''}
+      <button type="button" class="btn primary" data-confirm="yes">${progress ? 'Enregistrer' : 'Oui'}</button>
+      <button type="button" class="btn" data-confirm="no">${progress ? 'Ignorer' : 'Non'}</button>
+      ${progress || item.kind === 'watch' ? '<button type="button" class="btn like-btn" data-confirm-like aria-pressed="false"></button><span class="platform-likes" data-platform-likes></span>' : ''}
     </div>`;
+  if (progress) fillProgressPick(item);
   refreshConfirmLike();
   showRelaunch(false);
   togglePopover(bar, true);
   $('[data-confirm="yes"]', bar).focus({ preventScroll: true });
+}
+
+// Choix du dernier épisode regardé : saisons de la série, puis épisodes de la saison choisie (titres TMDB) ; au départ,
+// l'épisode lancé (numérotation TMDB)
+async function fillProgressPick(item, season = item.entry.season) {
+  const bar = $('#confirm');
+  const seasonSel = $('[data-progress-season]', bar);
+  const episodeSel = $('[data-progress-episode]', bar);
+  if (!seasonSel || bar.dataset.pendingId !== item.id) return;
+  const show = await api.title('tv', item.entry.id).catch(() => null);
+  const seasons = (show?.seasons ?? []).filter((s) => s.season_number > 0 && s.episode_count > 0);
+  if (bar.dataset.pendingId !== item.id) return;
+  if (!seasons.length) {
+    $('.progress-pick', bar).hidden = true;
+    return;
+  }
+  const chosen = seasons.find((s) => s.season_number === season) ?? seasons[0];
+  seasonSel.innerHTML = seasons.map((s) => `<option value="${s.season_number}">Saison ${s.season_number}</option>`).join('');
+  seasonSel.value = chosen.season_number;
+  const details = await api.season(item.entry.id, chosen.season_number).catch(() => null);
+  if (bar.dataset.pendingId !== item.id || Number(seasonSel.value) !== chosen.season_number) return;
+  const episodes = details?.episodes?.length
+    ? details.episodes.map((ep) => ({ number: ep.episode_number, name: ep.name }))
+    : Array.from({ length: chosen.episode_count }, (_, i) => ({ number: i + 1, name: '' }));
+  episodeSel.innerHTML = episodes
+    .map((ep) => `<option value="${ep.number}" data-name="${esc(ep.name ?? '')}">${esc(`Épisode ${ep.number}${ep.name && !/^(Épisode|Episode) \d+$/i.test(ep.name) ? ` · ${ep.name}` : ''}`)}</option>`)
+    .join('');
+  const start = season === chosen.season_number ? item.entry.episode : null;
+  episodeSel.value = episodes.some((ep) => ep.number === start) ? start : episodes[0].number;
 }
 
 // Le « J'aime » de la question porte sur le film ou la série entière, jamais sur un épisode
@@ -2019,7 +2063,17 @@ function remindPlatformLikes(entry) {
 }
 
 function answerPending(yes) {
-  library.resolvePending($('#confirm').dataset.pendingId, yes);
+  const bar = $('#confirm');
+  const episodeSel = $('[data-progress-episode]', bar);
+  // Dernier épisode choisi (seulement si la liste a été remplie)
+  const changes = episodeSel?.value
+    ? {
+        season: Number($('[data-progress-season]', bar).value),
+        episode: Number(episodeSel.value),
+        episodeName: episodeSel.selectedOptions[0]?.dataset.name ?? '',
+      }
+    : {};
+  library.resolvePending(bar.dataset.pendingId, yes, changes);
   promptedId = null;
   updateCounts();
   refreshDownloadButtons();
@@ -2027,6 +2081,13 @@ function answerPending(yes) {
   if (PERSONAL_VIEWS.includes(state.view)) renderLibrary();
   checkPending(); // question suivante, s'il y en a une
 }
+
+// « Où en es-tu ? » : autre saison choisie → ses épisodes
+document.addEventListener('change', (e) => {
+  if (!e.target.matches?.('#confirm [data-progress-season]')) return;
+  const item = library.list('pending').find((p) => p.id === $('#confirm').dataset.pendingId);
+  if (item) fillProgressPick(item, Number(e.target.value));
+});
 
 document.addEventListener('visibilitychange', checkPending);
 window.addEventListener('focus', checkPending);

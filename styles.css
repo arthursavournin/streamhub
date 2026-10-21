@@ -1032,6 +1032,22 @@ html:has(dialog[open]) { overflow: hidden; }
   .confirm .confirm-actions .btn.like-btn:hover { color: var(--text); background: rgba(255, 255, 255, 0.06); }
   .confirm .confirm-actions .btn.like-btn[aria-pressed="true"] { color: var(--mine); }
 }
+/* « Où en es-tu ? » (série) : dernier épisode regardé, saison puis épisode */
+.progress-pick { flex-basis: 100%; min-width: 0; }
+.progress-pick label { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: 0.85em; color: var(--muted); }
+.progress-selects { display: flex; gap: 8px; font-size: 1.15em; color: var(--text); }
+.progress-selects select {
+  min-width: 0;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.progress-selects [data-progress-season] { flex: none; }
+.progress-selects [data-progress-episode] { flex: 1 1 0; width: 0; text-overflow: ellipsis; } /* largeur 0 : ne déborde pas avec un long titre */
+.progress-pick[hidden] { display: none; }
+
 @media (max-width: 640px) {
   /* Sur téléphone, « Télécharger » passe sous « Regarder » pour ne pas tronquer le nom de la plateforme */
   .watch-row { flex-wrap: wrap; }

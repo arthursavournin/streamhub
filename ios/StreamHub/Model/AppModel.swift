@@ -2,11 +2,24 @@ import Foundation
 import Observation
 import UIKit
 
+// Série lancée : au retour, « Où en es-tu ? » note le dernier épisode vraiment regardé (comme le site)
+struct PendingProgress: Identifiable {
+    let entry: LibraryEntry
+    let at: Date
+    var id: String { entry.key }
+}
+
 // L'état de l'appli : réglages et bibliothèque, synchronisation, ouverture des titres sur les plateformes
 @Observable
 final class AppModel {
     let store = AppStore()
     let sync: SyncService
+    var pendingProgress: PendingProgress?
+    var progressQuestion: PendingProgress?
+
+    // « Où en es-tu ? » n'est posé qu'après 3 minutes : un retour plus rapide, c'est souvent juste pour changer de profil
+    // ou se connecter
+    static let progressDelay: TimeInterval = 3 * 60
 
     init() {
         sync = SyncService(store: store)
@@ -166,6 +179,8 @@ final class AppModel {
         // Lancé = regardé : dans l'historique tout de suite, sans « Tu as regardé… ? » au retour (demande de
         // l'utilisateur, comme le site depuis la version 1.9.2)
         store.recordWatch(entry)
+        // Série : on enchaîne souvent plusieurs épisodes sur la plateforme
+        if ref.type == .tv { pendingProgress = PendingProgress(entry: entry, at: Date()) }
 
         if let app = Platforms.appLink(watch.href).flatMap(URL.init(string:)), await UIApplication.shared.open(app) { return }
         guard let url = URL(string: watch.href) else { return }
@@ -178,9 +193,22 @@ final class AppModel {
         UIApplication.shared.open(url)
     }
 
-    // Retour dans l'appli : synchronisation
+    // Retour dans l'appli : synchronisation, et « Où en es-tu ? » si une série a été lancée il y a plus de 3 minutes
     func appBecameActive() {
         sync.appBecameActive()
+        guard let pendingProgress, Date().timeIntervalSince(pendingProgress.at) >= Self.progressDelay else { return }
+        progressQuestion = pendingProgress
+        self.pendingProgress = nil
+    }
+
+    // Réponse : le dernier épisode regardé remplace l'épisode lancé dans l'historique
+    func saveProgress(_ entry: LibraryEntry, season: Int, episode: Int, name: String?) {
+        var entry = entry
+        entry.raw["season"] = .int(Int64(season))
+        entry.raw["episode"] = .int(Int64(episode))
+        entry.raw["episodeName"] = name.map { .string($0) } ?? .null
+        store.recordWatch(entry)
+        progressQuestion = nil
     }
 }
 

@@ -69,12 +69,13 @@ export function addDownload(entry) {
 }
 
 // ---------- Questions en attente ----------
-// { id, kind: 'watch' | 'download', entry, at }
+// { id, kind: 'progress' | 'download' | 'platformLike' | 'platformUnlike' (| 'watch' : avant la 1.9.2), entry, at }
+// progress : série lancée, « Où en es-tu ? » au retour pour noter le dernier épisode vraiment regardé
 
 const platformId = (entry) => entry.service || entry.platform;
 
 const pendingId = (kind, entry) => {
-  if (kind === 'watch') return `watch:${titleKey(entry.type, entry.id)}`;
+  if (kind === 'watch' || kind === 'progress') return `${kind}:${titleKey(entry.type, entry.id)}`;
   if (kind === 'platformLike' || kind === 'platformUnlike') return `${kind}:${titleKey(entry.type, entry.id)}:${platformId(entry)}`;
   return `download:${downloadKey(entry.type, entry.id, entry.season, entry.episode)}`;
 };
@@ -102,13 +103,14 @@ export function nextPending(delays) {
   return lib.pending.find((p) => now - p.at >= delays[p.kind]) ?? null;
 }
 
-export function resolvePending(id, yes) {
+// changes : champs de l'entrée modifiés par la réponse (progress : saison et épisode choisis)
+export function resolvePending(id, yes, changes = {}) {
   const item = lib.pending.find((p) => p.id === id);
   if (!item) return;
   lib.pending = lib.pending.filter((p) => p.id !== id);
   saveLibrary(lib);
   if (!yes) return;
-  if (item.kind === 'watch') recordWatch(item.entry);
+  if (item.kind === 'watch' || item.kind === 'progress') recordWatch({ ...item.entry, ...changes });
   else if (item.kind === 'platformLike') markLikedOn(item.entry);
   else if (item.kind === 'platformUnlike') unmarkLikedOn(item.entry);
   else addDownload(item.entry);

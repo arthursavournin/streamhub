@@ -58,11 +58,22 @@ struct RootView: View {
             }
         }
         .background(Color.appBackground)
+        .sheet(isPresented: Binding(get: { model.progressQuestion != nil }, set: { if !$0 { model.progressQuestion = nil } })) {
+            if let question = model.progressQuestion { ProgressSheet(entry: question.entry) }
+        }
         #if DEBUG
-        // Tests dans le simulateur : code de synchronisation passé au lancement (STREAMHUB_SYNC_CODE)
+        // Tests dans le simulateur : code de synchronisation passé au lancement (STREAMHUB_SYNC_CODE) ; « Où en es-tu ? »
+        // affiché tout de suite pour une série (STREAMHUB_PROGRESS = identifiant TMDB, S1 E5)
         .task {
             if let code = ProcessInfo.processInfo.environment["STREAMHUB_SYNC_CODE"], model.store.syncMeta.code == nil {
                 try? await model.sync.join(code)
+            }
+            if let id = ProcessInfo.processInfo.environment["STREAMHUB_PROGRESS"].flatMap(Int.init) {
+                var entry = LibraryEntry(ref: TitleRef(type: .tv, id: id, title: "Naruto", poster: nil))
+                entry.raw["season"] = .int(1)
+                entry.raw["episode"] = .int(5)
+                entry.raw["platform"] = .string("Netflix")
+                model.progressQuestion = PendingProgress(entry: entry, at: Date())
             }
         }
         #endif

@@ -132,7 +132,11 @@ Sous le résumé, la fiche a des **onglets** (aussi dans l'appli iPhone) :
 - **Historique** : les 30 derniers titres regardés depuis StreamHub.
 - **Téléchargements** : un rappel des titres téléchargés dans les applis des plateformes (voir plus bas).
 
-Un film ou un épisode lancé depuis StreamHub entre tout de suite dans l'historique, sans question. Pour un
+Un film ou un épisode lancé depuis StreamHub entre tout de suite dans l'historique, sans question. Pour une série,
+on enchaîne souvent plusieurs épisodes sur la plateforme : en revenant dans StreamHub (au moins 3 minutes après), une
+seule fenêtre demande « Où en es-tu de *Naruto* ? » avec la saison et le dernier épisode regardé (l'épisode lancé est
+déjà choisi) ; « Enregistrer » met l'historique à jour, « Ignorer » garde l'épisode lancé. La même fenêtre propose
+« J'aime la série » (et, sur le site, « Liker aussi sur » la plateforme). Pour un
 téléchargement, StreamHub demande à ton retour « Le téléchargement a bien démarré ? » : le titre n'entre dans les
 téléchargements que si tu réponds oui.
 

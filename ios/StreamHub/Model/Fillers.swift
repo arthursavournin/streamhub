@@ -7,6 +7,14 @@ nonisolated struct FillerShow: Decodable, Sendable {
     let seasons: [[Int]] // [numéro, premier épisode, dernier épisode]
     let fillers: [[Int]] // [premier, dernier]
     let seasonNames: [String: String]? // titres des saisons sur Netflix (Boruto), par numéro
+    // Épisodes absents d'une plateforme alors que Streaming Availability en donne un lien (Boruto 11 à 15 sur Netflix :
+    // le lien relançait le dernier épisode regardé), par service
+    let unavailable: [String: [[Int]]]?
+
+    func isUnavailable(_ episode: Int, on service: String?) -> Bool {
+        guard let service, let ranges = unavailable?[service] else { return false }
+        return ranges.contains { $0.count == 2 && episode >= $0[0] && episode <= $0[1] }
+    }
 
     func isFiller(_ episode: Int) -> Bool { fillers.contains { $0.count == 2 && episode >= $0[0] && episode <= $0[1] } }
 

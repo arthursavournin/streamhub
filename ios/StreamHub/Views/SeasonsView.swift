@@ -107,6 +107,7 @@ struct SeasonsSection: View {
             }
             .task(id: details.id) {
                 fillerShow = await Fillers.show(details.id)
+                links = [:] // liens d'épisodes recalculés avec les épisodes absents d'une plateforme
                 selectStart()
             }
             .onChange(of: useFillers) { selectStart() }
@@ -171,7 +172,7 @@ struct SeasonsSection: View {
         for ep in episodes.prefix(shown) where links[ep.id] == nil {
             let found = await EpisodeLinks.links(for: ep, sa: saSeasons, entries: entries, titles: titles, absolute: absolute(ep), providers: providers)
             if Task.isCancelled { return }
-            links[ep.id] = found
+            links[ep.id] = found.filter { fillerShow?.isUnavailable(ep.episodeNumber, on: $0.entry.service) != true }
         }
     }
 }

@@ -10,7 +10,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.11.3';
+const APP_VERSION = '1.11.4';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -1384,7 +1384,16 @@ function episodeHtml(ep) {
 // hors-série d'après la liste d'animotaku.fr, dans fillers.json (numérotation absolue, la même que TMDB)
 const FILLER_GROUP = 'fillers';
 let fillersData;
-const loadFillers = () => (fillersData ??= fetch('fillers.json').then((res) => (res.ok ? res.json() : null)).catch(() => null));
+let fillersLoaded = null; // la même liste, une fois arrivée (pour les liens d'épisodes)
+const loadFillers = () =>
+  (fillersData ??= fetch('fillers.json')
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data) => (fillersLoaded = data))
+    .catch(() => null));
+// Épisode absent d'une plateforme alors que Streaming Availability en donne un lien (Boruto 11 à 15 sur Netflix,
+// signalé par l'utilisateur : Netflix relançait le dernier épisode regardé à la place)
+const unavailableOn = (service, episode) =>
+  inRanges(episode, fillersLoaded?.shows?.[current?.id]?.unavailable?.[service] ?? []);
 const inRanges = (n, ranges) => ranges.some(([first, last]) => n >= first && n <= last);
 
 async function fillerSeasons(item, def) {
@@ -1568,7 +1577,7 @@ function fillEpisodeLinks(number) {
   for (const epEl of seasonEl.querySelectorAll('.episode')) {
     const box = epEl.querySelector('.episode-links');
     const saEpisode = saSeasonOf(Number(epEl.dataset.origSeason))?.episodes.find((e) => e.number === Number(epEl.dataset.origEpisode));
-    const options = streamOptions(saEpisode?.options ?? []);
+    const options = streamOptions(saEpisode?.options ?? []).filter((o) => !unavailableOn(o.service, Number(epEl.dataset.origEpisode)));
     if (options.length) {
       box.innerHTML = options.map((o) => playLink(o, undefined, { download: true })).join('');
     } else if (seasonOptions.length) {

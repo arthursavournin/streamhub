@@ -49,6 +49,11 @@ struct LibraryEntry: Identifiable, Hashable {
     var at: Double { raw["at"]?.double ?? 0 }
 
     var ref: TitleRef { TitleRef(type: type, id: tmdbID, title: title, poster: poster) }
+    // Sur l'affiche : date de sortie d'un film (enregistrée avec l'entrée, comme sur le site)
+    var caption: String? {
+        let release = type == .movie ? releaseDateLabel(raw["date"]?.string) : ""
+        return release.isEmpty ? nil : release
+    }
 
     static func key(_ type: MediaType, _ id: Int) -> String { "\(type.rawValue):\(id)" }
 
@@ -203,5 +208,12 @@ final class AppStore {
     // Pour une série, une seule ligne par série : le dernier épisode lancé
     func recordWatch(_ entry: LibraryEntry) {
         putFirst(.history, entry, max: Self.historyMax)
+    }
+}
+
+extension [LibraryEntry] {
+    // Légendes des affiches d'une grille (voir caption)
+    var captions: [TitleRef: String] {
+        Dictionary(compactMap { e in e.caption.map { (e.ref, $0) } }, uniquingKeysWith: { a, _ in a })
     }
 }

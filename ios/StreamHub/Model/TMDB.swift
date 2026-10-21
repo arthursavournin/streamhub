@@ -35,6 +35,34 @@ nonisolated struct TMDBTitle: Decodable, Identifiable, Hashable, Sendable {
     var displayTitle: String { title ?? name ?? "" }
     var date: String { releaseDate ?? firstAirDate ?? "" }
     var ref: TitleRef { TitleRef(type: type, id: id, title: displayTitle, poster: posterPath) }
+    // Sur l'affiche : dernier épisode d'une série récente, ou date de sortie d'un film
+    var caption: String? {
+        if let label = latestEpisode?.label { return label }
+        let release = type == .movie ? releaseDateLabel(releaseDate) : ""
+        return release.isEmpty ? nil : release
+    }
+}
+
+// Date de sortie d'un film : « 9 oct. 2026 » (affiches), « 1er octobre 2026 » (fiche) ; année seule si le jour manque
+// (comme le site)
+nonisolated func releaseDateLabel(_ date: String?, long: Bool = false) -> String {
+    guard let date, !date.isEmpty else { return "" }
+    let parser = DateFormatter()
+    parser.dateFormat = "yyyy-MM-dd"
+    parser.locale = Locale(identifier: "en_US_POSIX")
+    guard let day = parser.date(from: String(date.prefix(10))) else { return String(date.prefix(4)) }
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "fr_FR")
+    formatter.dateFormat = long ? "d MMMM y" : "d MMM y"
+    let text = formatter.string(from: day)
+    return Calendar.current.component(.day, from: day) == 1 ? "1er" + text.dropFirst(1) : text
+}
+
+extension [TMDBTitle] {
+    // Légendes des affiches d'une grille (voir caption)
+    var captions: [TitleRef: String] {
+        Dictionary(compactMap { t in t.caption.map { (t.ref, $0) } }, uniquingKeysWith: { a, _ in a })
+    }
 }
 
 nonisolated struct LatestEpisode: Codable, Hashable, Sendable {

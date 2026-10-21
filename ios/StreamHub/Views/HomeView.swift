@@ -126,7 +126,7 @@ struct TitleRow: View {
                 ScrollView(.horizontal) {
                     LazyHStack(spacing: 10) {
                         ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
-                            PosterLink(ref: item.ref, rank: ranked ? i + 1 : nil, caption: item.latestEpisode?.label)
+                            PosterLink(ref: item.ref, rank: ranked ? i + 1 : nil, caption: item.caption)
                         }
                     }
                     .padding(.horizontal, 16)
@@ -194,7 +194,7 @@ private struct LocalRow: View {
                 ScrollView(.horizontal) {
                     LazyHStack(spacing: 10) {
                         ForEach(entries) { entry in
-                            PosterLink(ref: entry.ref)
+                            PosterLink(ref: entry.ref, caption: entry.caption)
                         }
                     }
                     .padding(.horizontal, 16)
@@ -232,7 +232,7 @@ private struct TitlesGridPage: View {
 
     var body: some View {
         ScrollView {
-            PosterGrid(refs: items.map(\.ref)).padding(.vertical, 8)
+            PosterGrid(refs: items.map(\.ref), captions: items.captions).padding(.vertical, 8)
         }
         .background(Color.appBackground)
         .navigationTitle(title)
@@ -246,7 +246,7 @@ struct LocalListPage: View {
 
     var body: some View {
         ScrollView {
-            PosterGrid(refs: model.store.entries(list).map(\.ref)).padding(.vertical, 8)
+            PosterGrid(refs: model.store.entries(list).map(\.ref), captions: model.store.entries(list).captions).padding(.vertical, 8)
         }
         .background(Color.appBackground)
         .navigationTitle(list == .history ? "Reprendre" : list.title)

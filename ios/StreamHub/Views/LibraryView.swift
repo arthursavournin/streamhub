@@ -19,7 +19,7 @@ struct LibraryView: View {
                         EmptyMessage(title: emptyTitle, systemImage: emptyIcon, message: emptyMessage)
                             .padding(.top, 60)
                     } else {
-                        PosterGrid(refs: entries.map(\.ref))
+                        PosterGrid(refs: entries.map(\.ref), captions: entries.captions)
                     }
                 }
                 .padding(.vertical, 8)

@@ -87,7 +87,7 @@ struct CatalogView: View {
                 } else {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 12)], spacing: 16) {
                         ForEach(items) { item in
-                            PosterLink(ref: item.ref, width: nil, caption: item.latestEpisode?.label)
+                            PosterLink(ref: item.ref, width: nil, caption: item.caption)
                                 .onAppear { if item.id == items.last?.id { Task { await loadMore() } } }
                         }
                     }

@@ -34,7 +34,7 @@ struct SearchView: View {
                             EmptyMessage(title: "Aucun résultat", systemImage: "magnifyingglass", message: "Essaie un autre titre.")
                                 .padding(.top, 60)
                         } else {
-                            PosterGrid(refs: results.map(\.ref))
+                            PosterGrid(refs: results.map(\.ref), captions: results.captions)
                         }
                     }
                     .padding(.vertical, 8)

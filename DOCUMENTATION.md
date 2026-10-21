@@ -71,7 +71,7 @@ les autres.
 
 ### La fiche d'un titre
 
-Un clic sur une affiche ouvre sa fiche : résumé, année, durée ou nombre de saisons, genres, bande-annonce, et les
+Un clic sur une affiche ouvre sa fiche : résumé, date de sortie (film) ou années de diffusion (série), durée ou nombre de saisons, genres, bande-annonce, et les
 boutons **« Regarder sur… »**, rangés en trois groupes :
 
 - **Dans tes abonnements** : les plateformes que tu as cochées dans les réglages.

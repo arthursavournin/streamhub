@@ -128,7 +128,7 @@ struct DetailView: View {
             parts = [!start.isEmpty && !end.isEmpty && end != start ? "\(start) – \(end)" : start, seasons, episodes, genres]
         } else {
             let runtime = d.runtime.flatMap { $0 > 0 ? "\($0 / 60) h \(String(format: "%02d", $0 % 60))" : nil } ?? ""
-            parts = [year(d.releaseDate), runtime, genres]
+            parts = [releaseDateLabel(d.releaseDate, long: true), runtime, genres]
         }
         if let vote = d.voteAverage, (d.voteCount ?? 0) > 0 { parts.append("★ \(String(format: "%.1f", vote))") }
         return parts.filter { !$0.isEmpty }.joined(separator: " · ")

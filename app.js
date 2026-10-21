@@ -10,7 +10,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.9.0';
+const APP_VERSION = '1.9.1';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -81,6 +81,13 @@ const year = (date) => (date ? date.slice(0, 4) : '');
 const titleOf = (item) => item.title ?? item.name ?? '';
 const originalTitleOf = (item) => item.original_title ?? item.original_name ?? '';
 const dateOf = (item) => item.release_date ?? item.first_air_date ?? '';
+// Date de sortie d'un film : « 9 oct. 2026 » (affiches), « 1er octobre 2026 » (fiche) ; année seule si le jour manque
+function releaseDate(date, long = false) {
+  if (!/^\d{4}-\d{2}-\d{2}/.test(date ?? '')) return year(date);
+  const d = new Date(`${date.slice(0, 10)}T12:00:00`);
+  const text = d.toLocaleDateString('fr-FR', { day: 'numeric', month: long ? 'long' : 'short', year: 'numeric' });
+  return d.getDate() === 1 ? text.replace(/^1 /, '1er ') : text;
+}
 // Les plateformes ne permettent de télécharger que dans leurs applis pour téléphone et tablette
 // (iPhone, iPad, Android) : ni sur ordinateur, ni sur TV.
 const CAN_DOWNLOAD = (() => {
@@ -419,7 +426,7 @@ function buildCard(m, { meta, href, target, typeTag = state.type === 'all', rank
       <div class="card-providers"></div>
     </div>
     <span class="card-title">${esc(title)}</span>
-    <span class="card-meta">${meta ?? esc([year(date), rating].filter(Boolean).join(' · '))}</span>`;
+    <span class="card-meta">${meta ?? esc([type === 'movie' ? releaseDate(date) : year(date), rating].filter(Boolean).join(' · '))}</span>`;
   card.setAttribute('aria-label', `${title}${date ? `, ${year(date)}` : ''}`);
   return card;
 }
@@ -482,7 +489,7 @@ function ago(timestamp) {
 function libraryMeta(entry, name) {
   if (name === 'likes') {
     const on = library.likedOn(entry.type, entry.id).map((p) => `✓ ${shortPlatformName(p.platform)}`);
-    return esc([year(entry.date), entry.type === 'tv' ? 'Série' : 'Film', ...on].filter(Boolean).join(' · '));
+    return esc([entry.type === 'movie' ? releaseDate(entry.date) : year(entry.date), entry.type === 'tv' ? 'Série' : 'Film', ...on].filter(Boolean).join(' · '));
   }
   const parts = [episodeLabel(entry), shortPlatformName(entry.platform), name === 'history' ? ago(entry.at) : ''].filter(Boolean);
   return `${name === 'downloads' ? '⬇ ' : ''}${esc(parts.join(' · '))}`;
@@ -1260,7 +1267,7 @@ function metaLine(item, type) {
     ].filter(Boolean);
   }
   const runtime = item.runtime ? `${Math.floor(item.runtime / 60)} h ${String(item.runtime % 60).padStart(2, '0')}` : '';
-  return [year(item.release_date), runtime, genres].filter(Boolean);
+  return [releaseDate(item.release_date, true), runtime, genres].filter(Boolean);
 }
 
 // Une saison affichée : { number, name, count, airDate, poster, origSeason, episodes? }

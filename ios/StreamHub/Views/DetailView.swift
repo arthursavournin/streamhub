@@ -157,6 +157,15 @@ struct DetailView: View {
                 }
                 .buttonStyle(.glass)
                 .tint(liked ? .pink : nil)
+                // Ce titre en grand en haut de l'accueil (un second appui revient au n° 1 du Top 50)
+                let onHero = model.store.homeHero.map { $0.type == full.type && $0.id == full.id } ?? false
+                Button {
+                    model.store.setHome(rows: model.store.homeLayout, hero: onHero ? nil : full)
+                } label: {
+                    Label("À l’affiche", systemImage: onHero ? "star.fill" : "star")
+                }
+                .buttonStyle(.glass)
+                .tint(onHero ? .yellow : nil)
                 if let trailer = d.trailer {
                     Button {
                         model.openWeb("https://www.youtube.com/watch?v=\(trailer.key)")

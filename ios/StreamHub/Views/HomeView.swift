@@ -3,13 +3,17 @@ import SwiftUI
 struct HomeView: View {
     @Environment(AppModel.self) private var model
     @State private var top: [TMDBTitle] = []
+    @State private var hero: TMDBTitle?
     @State private var error: String?
+
+    // Rangées choisies dans Réglages → Accueil, dans l'ordre choisi
+    private var rows: [HomeRow] { model.store.homeLayout.filter(\.on).compactMap { HomeRow.named($0.key) } }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 26) {
-                    if let hero = top.first {
+                    if let hero = hero ?? top.first {
                         HeroView(title: hero)
                     } else if let error {
                         EmptyMessage(title: "Impossible de charger l’accueil", systemImage: "wifi.exclamationmark", message: error)
@@ -17,13 +21,13 @@ struct HomeView: View {
                     } else {
                         Color.appSurface.frame(height: 460).overlay(ProgressView())
                     }
-                    ForEach(HomeRow.home) { row in
+                    ForEach(rows) { row in
                         switch row.kind {
                         case .local(let list):
                             LocalRow(title: row.title, list: list)
                         case .catalog:
                             if row.ranked {
-                                TitleRow(title: row.title, items: top, ranked: true)
+                                TitleRow(title: row.title, items: top, ranked: true, seeAllTop: true)
                             } else {
                                 CatalogRow(row: row)
                             }
@@ -35,17 +39,25 @@ struct HomeView: View {
             .ignoresSafeArea(edges: .top)
             .background(Color.appBackground)
             .titleDestinations()
+            .navigationDestination(for: CatalogPreset.self) { CatalogView(preset: $0) }
+            .navigationDestination(for: LibraryList.self) { LocalListPage(list: $0) }
             .refreshable { await loadTop() }
-            .task(id: model.catalogKey) { await loadTop() }
+            .task(id: "\(model.catalogKey)|\(model.store.homeHero?.id ?? 0)") { await loadTop() }
         }
     }
 
+    // Top 50 (rangée et affiche), et titre choisi pour l'affiche (Réglages → Accueil ou « À l'affiche » dans sa fiche)
     private func loadTop() async {
+        if let chosen = model.store.homeHero {
+            hero = try? await model.tmdb.title(chosen.type, chosen.id)
+        } else {
+            hero = nil
+        }
         do {
             top = try await model.fetch(HomeRow.home[0])
             error = nil
         } catch {
-            if top.isEmpty { self.error = error.localizedDescription }
+            if top.isEmpty, hero == nil { self.error = error.localizedDescription }
         }
     }
 }
@@ -57,6 +69,7 @@ private struct HeroView: View {
 
     var body: some View {
         let ref = title.ref
+        let chosen = model.store.homeHero?.id == title.id
         ZStack(alignment: .bottom) {
             Color.appSurface
                 .frame(height: 520)
@@ -68,7 +81,7 @@ private struct HeroView: View {
                     .font(.largeTitle.weight(.heavy))
                     .multilineTextAlignment(.center)
                     .shadow(radius: 8)
-                Text(title.type == .tv ? "Série · n° 1 du moment" : "Film · n° 1 du moment")
+                Text(title.type == .tv ? (chosen ? "Série · à l’affiche" : "Série · n° 1 du moment") : (chosen ? "Film · à l’affiche" : "Film · n° 1 du moment"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 HStack(spacing: 12) {
@@ -97,11 +110,19 @@ struct TitleRow: View {
     let title: String
     let items: [TMDBTitle]
     var ranked = false
+    var seeAll: CatalogPreset?
+    var seeAllTop = false // « Tout voir » du Top 50 : les titres de la rangée en grille
 
     var body: some View {
         if !items.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                SectionTitle(text: title)
+                RowHeader(title: title) {
+                    if let seeAll {
+                        NavigationLink(value: seeAll) { SeeAllLabel() }
+                    } else if seeAllTop {
+                        NavigationLink { TitlesGridPage(title: title, items: items) } label: { SeeAllLabel() }
+                    }
+                }
                 ScrollView(.horizontal) {
                     LazyHStack(spacing: 10) {
                         ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
@@ -129,7 +150,7 @@ private struct CatalogRow: View {
             if loadedKey == nil {
                 PlaceholderRow(title: row.title)
             } else {
-                TitleRow(title: row.title, items: items)
+                TitleRow(title: row.title, items: items, seeAll: row.preset)
             }
         }
         .task(id: model.catalogKey) {
@@ -169,7 +190,7 @@ private struct LocalRow: View {
         let entries = model.store.entries(list)
         if !entries.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                SectionTitle(text: title)
+                RowHeader(title: title) { NavigationLink(value: list) { SeeAllLabel() } }
                 ScrollView(.horizontal) {
                     LazyHStack(spacing: 10) {
                         ForEach(entries) { entry in
@@ -181,5 +202,53 @@ private struct LocalRow: View {
                 .scrollIndicators(.hidden)
             }
         }
+    }
+}
+
+// Titre d'une rangée, avec « Tout voir › » à droite
+private struct RowHeader<Trailing: View>: View {
+    let title: String
+    @ViewBuilder let trailing: Trailing
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            SectionTitle(text: title)
+            Spacer()
+            trailing.padding(.trailing, 16)
+        }
+    }
+}
+
+private struct SeeAllLabel: View {
+    var body: some View {
+        Text("Tout voir ›").font(.subheadline.weight(.semibold)).foregroundStyle(Color.accentColor)
+    }
+}
+
+// « Tout voir » du Top 50 : les titres de la rangée en grille, dans l'ordre du classement
+private struct TitlesGridPage: View {
+    let title: String
+    let items: [TMDBTitle]
+
+    var body: some View {
+        ScrollView {
+            PosterGrid(refs: items.map(\.ref)).padding(.vertical, 8)
+        }
+        .background(Color.appBackground)
+        .navigationTitle(title)
+    }
+}
+
+// « Tout voir » de Reprendre ou Ma liste
+struct LocalListPage: View {
+    @Environment(AppModel.self) private var model
+    let list: LibraryList
+
+    var body: some View {
+        ScrollView {
+            PosterGrid(refs: model.store.entries(list).map(\.ref)).padding(.vertical, 8)
+        }
+        .background(Color.appBackground)
+        .navigationTitle(list == .history ? "Reprendre" : list.title)
     }
 }

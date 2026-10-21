@@ -180,33 +180,45 @@ struct HomeRow: Identifiable {
         case local(LibraryList)
     }
 
+    let key: String // clé commune avec le site (réglage « Accueil » synchronisé)
     let title: String
     let kind: Kind
     var limit = 20
     var ranked = false
-    var id: String { title }
+    var id: String { key }
 
     static let both: [MediaType] = [.movie, .tv]
 
-    // Comme l'accueil du site (rowsFor('home'))
+    // Bibliothèque déjà réglée comme cette rangée (« Tout voir »)
+    var preset: CatalogPreset? {
+        guard case .catalog(let types, let sort, let genres, let extra, _) = kind, !ranked else { return nil }
+        return CatalogPreset(
+            title: title, type: types.count > 1 ? .all : (types[0] == .movie ? .movie : .tv), sort: sort,
+            genre: genres.isEmpty ? nil : CatalogGenre(name: title, movie: genres[.movie], tv: genres[.tv]), extra: extra
+        )
+    }
+
+    // Comme l'accueil du site (HOME_ROWS), dans l'ordre par défaut
     static let home: [HomeRow] = [
-        HomeRow(title: "Top 50 du moment", kind: .catalog(types: both, sort: .popularity, pages: 2), limit: 50, ranked: true),
-        HomeRow(title: "Reprendre", kind: .local(.history)),
-        HomeRow(title: "Ma liste", kind: .local(.watchlist)),
-        HomeRow(title: "Nouveautés", kind: .catalog(types: both, sort: .recent, pages: 2), limit: 30),
-        HomeRow(title: "Nouveaux épisodes", kind: .catalog(types: [.tv], sort: .recent, pages: 2), limit: 40),
-        HomeRow(title: "Nouveaux films", kind: .catalog(types: [.movie], sort: .recent)),
-        HomeRow(title: "Les mieux notés", kind: .catalog(types: both, sort: .rating)),
-        HomeRow(title: "Action & aventure", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 28, .tv: 10759])),
-        HomeRow(title: "Comédie", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 35, .tv: 35])),
-        HomeRow(title: "Horreur", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 27])),
-        HomeRow(title: "Science-fiction & fantastique", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 878, .tv: 10765])),
-        HomeRow(title: "Thriller & policier", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 53, .tv: 80])),
-        HomeRow(title: "Drame", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 18, .tv: 18])),
-        HomeRow(title: "Animation", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 16, .tv: 16])),
-        HomeRow(title: "Animés japonais", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 16, .tv: 16], extra: ["with_origin_country": "JP"])),
-        HomeRow(title: "Romance", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 10749])),
-        HomeRow(title: "Famille", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 10751, .tv: 10751])),
-        HomeRow(title: "Documentaires", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 99, .tv: 99])),
+        HomeRow(key: "top", title: "Top 50 du moment", kind: .catalog(types: both, sort: .popularity, pages: 2), limit: 50, ranked: true),
+        HomeRow(key: "history", title: "Reprendre", kind: .local(.history)),
+        HomeRow(key: "watchlist", title: "Ma liste", kind: .local(.watchlist)),
+        HomeRow(key: "recent", title: "Nouveautés", kind: .catalog(types: both, sort: .recent, pages: 2), limit: 30),
+        HomeRow(key: "new-episodes", title: "Nouveaux épisodes", kind: .catalog(types: [.tv], sort: .recent, pages: 2), limit: 40),
+        HomeRow(key: "new-movies", title: "Nouveaux films", kind: .catalog(types: [.movie], sort: .recent)),
+        HomeRow(key: "rating", title: "Les mieux notés", kind: .catalog(types: both, sort: .rating)),
+        HomeRow(key: "action", title: "Action & aventure", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 28, .tv: 10759])),
+        HomeRow(key: "comedy", title: "Comédie", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 35, .tv: 35])),
+        HomeRow(key: "horror", title: "Horreur", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 27])),
+        HomeRow(key: "scifi", title: "Science-fiction & fantastique", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 878, .tv: 10765])),
+        HomeRow(key: "thriller", title: "Thriller & policier", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 53, .tv: 80])),
+        HomeRow(key: "drama", title: "Drame", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 18, .tv: 18])),
+        HomeRow(key: "animation", title: "Animation", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 16, .tv: 16])),
+        HomeRow(key: "anime", title: "Animés japonais", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 16, .tv: 16], extra: ["with_origin_country": "JP"])),
+        HomeRow(key: "romance", title: "Romance", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 10749])),
+        HomeRow(key: "family", title: "Famille", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 10751, .tv: 10751])),
+        HomeRow(key: "documentary", title: "Documentaires", kind: .catalog(types: both, sort: .popularity, genres: [.movie: 99, .tv: 99])),
     ]
+
+    static func named(_ key: String) -> HomeRow? { home.first { $0.key == key } }
 }

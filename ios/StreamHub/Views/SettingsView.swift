@@ -7,6 +7,14 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 SyncSection()
+                Section("Accueil") {
+                    NavigationLink {
+                        HomeSettingsView()
+                    } label: {
+                        let shown = model.store.homeLayout.filter(\.on).count
+                        LabeledContent("Rangées et affiche", value: "\(shown) rangées")
+                    }
+                }
                 Section("Mes abonnements") {
                     NavigationLink {
                         ProvidersView()
@@ -270,5 +278,40 @@ struct WelcomeView: View {
             message = error.localizedDescription
         }
         busy = false
+    }
+}
+
+// Réglages → Accueil : titre à l'affiche et rangées (affichées ou non, dans l'ordre voulu), synchronisés avec le site
+struct HomeSettingsView: View {
+    @Environment(AppModel.self) private var model
+    @State private var rows: [HomeChoice] = []
+
+    var body: some View {
+        List {
+            Section {
+                LabeledContent("À l’affiche", value: model.store.homeHero.map { "« \($0.title) »" } ?? "Automatique")
+                if model.store.homeHero != nil {
+                    Button("Revenir au n° 1 du Top 50") { model.store.setHome(rows: rows, hero: nil) }
+                }
+            } footer: {
+                Text("Pour choisir un titre, ouvre sa fiche et appuie sur « À l’affiche ». Automatique : le n° 1 du Top 50 du moment.")
+            }
+            Section {
+                ForEach($rows) { $row in
+                    Toggle(HomeRow.named(row.key)?.title ?? row.key, isOn: $row.on)
+                }
+                .onMove { rows.move(fromOffsets: $0, toOffset: $1) }
+            } header: {
+                Text("Rangées")
+            } footer: {
+                Text("Coche les rangées à afficher et fais-les glisser pour changer leur ordre.")
+            }
+        }
+        .environment(\.editMode, .constant(.active))
+        .scrollContentBackground(.hidden)
+        .background(Color.appBackground)
+        .navigationTitle("Accueil")
+        .onAppear { rows = model.store.homeLayout }
+        .onChange(of: rows) { _, value in model.store.setHome(rows: value, hero: model.store.homeHero) }
     }
 }

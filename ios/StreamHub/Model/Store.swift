@@ -12,6 +12,13 @@ nonisolated struct Provider: Codable, Hashable, Identifiable, Sendable {
     var logo: String?
 }
 
+// Une rangée de l'accueil : affichée ou non (Réglages → Accueil)
+nonisolated struct HomeChoice: Codable, Hashable, Identifiable, Sendable {
+    let key: String
+    var on: Bool
+    var id: String { key }
+}
+
 // Les listes de la bibliothèque synchronisées avec le site
 enum LibraryList: String, CaseIterable, Identifiable {
     case watchlist, likes, history
@@ -135,6 +142,23 @@ final class AppStore {
 
     func setSetting(_ key: String, _ value: JSON) {
         updateSettings { $0[key] = value }
+    }
+
+    // ---------- Accueil (réglage synchronisé, même forme que le site) ----------
+    // home = { rows: [{ key, on }], hero: { type, id, title, poster } | null }
+
+    // Rangées dans l'ordre choisi ; les rangées absentes de l'enregistrement (ajoutées depuis) à la fin, affichées
+    var homeLayout: [HomeChoice] {
+        let known = HomeRow.home.map(\.key)
+        let saved = (settings["home"]?["rows"]?.decode([HomeChoice].self) ?? []).filter { known.contains($0.key) }
+        let seen = Set(saved.map(\.key))
+        return saved + known.filter { !seen.contains($0) }.map { HomeChoice(key: $0, on: true) }
+    }
+
+    var homeHero: TitleRef? { settings["home"]?["hero"]?.decode(TitleRef.self) }
+
+    func setHome(rows: [HomeChoice], hero: TitleRef?) {
+        updateSettings { $0["home"] = .object(["rows": JSON.from(rows), "hero": hero.map(JSON.from) ?? .null]) }
     }
 
     func setProviders(_ list: [Provider]) {

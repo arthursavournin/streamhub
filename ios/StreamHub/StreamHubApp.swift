@@ -34,13 +34,20 @@ struct RootView: View {
         @Bindable var model = model
         Group {
             if model.isConfigured {
-                // Demande de l'utilisateur : barre entière Recherche, Accueil, Ma liste, Réglages, et barre réduite au
+                // Demande de l'utilisateur : barre entière Recherche, Accueil, Bibliothèque, Ma liste, Réglages, et barre réduite au
                 // défilement avec la loupe à gauche et l'onglet en cours à droite. iOS place toujours l'onglet de
                 // recherche à droite : la barre est donc affichée de droite à gauche (onglets écrits dans l'ordre inverse),
                 // et chaque écran remis de gauche à droite.
                 TabView(selection: $tab) {
                     Tab("Réglages", systemImage: "gearshape.fill", value: 3) { SettingsView().leftToRight() }
                     Tab("Ma liste", systemImage: "bookmark.fill", value: 2) { LibraryView().leftToRight() }
+                    Tab("Bibliothèque", systemImage: "square.grid.2x2.fill", value: 4) {
+                        NavigationStack {
+                            CatalogView(preset: CatalogPreset())
+                                .titleDestinations()
+                        }
+                        .leftToRight()
+                    }
                     Tab("Accueil", systemImage: "house.fill", value: 1) { HomeView().leftToRight() }
                     Tab(value: 0, role: .search) { SearchView().leftToRight() }
                 }

@@ -1,7 +1,7 @@
 import { loadSettings, saveSettings, relayUrl, HISTORY_MAX } from './store.js';
 import { makeApi, img, testTmdbKey, testSaKey, testRelay } from './api.js';
 import { syncNow, syncState, createCode, joinCode, leave, startAutoSync } from './sync.js';
-import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, providerLogo, CANAL_CHANNELS, CANAL_CINE_SERIES, withVirtualChannels, withSaOffers } from './providers.js';
+import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, providerLogo, CANAL_CHANNELS, CANAL_CINE_SERIES, withVirtualChannels, withSaOffers, originalNetworks } from './providers.js';
 import { INDEXED_PLATFORMS, platformEpisodeUrl, canalChannelPath } from './episodes.js';
 import { aliasMatches } from './aliases.js';
 import { loadTitles, suggest, splitNumber, arrangeSagas } from './search.js';
@@ -9,7 +9,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.8.0';
+const APP_VERSION = '1.8.1';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -780,19 +780,33 @@ async function fetchRow(row) {
     );
     const seen = new Set();
     items = lists.flat().filter((m) => !seen.has(`${m.media_type}:${m.id}`) && seen.add(`${m.media_type}:${m.id}`));
+    const unlisted = (await fetchUnlisted(row, types)).filter((m) => !seen.has(`tv:${m.id}`));
+    items.push(...unlisted);
     // Séries récentes : leur dernier épisode (pour les classer parmi les films, et affiché sur l'affiche à la place de
     // l'année de création)
     if (row.sort === 'recent') {
       const latest = await Promise.all(items.map((m) => (m.media_type === 'tv' ? api.title('tv', m.id).catch(() => null) : null)));
       items = items.map((m, i) => (latest[i]?.last_episode_to_air ? { ...m, latest_episode: latest[i].last_episode_to_air } : m));
     }
-    if (types.length > 1) items.sort((a, b) => SORT_KEYS[row.sort](b) - SORT_KEYS[row.sort](a));
+    if (types.length > 1 || unlisted.length) items.sort((a, b) => SORT_KEYS[row.sort ?? 'popularity'](b) - SORT_KEYS[row.sort ?? 'popularity'](a));
   }
   if (row.filter !== 'all') {
     const offers = await Promise.all(items.map((m) => api.offers(m.media_type, m.id).catch(() => null)));
     items = items.filter((m, i) => matchesFilter(offers[i], row.filter));
   }
   return row.limit ? items.slice(0, row.limit) : items;
+}
+
+// Séries de la rangée que JustWatch n'a pas encore dans le pays : créations de tes plateformes (VisionQuest sur Disney+)
+// absentes de la recherche TMDB par plateforme, qui ne connaît que les offres JustWatch. Même recherche que la rangée,
+// par diffuseur ; on ne garde que celles que withOriginals ajoute à une de tes plateformes.
+async function fetchUnlisted(row, types) {
+  const networks = originalNetworks(activeProviderIds(row.filter));
+  if (!types.includes('tv') || !networks.length) return [];
+  const res = await api.discover('tv', { page: 1, genre: row.genres?.tv ?? row.genre?.id, sort: row.sort, networks, extra: row.extra }).catch(() => null);
+  const found = (res?.results ?? []).map((m) => ({ ...m, media_type: 'tv' }));
+  const offers = await Promise.all(found.map((m) => api.offers('tv', m.id).catch(() => null)));
+  return found.filter((m, i) => streamable(offers[i]).some((p) => p.unlisted) && matchesFilter(offers[i], row.filter));
 }
 
 // « S1 E31 · 16 oct. » : dernier épisode d'une série récente

@@ -143,6 +143,13 @@ nonisolated enum Platforms {
     // dans le pays.
     static let originals: [Int: String] = [213: "netflix", 2739: "disney", 1024: "prime", 2552: "apple", 3186: "hbo", 49: "hbo", 4330: "paramount"]
 
+    // Diffuseurs TMDB des créations des plateformes choisies (identifiants TMDB des plateformes), pour chercher les séries
+    // que JustWatch n'a pas encore dans le pays (rangées de l'accueil)
+    static func originalNetworks(_ providerIDs: [Int]) -> [Int] {
+        let services = Set(tmdbProviders.filter { providerIDs.contains($0.value.providerId) }.map(\.key))
+        return originals.filter { services.contains($0.value) }.map(\.key).sorted()
+    }
+
     // Série en cours de diffusion (ou sortie il y a moins de 60 jours), création d'une plateforme présente dans le pays
     // (available), sans aucune offre d'abonnement ou gratuite dans le pays : la plateforme est ajoutée (unlisted "network")
     static func withOriginals(_ offers: Offers?, networks: [Int], dates: [String], airing: Bool, available: Set<Int>) -> Offers? {

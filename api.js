@@ -112,7 +112,13 @@ export function makeApi(settings) {
     },
 
     // extra : paramètres TMDB supplémentaires (ex. { with_origin_country: 'JP' })
-    discover(type, { page, genre, sort, providers, extra = {} }) {
+    // networks : séries de ces diffuseurs (créations des plateformes) diffusées ces 60 derniers jours, sans filtre de
+    // plateforme (pour celles que JustWatch n'a pas encore dans le pays, voir withOriginals)
+    discover(type, { page, genre, sort, providers, networks, extra = {} }) {
+      if (type === 'tv' && networks?.length) {
+        const recentFrom = new Date(Date.now() - (sort === 'recent' ? 7 : 60) * 864e5).toISOString().slice(0, 10);
+        return this.discover('tv', { page, genre, sort, providers: [], extra: { with_networks: networks.join('|'), 'air_date.gte': recentFrom, ...extra } });
+      }
       const today = new Date().toISOString().slice(0, 10);
       // Séries les plus récentes : celles qui ont eu un épisode ces 7 derniers jours (nouvelle saison ou épisode de la
       // semaine), les plus populaires d'abord, sans talk-shows, infos, feuilletons quotidiens ni téléréalité. La date de

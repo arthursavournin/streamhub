@@ -146,6 +146,13 @@ const TMDB_PROVIDERS = {
 const ORIGINALS = { 213: 'netflix', 2739: 'disney', 1024: 'prime', 2552: 'apple', 3186: 'hbo', 49: 'hbo', 4330: 'paramount' };
 const RECENT_MS = 60 * 24 * 3600 * 1000;
 
+// Diffuseurs TMDB des créations des plateformes choisies (identifiants TMDB des plateformes), pour chercher les
+// séries que JustWatch n'a pas encore dans le pays (rangées de l'accueil)
+export function originalNetworks(providerIds) {
+  const services = new Set(Object.entries(TMDB_PROVIDERS).filter(([, p]) => providerIds.includes(p.provider_id)).map(([s]) => s));
+  return Object.entries(ORIGINALS).filter(([, s]) => services.has(s)).map(([n]) => Number(n));
+}
+
 // Série en cours de diffusion (ou sortie il y a moins de 60 jours), création d'une plateforme présente dans le
 // pays (available : identifiants des plateformes du pays), sans aucune offre d'abonnement ou gratuite dans le
 // pays : la plateforme est ajoutée (unlisted: 'network'). offers : offres TMDB du pays (ou null).

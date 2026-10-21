@@ -90,8 +90,8 @@ la liste, avec la mention « Pas encore référencée dans ce pays par JustWatch
 
 - **d'après son diffuseur** : une série en cours de diffusion (ou sortie depuis moins de 60 jours), création de
   Netflix, Disney+, Prime Video, Apple TV, HBO Max ou Paramount+, est ajoutée sur sa plateforme si elle n'a encore
-  aucune offre dans ton pays. Ça marche sans clé, aussi pour les affiches et le filtre « Mes plateformes » de la
-  recherche.
+  aucune offre dans ton pays. Ça marche sans clé, aussi pour les affiches, le filtre « Mes plateformes » de la
+  recherche et les rangées de l'accueil qui la concernent (son genre, Nouveautés, Nouveaux épisodes…).
 - **d'après Streaming Availability** (avec ta clé) : les plateformes que Streaming Availability donne dans ton pays,
   mais pas JustWatch, sont ajoutées à l'ouverture de la fiche, avec leur lien direct.
 

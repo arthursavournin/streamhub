@@ -60,6 +60,8 @@ final class AppModel {
         }
         var seen = Set<String>()
         var items = lists.flatMap { $0 }.filter { seen.insert("\($0.type.rawValue):\($0.id)").inserted }
+        let unlisted = shown.contains(.tv) ? await fetchUnlisted(sort: sort, genre: genres[.tv], extra: extra, providers: providers) : []
+        items += unlisted.filter { seen.insert("tv:\($0.id)").inserted }
         // Séries récentes : leur dernier épisode (pour les classer parmi les films, et affiché sur l'affiche)
         if sort == .recent {
             let latest = await withTaskGroup(of: (Int, LatestEpisode?).self) { group in
@@ -70,8 +72,8 @@ final class AppModel {
             }
             items = items.map { var m = $0; if m.type == .tv { m.latestEpisode = latest[m.id] }; return m }
         }
-        if shown.count > 1 {
-            // Films et séries mélangés selon le tri choisi
+        if shown.count > 1 || !unlisted.isEmpty {
+            // Films et séries mélangés selon le tri choisi (et séries ajoutées par fetchUnlisted)
             let score: (TMDBTitle) -> Double = switch sort {
             case .popularity: { $0.popularity ?? 0 }
             case .rating: { $0.voteAverage ?? 0 }
@@ -80,6 +82,34 @@ final class AppModel {
             items.sort { score($0) > score($1) }
         }
         return Array(items.prefix(row.limit))
+    }
+
+    // Séries de la rangée que JustWatch n'a pas encore dans le pays : créations de tes plateformes (VisionQuest sur
+    // Disney+) absentes de la recherche TMDB par plateforme. Même recherche, par diffuseur (épisode ces 60 derniers
+    // jours, 7 pour les nouveautés) ; on ne garde que celles que withOriginals ajoute à une de tes plateformes (comme le site).
+    private func fetchUnlisted(sort: Sort, genre: Int?, extra: [String: String], providers: [Int]) async -> [TMDBTitle] {
+        let networks = Platforms.originalNetworks(providers)
+        guard !networks.isEmpty else { return [] }
+        let tmdb = tmdb
+        let region = store.region
+        let mine = store.providers
+        let since = String(ISO8601DateFormatter().string(from: Date().addingTimeInterval(-(sort == .recent ? 7 : 60) * 86400)).prefix(10))
+        var params = ["with_networks": networks.map(String.init).joined(separator: "|"), "air_date.gte": since]
+        for (k, v) in extra { params[k] = v }
+        guard let found = try? await tmdb.discover(.tv, genre: genre, sort: sort, providers: [], extra: params) else { return [] }
+        let kept = await withTaskGroup(of: (Int, Bool).self) { group in
+            for item in found {
+                group.addTask {
+                    let offers = (try? await tmdb.details(.tv, item.id))?.watchProviders?.results[region]
+                    let streamable = offers?.streamable ?? []
+                    return (item.id, streamable.contains { $0.unlisted != nil } && streamable.contains { Links.isMine($0, providers: mine) })
+                }
+            }
+            var ids = Set<Int>()
+            for await (id, keep) in group where keep { ids.insert(id) }
+            return ids
+        }
+        return found.filter { kept.contains($0.id) }
     }
 
     // ---------- Top du moment ----------

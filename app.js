@@ -10,7 +10,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.11.4';
+const APP_VERSION = '1.11.5';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -1579,7 +1579,13 @@ function fillEpisodeLinks(number) {
     const saEpisode = saSeasonOf(Number(epEl.dataset.origSeason))?.episodes.find((e) => e.number === Number(epEl.dataset.origEpisode));
     const options = streamOptions(saEpisode?.options ?? []).filter((o) => !unavailableOn(o.service, Number(epEl.dataset.origEpisode)));
     if (options.length) {
-      box.innerHTML = options.map((o) => playLink(o, undefined, { download: true })).join('');
+      // Tes plateformes qui ont la série mais pas de lien pour cet épisode (Streaming Availability ne connaît que les
+      // 15 premiers épisodes de Boruto sur Netflix, qui les a tous) : bouton vers la page de la série
+      const same = (a, b) => a.service === b.service && (a.addon ?? '') === (b.addon ?? '');
+      const missing = streamOptions(current.links?.options ?? []).filter((o) => isMineOption(o) && o.link && !options.some((x) => same(x, o)));
+      box.innerHTML =
+        options.map((o) => playLink(o, undefined, { download: true })).join('') +
+        missing.map((o) => playLink({ ...o, videoLink: o.link }, `${shortPlatformName(o.name)} · page de la série`)).join('');
     } else if (seasonOptions.length) {
       // Pas de lien pour cet épisode précis : on propose au moins la saison
       box.innerHTML = seasonOptions.map((o) => playLink(o, `La saison sur ${shortPlatformName(o.name)}`)).join('');

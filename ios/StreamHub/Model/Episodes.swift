@@ -118,11 +118,22 @@ enum EpisodeLinks {
         let saSeason = sa.first { $0.number == ep.seasonNumber }
         let episodeOptions = streamOptions(saSeason?.episodes[ep.episodeNumber] ?? [], providers: providers)
         if !episodeOptions.isEmpty {
-            return episodeOptions.compactMap { o in
+            var out = episodeOptions.compactMap { o in
                 entry(for: o, providers: providers).map { e in
                     EpisodeLink(label: o.addon.map { "\($0) (\(Platforms.shortName(e.name)))" } ?? Platforms.shortName(e.name), entry: e)
                 }
             }
+            // Tes plateformes qui ont la série mais pas de lien pour cet épisode (Streaming Availability ne connaît que
+            // les 15 premiers épisodes de Boruto sur Netflix, qui les a tous) : bouton vers la page de la série
+            let covered = Set(out.map { Platforms.hostService(for: $0.entry.name)?.id ?? $0.entry.name })
+            for e in entries where e.mine && !Platforms.isChannel(e.name) {
+                let key = Platforms.hostService(for: e.name)?.id ?? e.name
+                guard !covered.contains(key), let page = e.page else { continue }
+                var link = e
+                link.href = page
+                out.append(EpisodeLink(label: "\(Platforms.shortName(e.name)) · page de la série", entry: link))
+            }
+            return out
         }
         let seasonOptions = streamOptions(saSeason?.options ?? [], providers: providers)
         if !seasonOptions.isEmpty {

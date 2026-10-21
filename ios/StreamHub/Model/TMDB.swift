@@ -23,6 +23,9 @@ nonisolated struct TMDBTitle: Decodable, Identifiable, Hashable, Sendable {
     let firstAirDate: String?
     let voteAverage: Double?
     let popularity: Double?
+    let voteCount: Int?
+    let originalLanguage: String?
+    let genreIds: [Int]?
 
     var latestEpisode: LatestEpisode? // séries récentes : dernier épisode diffusé (rempli par l'appli)
 
@@ -79,7 +82,8 @@ nonisolated struct Offers: Codable, Sendable {
 
 nonisolated struct TitleDetails: Decodable, Sendable {
     struct Genre: Decodable, Sendable { let id: Int; let name: String }
-    struct Person: Decodable, Sendable { let name: String; let job: String? }
+    struct Person: Decodable, Sendable { let id: Int?; let name: String; let job: String? }
+    struct Company: Decodable, Sendable { let id: Int }
     struct Credits: Decodable, Sendable { let cast: [Person]?; let crew: [Person]? }
     struct Video: Decodable, Sendable { let key: String; let site: String; let type: String }
     struct Videos: Decodable, Sendable { let results: [Video] }
@@ -113,11 +117,16 @@ nonisolated struct TitleDetails: Decodable, Sendable {
     let lastEpisodeToAir: LatestEpisode?
     let nextEpisodeToAir: LatestEpisode?
     var watchProviders: WatchProviders?
+    // Pour les suggestions (voir Suggestions.swift)
+    let originalLanguage: String?
+    let belongsToCollection: TMDBClient.CollectionRef?
+    let productionCompanies: [Company]?
 
     enum CodingKeys: String, CodingKey {
         case id, title, name, originalTitle, originalName, overview, tagline, posterPath, backdropPath, releaseDate
         case firstAirDate, lastAirDate, inProduction, runtime, numberOfSeasons, numberOfEpisodes, voteAverage, voteCount
         case genres, createdBy, credits, videos, seasons, networks, lastEpisodeToAir, nextEpisodeToAir
+        case originalLanguage, belongsToCollection, productionCompanies
         case watchProviders = "watch/providers"
     }
 
@@ -375,6 +384,34 @@ struct TMDBClient {
         var collection: Collection = try await get("/collection/\(id)", ["language": language])
         collection.parts = await localized(collection.parts.map { var t = $0; t.mediaType = t.mediaType ?? "movie"; return t })
         return collection
+    }
+
+    // ---------- Suggestions de la fiche (voir Suggestions.swift) ----------
+
+    // Titres conseillés par TMDB (vus par les mêmes spectateurs)
+    func recommendations(_ type: MediaType, _ id: Int) async throws -> [TMDBTitle] {
+        let page: Page<TMDBTitle> = try await get("/\(type.rawValue)/\(id)/recommendations", ["language": language])
+        return await localized(page.results.map { var t = $0; t.mediaType = t.mediaType ?? type.rawValue; return t })
+    }
+
+    // Titres proches (genres, mots-clés)
+    func similar(_ type: MediaType, _ id: Int) async throws -> [TMDBTitle] {
+        let page: Page<TMDBTitle> = try await get("/\(type.rawValue)/\(id)/similar", ["language": language])
+        return await localized(page.results.map { var t = $0; t.mediaType = type.rawValue; return t })
+    }
+
+    // Sociétés de production, créateurs et mots-clés d'un titre (pour reconnaître une suite ou une série dérivée)
+    nonisolated struct Facts: Decodable, Sendable {
+        nonisolated struct Keyword: Decodable, Sendable { let name: String }
+        nonisolated struct Keywords: Decodable, Sendable { let keywords: [Keyword]?; let results: [Keyword]? }
+        let productionCompanies: [TitleDetails.Company]?
+        let createdBy: [TitleDetails.Person]?
+        let keywords: Keywords?
+        var keywordNames: [String] { (keywords?.keywords ?? keywords?.results ?? []).map(\.name) }
+    }
+
+    func facts(_ type: MediaType, _ id: Int) async throws -> Facts {
+        try await get("/\(type.rawValue)/\(id)", ["language": language, "append_to_response": "keywords"])
     }
 
     // Films et séries (pas les personnes)

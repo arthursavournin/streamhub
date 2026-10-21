@@ -27,7 +27,6 @@ struct SeasonsSection: View {
     var body: some View {
         if !seasons.isEmpty {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Épisodes").font(.title3.weight(.bold)).padding(.horizontal, 16)
                 ScrollViewReader { proxy in
                     ScrollView(.horizontal) {
                         HStack(spacing: 8) {

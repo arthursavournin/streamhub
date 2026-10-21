@@ -5,11 +5,12 @@ import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosL
 import { INDEXED_PLATFORMS, platformEpisodeUrl, canalChannelPath } from './episodes.js';
 import { aliasMatches } from './aliases.js';
 import { loadTitles, suggest, splitNumber, arrangeSagas } from './search.js';
+import { sagaTitles, universeTitles, genreTitles } from './suggestions.js';
 import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.8.2';
+const APP_VERSION = '1.9.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -1026,8 +1027,11 @@ async function openDetail(type, id, opener) {
   current = { key, type, id, entries: [], links: null, linksState: settings.saKey ? 'loading' : 'none' };
   el.detail.dataset.key = key;
   setDetailHtml('<div class="detail-loading">Chargement…</div>');
-  el.detail.returnFocus = opener;
-  el.detail.showModal();
+  // Depuis une suggestion, la fiche est déjà ouverte : le focus reviendra sur la carte qui l'avait ouverte
+  if (!el.detail.open) {
+    el.detail.returnFocus = opener;
+    el.detail.showModal();
+  }
   rehostBars();
   try {
     const item = await api.details(type, id);
@@ -1328,7 +1332,7 @@ function seasonsHtml() {
       </select>`
     : '';
   return `<section class="seasons" aria-label="Saisons">
-    <div class="seasons-head"><h3>Saisons</h3>${picker}</div>
+    ${picker ? `<div class="seasons-head">${picker}</div>` : ''}
     <ol class="season-list">
       ${seasons
         .map(
@@ -1640,13 +1644,92 @@ function renderDetail(item, type) {
       ${makers.length || cast.length ? `<dl class="credits">
         ${makers.length ? `<dt>${type === 'tv' ? 'Création' : 'Réalisation'}</dt><dd>${makers.map(esc).join(', ')}</dd>` : ''}
         ${cast.length ? `<dt>Avec</dt><dd>${cast.map(esc).join(', ')}</dd>` : ''}</dl>` : ''}
-      ${type === 'tv' ? seasonsHtml() : ''}
+      ${detailTabsHtml(type)}
     </div>`);
+  if (!$('#panel-suggestions', el.detail).hidden) loadSuggestions();
   refreshLikeButton();
   refreshHeroPick();
   refreshDownloadButtons();
   $('.watch', el.detail)?.focus({ preventScroll: true });
   if (!$('.watch', el.detail)) el.detail.focus({ preventScroll: true });
+}
+
+// Onglets sous la description : « Épisodes » (séries, ouvert d'abord) et « Suggestions » (seul onglet d'un film).
+// Les suggestions d'une série sont cherchées à la première ouverture de leur onglet.
+function detailTabsHtml(type) {
+  const episodes = type === 'tv' && current?.seasons?.length > 0;
+  const tabs = [episodes && ['episodes', 'Épisodes'], ['suggestions', 'Suggestions']].filter(Boolean);
+  return `<div class="detail-tabs" role="tablist" aria-label="Plus sur ce titre">
+      ${tabs.map(([key, label], i) => `<button type="button" role="tab" id="tab-${key}" aria-controls="panel-${key}" aria-selected="${i === 0}" data-detail-tab="${key}">${label}</button>`).join('')}
+    </div>
+    ${type === 'tv' ? `<div class="tab-panel" role="tabpanel" id="panel-episodes" aria-labelledby="tab-episodes" ${episodes ? '' : 'hidden'}>${seasonsHtml()}</div>` : ''}
+    <div class="tab-panel" role="tabpanel" id="panel-suggestions" aria-labelledby="tab-suggestions" ${episodes ? 'hidden' : ''}></div>`;
+}
+
+function selectDetailTab(key) {
+  for (const tab of el.detail.querySelectorAll('[data-detail-tab]')) {
+    const on = tab.dataset.detailTab === key;
+    tab.setAttribute('aria-selected', on);
+    $(`#panel-${tab.dataset.detailTab}`, el.detail).hidden = !on;
+  }
+  if (key === 'suggestions') loadSuggestions();
+}
+
+// Rangées de l'onglet Suggestions : la saga, le même univers, puis le même genre (voir suggestions.js). Cherchées en même
+// temps, affichées dans cet ordre dès qu'elles arrivent, sans doublons.
+async function loadSuggestions() {
+  const panel = $('#panel-suggestions', el.detail);
+  if (!panel || panel.dataset.loaded) return;
+  panel.dataset.loaded = 'true';
+  panel.innerHTML = '<p class="muted suggest-status">Recherche des suggestions…</p>';
+  const { key, item, type } = current;
+  const saga = sagaTitles(api, item).catch(() => ({ items: [] }));
+  const universe = saga.then((s) => universeTitles(api, item, type, new Set(s.items.map((m) => `movie:${m.id}`)))).catch(() => []);
+  const genre = genreTitles(api, item, type).then(availableFirst).catch(() => []);
+  const shown = new Set([key]);
+  const add = (title, items) => {
+    if (current?.key !== key) return;
+    const fresh = items.filter((m) => !shown.has(`${m.media_type}:${m.id}`));
+    if (!fresh.length) return;
+    fresh.forEach((m) => shown.add(`${m.media_type}:${m.id}`));
+    $('.suggest-status', panel)?.before(suggestionRow(title, fresh));
+  };
+  const s = await saga;
+  add(s.name ? `La saga ${s.name}` : 'La saga', s.items);
+  add('Dans le même univers', await universe);
+  add('Dans le même genre', (await genre).slice(0, 20));
+  if (current?.key !== key) return;
+  const status = $('.suggest-status', panel);
+  if (panel.querySelector('.row')) status?.remove();
+  else if (status) status.textContent = 'Pas de suggestion pour ce titre.';
+}
+
+// Titres du même genre : ceux de tes abonnements d'abord (mêmes offres que les rangées et les affiches)
+async function availableFirst(items) {
+  const filter = defaultFilter();
+  if (filter === 'all') return items;
+  const offers = await Promise.all(items.map((m) => api.offers(m.media_type, m.id).catch(() => null)));
+  const mine = items.filter((m, i) => matchesFilter(offers[i], filter));
+  return [...mine, ...items.filter((m) => !mine.includes(m))];
+}
+
+function suggestionRow(title, items) {
+  const section = document.createElement('section');
+  section.className = 'row suggest-row';
+  section.innerHTML = `
+    <div class="row-head"><h3>${esc(title)}</h3></div>
+    <div class="row-body">
+      <button type="button" class="row-arrow prev" data-row-scroll="-1" tabindex="-1" aria-label="Défiler vers la gauche">‹</button>
+      <div class="row-track"></div>
+      <button type="button" class="row-arrow next" data-row-scroll="1" tabindex="-1" aria-label="Défiler vers la droite">›</button>
+    </div>`;
+  const track = $('.row-track', section);
+  for (const m of items) {
+    const card = buildCard(m, { typeTag: true });
+    track.append(card);
+    logoObserver.observe(card);
+  }
+  return section;
 }
 
 // ---------- Lancement sur une plateforme ----------
@@ -2579,6 +2662,8 @@ document.addEventListener('click', (e) => {
     return;
   }
 
+  const detailTab = target.closest('[data-detail-tab]');
+  if (detailTab) return selectDetailTab(detailTab.dataset.detailTab);
   const seasonBtn = target.closest('[data-season-toggle]');
   if (seasonBtn) return toggleSeason(seasonBtn);
   const moreEpisodes = target.closest('[data-more-episodes]');

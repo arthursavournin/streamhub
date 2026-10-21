@@ -125,6 +125,22 @@ export function makeApi(settings) {
       return { ...data, parts: await Promise.all((data.parts ?? []).map((m) => localized(m, 'movie'))) };
     },
 
+    // Suggestions de la fiche (voir suggestions.js) : titres conseillés par TMDB (vus par les mêmes spectateurs), titres
+    // proches (genres, mots-clés), et fiche avec ses mots-clés pour reconnaître une suite ou une série dérivée
+    async recommendations(type, id) {
+      const res = await tmdb(`/${type}/${id}/recommendations`, { language });
+      return localizedList({ ...res, results: res.results.map((m) => ({ ...m, media_type: m.media_type ?? type })) });
+    },
+
+    async similar(type, id) {
+      const res = await tmdb(`/${type}/${id}/similar`, { language });
+      return localizedList({ ...res, results: res.results.map((m) => ({ ...m, media_type: type })) });
+    },
+
+    withKeywords(type, id) {
+      return tmdb(`/${type}/${id}`, { language, append_to_response: 'keywords' });
+    },
+
     async genres(type) {
       const data = await tmdb(`/genre/${type}/list`, { language });
       return data.genres;

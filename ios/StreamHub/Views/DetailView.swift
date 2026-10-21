@@ -12,6 +12,12 @@ struct DetailView: View {
     @State private var linksReady = false
     @State private var error: String?
     @State private var opening: String?
+    @State private var tab: DetailTab?
+    @State private var suggestions: Suggestions.Groups?
+    @State private var suggestionsTask: Task<Void, Never>?
+    @State private var suggestionsDone = false
+
+    private enum DetailTab { case episodes, suggestions }
 
     var body: some View {
         ScrollView {
@@ -21,14 +27,7 @@ struct DetailView: View {
                     actions(details)
                     watchSection(details)
                     about(details)
-                    if ref.type == .tv {
-                        SeasonsSection(
-                            details: details, entries: entries, saSeasons: saSeasons, linksReady: linksReady,
-                            lastWatched: model.store.entries(.history).first { $0.key == LibraryEntry.key(.tv, ref.id) }
-                        ) { link, episode in
-                            Task { await model.open(link.entry, for: ref, date: details.date, episode: episode) }
-                        }
-                    }
+                    tabs(details)
                 } else if let error {
                     EmptyMessage(title: "Fiche indisponible", systemImage: "exclamationmark.triangle", message: error)
                 } else {
@@ -274,6 +273,100 @@ struct DetailView: View {
 
     private func credit(_ label: String, _ value: String) -> some View {
         Text("\(Text(label).foregroundStyle(.secondary))  \(value)").font(.subheadline)
+    }
+
+    // ---------- Onglets : Épisodes (séries, ouvert d'abord) et Suggestions (seul onglet d'un film) ----------
+
+    private func hasEpisodes(_ d: TitleDetails) -> Bool {
+        ref.type == .tv && (d.seasons ?? []).contains { ($0.episodeCount ?? 0) > 0 }
+    }
+
+    @ViewBuilder
+    private func tabs(_ d: TitleDetails) -> some View {
+        let episodes = hasEpisodes(d)
+        let current = tab ?? (episodes ? .episodes : .suggestions)
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(spacing: 0) {
+                HStack(spacing: 24) {
+                    if episodes { tabButton("Épisodes", .episodes, current: current) }
+                    tabButton("Suggestions", .suggestions, current: current)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                Divider()
+            }
+            if episodes {
+                // Gardée affichée même cachée : la saison choisie et les épisodes chargés restent au retour sur l'onglet
+                SeasonsSection(
+                    details: d, entries: entries, saSeasons: saSeasons, linksReady: linksReady,
+                    lastWatched: model.store.entries(.history).first { $0.key == LibraryEntry.key(.tv, ref.id) }
+                ) { link, episode in
+                    Task { await model.open(link.entry, for: ref, date: d.date, episode: episode) }
+                }
+                .frame(height: current == .episodes ? nil : 0, alignment: .top)
+                .clipped()
+                .opacity(current == .episodes ? 1 : 0)
+                .accessibilityHidden(current != .episodes)
+            }
+            if current == .suggestions {
+                suggestionsView(d)
+            }
+        }
+    }
+
+    private func tabButton(_ label: String, _ value: DetailTab, current: DetailTab) -> some View {
+        Button { tab = value } label: {
+            Text(label)
+                .font(.headline)
+                .foregroundStyle(current == value ? .primary : .secondary)
+                .padding(.vertical, 10)
+                .overlay(alignment: .bottom) {
+                    if current == value { Capsule().fill(Color.accentColor).frame(height: 3) }
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(current == value ? .isSelected : [])
+    }
+
+    // Rangées : la saga, le même univers, puis le même genre (voir Suggestions.swift), affichées dès qu'elles arrivent
+    private func suggestionsView(_ d: TitleDetails) -> some View {
+        VStack(alignment: .leading, spacing: 22) {
+            if let s = suggestions {
+                TitleRow(title: s.sagaName.isEmpty ? "La saga" : "La saga \(s.sagaName)", items: s.saga)
+                TitleRow(title: "Dans le même univers", items: s.universe)
+                TitleRow(title: "Dans le même genre", items: Array(s.genre.prefix(20)))
+                if suggestionsDone && s.saga.isEmpty && s.universe.isEmpty && s.genre.isEmpty {
+                    Text("Pas de suggestion pour ce titre.").foregroundStyle(.secondary).padding(.horizontal, 16)
+                }
+            }
+            if !suggestionsDone {
+                ProgressView("Recherche des suggestions…").frame(maxWidth: .infinity).padding(.vertical, 16)
+            }
+        }
+        .onAppear { loadSuggestions(d) }
+    }
+
+    // Une seule recherche par fiche, qui continue si on change d'onglet entre-temps
+    private func loadSuggestions(_ d: TitleDetails) {
+        guard suggestionsTask == nil else { return }
+        let tmdb = model.tmdb
+        let type = ref.type
+        let region = model.store.region
+        let providers = model.store.providers
+        suggestionsTask = Task {
+            async let genre = Suggestions.genre(tmdb, d, type: type, region: region, providers: providers)
+            let saga = await Suggestions.saga(tmdb, d)
+            var groups = Suggestions.Groups(sagaName: saga.name, saga: saga.items)
+            suggestions = groups
+            var shown = Set(saga.items.map { "movie:\($0.id)" })
+            groups.universe = await Suggestions.universe(tmdb, d, type: type, exclude: shown)
+            suggestions = groups
+            shown.formUnion(groups.universe.map { "\($0.type.rawValue):\($0.id)" })
+            shown.insert("\(type.rawValue):\(d.id)")
+            groups.genre = await genre.filter { !shown.contains("\($0.type.rawValue):\($0.id)") }
+            suggestions = groups
+            suggestionsDone = true
+        }
     }
 }
 

@@ -109,9 +109,21 @@ Sous chaque bouton, une indication précise ce qu'il va faire :
 | **Liens sur TMDB** | La page « Où regarder » de TMDB, qui renvoie vers chaque plateforme |
 
 Pour une **série**, le bouton « Regarder sur… » **reprend où tu t'es arrêté** (épisode suivant), ou commence à
-l'épisode 1 si tu ne l'as jamais regardée ([détails](#reprendre-une-série)). Chaque saison se déplie aussi pour
-afficher ses épisodes (résumé, date, durée), avec un bouton pour lancer directement celui que tu veux quand la
-plateforme le permet.
+l'épisode 1 si tu ne l'as jamais regardée ([détails](#reprendre-une-série)).
+
+Sous le résumé, la fiche a des **onglets** (aussi dans l'appli iPhone) :
+
+- **Épisodes** (séries, ouvert d'abord) : chaque saison se déplie pour afficher ses épisodes (résumé, date, durée),
+  avec un bouton pour lancer directement celui que tu veux quand la plateforme le permet.
+- **Suggestions** (ouvert d'abord pour un film, seul onglet) : des affiches à ouvrir, en trois rangées :
+  - **La saga** : les autres films de la saga, dans l'ordre de sortie (les 7 autres Harry Potter) ;
+  - **Dans le même univers** : les films et séries de la même franchise, que TMDB ne relie pas entre eux. Exemples :
+    Naruto → Naruto Shippuden, Boruto et les films Naruto ; un film Harry Potter → la série Harry Potter et Les
+    Animaux fantastiques ; Breaking Bad → Better Call Saul et El Camino. StreamHub les retrouve par le nom de la
+    franchise (même langue d'origine, un genre en commun, et une société de production commune quand le nom n'est pas
+    en tête du titre) et parmi les titres conseillés par TMDB (deux sociétés de production en commun et une suite ou
+    une série dérivée) ;
+  - **Dans le même genre** : les titres conseillés par TMDB, ceux de tes abonnements d'abord.
 
 ### Tes listes
 
@@ -517,6 +529,7 @@ Puis ouvre **http://localhost:8080**. Le relais accepte les appels venant de `lo
 | `episodes.js` | Liens directs vers les épisodes TF1+ et M6+ (index publié dans `data/`) |
 | `aliases.js` | Recherche par surnom ou sigle (liste intégrée + Wikidata) |
 | `search.js` | Correction des fautes de frappe, numéro de film, ordre des sagas |
+| `suggestions.js` | Onglet Suggestions de la fiche : saga, même univers (films et séries), même genre |
 | `nav.js` | Navigation aux flèches (clavier, télécommande) |
 | `sw.js`, `manifest.webmanifest`, icônes | Installation en appli (PWA), cache hors ligne et mises à jour |
 | `relay/worker.js` | Relais Cloudflare Workers (liens JustWatch, synchronisation) |

@@ -1213,6 +1213,33 @@ html:has(dialog[open]) { overflow: hidden; }
 
 .more-episodes { display: flex; width: 100%; justify-content: center; margin-top: 10px; }
 
+/* Onglets de la fiche sous la description : Épisodes (séries) et Suggestions */
+.detail-body { --detail-pad: 28px; }
+@media (max-width: 640px) { .detail-body { --detail-pad: 16px; } }
+.detail-tabs { display: flex; gap: 26px; margin-top: 28px; border-bottom: 1px solid var(--border); }
+.detail-tabs button {
+  margin-bottom: -1px;
+  padding: 10px 0;
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 1.05em;
+  font-weight: 700;
+  cursor: pointer;
+}
+.detail-tabs button:hover { color: var(--text); }
+.detail-tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+.tab-panel[hidden] { display: none; }
+.tab-panel { padding-top: 16px; }
+.tab-panel .seasons { margin-top: 0; }
+.tab-panel > .muted { margin: 8px 0; }
+/* Rangées des suggestions : elles débordent jusqu'aux bords de la fiche, comme celles de l'accueil */
+.suggest-row { margin: 0 calc(-1 * var(--detail-pad)) 18px; --gutter: var(--detail-pad); }
+.suggest-row .row-head h3 { margin: 0; font-size: 1.05em; font-weight: 700; }
+.suggest-row .row-track > .card { width: clamp(108px, 13vw, 150px); }
+
 .seasons-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
 .seasons-head h3 { margin: 0; }
 .season-source { padding: 6px 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }

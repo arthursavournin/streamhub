@@ -409,8 +409,7 @@ Il fait aussi quatre choses de plus :
   la série reprend à l'épisode suivant ;
 - sur les sites **Netflix** et **Prime Video** (depuis la version 2.9), il signale les **épisodes hors-série
   (fillers)** de Naruto, Naruto Shippuden et Boruto : cadre rouge et étiquette « FILLER » dans la liste des
-  épisodes, et un bandeau rouge quand tu lances un épisode filler. Un petit message indique combien de fillers il a
-  repérés dans la liste affichée (s'il dit « pas reconnus », ou s'il n'apparaît pas, signale-le). La liste des fillers
+  épisodes (sans autre message). La liste des fillers
   est celle de StreamHub, qu'il relit en ligne. Dans les applis Netflix et Prime Video de l'iPhone, c'est impossible :
   aucun script ne peut modifier une appli.
 

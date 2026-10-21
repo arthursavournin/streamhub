@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         StreamHub – reprise après connexion
 // @namespace    https://arthursavournin.github.io/streamhub/
-// @version      2.9
+// @version      3.0
 // @description  Ouvre le titre lancé depuis StreamHub après la connexion ou le choix du profil, au lieu de laisser sur l'accueil. Signale les épisodes hors-série (fillers) de Naruto, Naruto Shippuden et Boruto sur Netflix et Prime Video.
 // @author       StreamHub
 // @match        *://*/*
@@ -23,7 +23,7 @@
 // Ailleurs, et sans lien « #streamhub= » récent (15 minutes), le script ne fait rien.
 //
 // Sur Netflix et Prime Video, il signale aussi les épisodes hors-série (fillers) de Naruto, Naruto Shippuden et
-// Boruto : cadre rouge « Filler » dans la liste des épisodes, bandeau au lancement d'un épisode filler.
+// Boruto : cadre rouge « Filler » dans la liste des épisodes.
 (() => {
   // StreamHub en ligne, ou lancé sur son ordinateur (python3 -m http.server)
   const onStreamHub =
@@ -197,60 +197,10 @@
       return { rows: rows.length, known, fillers, season };
     }
 
-    // Lecteur : épisode en cours (« S2:É5 », « É33 », « Saison 2, Ép. 5 ») → bandeau s'il est filler
-    function currentEpisode(show) {
-      const box = document.querySelector('[data-uia="video-title"], .atvwebplayersdk-subtitle-text');
-      if (!box) return null;
-      const text = textOf(box);
-      const m = /(?:S(?:aison)?\s*(\d+)\s*[:,]\s*)?[ÉE]p?(?:isode)?\.?\s*(\d+)\s*(.*)$/i.exec(text);
-      if (!m) return null;
-      const spans = [...box.querySelectorAll('span')].map(textOf).filter(Boolean);
-      const title = spans.length > 1 ? spans.at(-1) : m[3];
-      return absolute(show, m[1] ? Number(m[1]) : null, Number(m[2]), title);
-    }
-
-    function banner(text, color) {
-      let el = document.getElementById('streamhub-filler-banner');
-      if (!el) {
-        el = document.createElement('div');
-        el.id = 'streamhub-filler-banner';
-        Object.assign(el.style, {
-          position: 'fixed', top: '16px', left: '50%', transform: 'translateX(-50%)', zIndex: '2147483647',
-          padding: '10px 18px', borderRadius: '12px', color: '#fff', boxShadow: '0 6px 24px rgba(0,0,0,.45)',
-          font: '600 15px/1.35 -apple-system, Helvetica, Arial, sans-serif', pointerEvents: 'none', maxWidth: '90vw',
-          textAlign: 'center',
-        });
-        (document.body ?? document.documentElement).append(el);
-      }
-      el.textContent = text;
-      el.style.background = color;
-      el.hidden = false;
-      clearTimeout(banner.timer);
-      banner.timer = setTimeout(() => (el.hidden = true), 9000);
-    }
-
-    let lastReport = '';
-    let lastEpisode = null;
+    // Pas de message ni de bandeau (demande de l'utilisateur) : le cadre rouge des épisodes suffit
     function tick() {
       const show = pageShow();
-      if (!show) return;
-      const list = scanList(show);
-      // Petit message une fois par liste : sert aussi à vérifier que le script reconnaît la page
-      const report = `${show.name}|${list.season}|${list.rows}|${list.known}`;
-      if (list.rows && report !== lastReport) {
-        lastReport = report;
-        banner(
-          list.known
-            ? `StreamHub · ${show.name} : ${list.fillers} filler${list.fillers > 1 ? 's' : ''} sur ${list.known} épisode${list.known > 1 ? 's' : ''} affiché${list.known > 1 ? 's' : ''}`
-            : `StreamHub · ${show.name} : épisodes affichés, mais pas reconnus`,
-          'rgba(20, 20, 20, 0.92)',
-        );
-      }
-      const n = currentEpisode(show);
-      if (n && n !== lastEpisode) {
-        lastEpisode = n;
-        if (isFiller(show, n)) banner(`⚠️ ${show.name}, épisode ${n} : filler (hors-série)`, 'rgba(200, 30, 30, 0.95)');
-      }
+      if (show) scanList(show);
     }
     setInterval(tick, 1500);
   }

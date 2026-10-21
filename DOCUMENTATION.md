@@ -80,6 +80,17 @@ boutons **« Regarder sur… »**, rangés en trois groupes :
   absent de l'index ouvre la page de la chaîne sur Canal+. Sur iPhone et iPad, l'appli Canal+ s'ouvre sur la fiche.
 - **Location et achat** : les boutiques (Apple TV, Amazon Video…), repliées par défaut.
 
+Les plateformes viennent de TMDB, qui reprend les données de JustWatch. Une nouveauté peut sortir avant que JustWatch
+la référence dans ton pays (exemple : VisionQuest, sortie sur Disney+ partout le même jour). StreamHub complète alors
+la liste, avec la mention « Pas encore référencée dans ce pays par JustWatch » sous les boutons :
+
+- **d'après son diffuseur** : une série en cours de diffusion (ou sortie depuis moins de 60 jours), création de
+  Netflix, Disney+, Prime Video, Apple TV, HBO Max ou Paramount+, est ajoutée sur sa plateforme si elle n'a encore
+  aucune offre dans ton pays. Ça marche sans clé, aussi pour les affiches et le filtre « Mes plateformes » de la
+  recherche.
+- **d'après Streaming Availability** (avec ta clé) : les plateformes que Streaming Availability donne dans ton pays,
+  mais pas JustWatch, sont ajoutées à l'ouverture de la fiche, avec leur lien direct.
+
 Sous chaque bouton, une indication précise ce qu'il va faire :
 
 | Indication | Ce qui se passe |
@@ -432,6 +443,11 @@ installée. Si iOS a été réglé pour ouvrir ce site dans Safari, fais un appu
 
 **Sur ordinateur, Prime Video s'ouvre dans l'appli alors que je veux le site (ou l'inverse).**
 Choisis dans Réglages → Pays et lecture → Ouvrir les titres.
+
+**« … n'est disponible sur aucune plateforme de streaming dans ce pays », alors que le titre est sorti.**
+JustWatch ne l'a pas encore référencé dans ton pays. StreamHub le complète tout seul pour les séries des grandes
+plateformes et avec une clé Streaming Availability (voir [La fiche d’un titre](#la-fiche-dun-titre)) ; sinon,
+il apparaîtra quand JustWatch l'aura ajouté, en général sous quelques jours.
 
 **« Quota Streaming Availability atteint ».**
 L'offre gratuite est limitée par jour : StreamHub utilise les liens JustWatch en attendant le lendemain.

@@ -1,7 +1,7 @@
 import { loadSettings, saveSettings, relayUrl, HISTORY_MAX } from './store.js';
 import { makeApi, img, testTmdbKey, testSaKey, testRelay } from './api.js';
 import { syncNow, syncState, createCode, joinCode, leave, startAutoSync } from './sync.js';
-import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, providerLogo, CANAL_CHANNELS, CANAL_CINE_SERIES, withVirtualChannels } from './providers.js';
+import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, providerLogo, CANAL_CHANNELS, CANAL_CINE_SERIES, withVirtualChannels, withSaOffers } from './providers.js';
 import { INDEXED_PLATFORMS, platformEpisodeUrl, canalChannelPath } from './episodes.js';
 import { aliasMatches } from './aliases.js';
 import { loadTitles, suggest, splitNumber, arrangeSagas } from './search.js';
@@ -9,7 +9,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.7.0';
+const APP_VERSION = '1.7.1';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -987,6 +987,7 @@ async function openDetail(type, id, opener) {
     if (current?.key !== key) return loading.done();
     current.links = links;
     current.linksState = links ? 'ready' : settings.saKey ? 'error' : 'none';
+    if (links) addSaOffers(links.options);
     if (links) applyDirectLinks(links.options);
     if (type === 'tv') applySeasonLinks();
     // Boutons encore sans lien direct (plateforme ou titre inconnu de Streaming Availability) : JustWatch
@@ -1020,6 +1021,7 @@ function watchEntries(item, type) {
       service: hostServiceFor(p.provider_name)?.id ?? null, // pour les liens ; une chaîne Amazon → Prime Video
       href: fallback.href,
       hint: fallback.hint,
+      unlisted: p.unlisted ?? null, // pas encore référencée dans le pays : 'network' (diffuseur) ou 'sa'
     });
   };
   for (const kind of ['flatrate', 'free', 'ads', 'rent', 'buy']) for (const p of offers?.[kind] ?? []) add(p, kind);
@@ -1491,22 +1493,15 @@ function fillEpisodeLinks(number) {
   refreshDownloadButtons();
 }
 
-function renderDetail(item, type) {
+// Section « Où regarder » de la fiche : boutons des plateformes, rangés par abonnement
+function watchSectionHtml(item, type) {
   const w = words(type);
-  const title = titleOf(item);
-  const originalTitle = originalTitleOf(item);
   const { entries, tmdbLink } = watchEntries(item, type);
   const mine = entries.filter((e) => e.mine);
   if (current) current.entries = mine;
   const others = entries.filter((e) => !e.mine && e.kind !== 'rent' && e.kind !== 'buy');
   const paid = entries.filter((e) => e.kind === 'rent' || e.kind === 'buy');
-  const trailer = item.videos?.results?.find((v) => v.site === 'YouTube' && v.type === 'Trailer');
-  const makers =
-    type === 'tv'
-      ? (item.created_by ?? []).map((c) => c.name)
-      : (item.credits?.crew ?? []).filter((c) => c.job === 'Director').map((c) => c.name);
-  const cast = item.credits?.cast?.slice(0, 5).map((c) => c.name) ?? [];
-  const meta = metaLine(item, type);
+  const unlisted = entries.filter((e) => e.unlisted);
 
   let watchHtml;
   if (!entries.length) {
@@ -1521,6 +1516,44 @@ function renderDetail(item, type) {
       ${others.length && !mine.length ? `<h3>Disponible sur</h3><div class="watch-list" data-section="others">${others.map(watchButton).join('')}</div>` : ''}
       ${paid.length ? `<details class="paid"><summary>Location et achat (${paid.length})</summary><div class="watch-list">${paid.map(watchButton).join('')}</div></details>` : ''}`;
   }
+  // Offre ajoutée par StreamHub (JustWatch ne la référence pas encore dans le pays) : on le dit
+  const names = esc(platformList(unlisted.map((e) => ({ name: shortPlatformName(e.name) }))) ?? '');
+  const unlistedHint = !unlisted.length
+    ? ''
+    : unlisted.every((e) => e.unlisted === 'network')
+      ? `<p class="hint">Pas encore référencé${type === 'tv' ? 'e' : ''} dans ce pays par JustWatch : ${names} ajouté d’après son diffuseur, en attendant.</p>`
+      : `<p class="hint">Pas encore référencé${type === 'tv' ? 'e' : ''} dans ce pays par JustWatch : ${names} ajouté d’après Streaming Availability.</p>`;
+  return `<section class="watch-section" aria-label="Où regarder">
+        ${watchHtml}
+        ${unlistedHint}
+        ${entries.length && !settings.saKey ? `<p class="hint">Astuce : ajoute une clé Streaming Availability dans les réglages pour ouvrir directement ${type === 'tv' ? 'la série' : 'le film'} au lieu d’une recherche.</p>` : ''}
+      </section>`;
+}
+
+// Plateformes que Streaming Availability donne dans le pays mais que TMDB (JustWatch) n'a pas encore : ajoutées à la
+// fiche, puis la section « Où regarder » est redessinée (les liens directs sont posés juste après)
+function addSaOffers(options) {
+  const results = current?.item?.['watch/providers']?.results ?? {};
+  const before = results[settings.region] ?? null;
+  const after = withSaOffers(before, options);
+  if (after === before) return;
+  (current.item['watch/providers'] ??= { results }).results[settings.region] = withVirtualChannels(after, settings.region);
+  $('.watch-section', el.detail).outerHTML = watchSectionHtml(current.item, current.type);
+  applyCanalChannels();
+  refreshLikeButton();
+  refreshDownloadButtons();
+}
+
+function renderDetail(item, type) {
+  const title = titleOf(item);
+  const originalTitle = originalTitleOf(item);
+  const trailer = item.videos?.results?.find((v) => v.site === 'YouTube' && v.type === 'Trailer');
+  const makers =
+    type === 'tv'
+      ? (item.created_by ?? []).map((c) => c.name)
+      : (item.credits?.crew ?? []).filter((c) => c.job === 'Director').map((c) => c.name);
+  const cast = item.credits?.cast?.slice(0, 5).map((c) => c.name) ?? [];
+  const meta = metaLine(item, type);
 
   setDetailHtml(`
     <div class="detail-hero" style="${item.backdrop_path ? `background-image:url('${img(item.backdrop_path, 'w1280')}')` : ''}"></div>
@@ -1540,10 +1573,7 @@ function renderDetail(item, type) {
           </div>
         </div>
       </div>
-      <section class="watch-section" aria-label="Où regarder">
-        ${watchHtml}
-        ${entries.length && !settings.saKey ? `<p class="hint">Astuce : ajoute une clé Streaming Availability dans les réglages pour ouvrir directement ${type === 'tv' ? 'la série' : 'le film'} au lieu d’une recherche.</p>` : ''}
-      </section>
+      ${watchSectionHtml(item, type)}
       ${item.tagline ? `<p class="tagline">${esc(item.tagline)}</p>` : ''}
       ${item.overview ? `<p class="overview">${esc(item.overview)}</p>` : ''}
       ${makers.length || cast.length ? `<dl class="credits">

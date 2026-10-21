@@ -230,6 +230,15 @@ struct DetailView: View {
                 .tint(.secondary)
                 .padding(.top, 6)
             }
+            // Offre ajoutée par StreamHub (JustWatch ne la référence pas encore dans le pays) : on le dit
+            let unlisted = entries.filter { $0.unlisted != nil }
+            if !unlisted.isEmpty {
+                let names = unlisted.map(\.displayName).joined(separator: ", ")
+                let source = unlisted.allSatisfy { $0.unlisted == "network" } ? "d’après son diffuseur, en attendant" : "d’après Streaming Availability"
+                Text("Pas encore référencé\(ref.type == .tv ? "e" : "") dans ce pays par JustWatch : \(names) ajouté \(source).")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal, 16)
     }

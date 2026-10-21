@@ -3,7 +3,7 @@
 // - Streaming Availability (RapidAPI) : liens directs vers le film ou la série sur chaque plateforme
 // `type` vaut 'movie' (film) ou 'tv' (série), comme dans les URL de TMDB.
 import { cacheGet, cacheSet, relayUrl } from './store.js';
-import { autoplayLink, providerLogo, withLogos, withVirtualChannels, withVirtualProviders } from './providers.js';
+import { autoplayLink, providerLogo, withLogos, withOriginals, withVirtualChannels, withVirtualProviders } from './providers.js';
 
 const TMDB = 'https://api.themoviedb.org/3';
 const SA_HOST = 'streaming-availability.p.rapidapi.com';
@@ -57,6 +57,20 @@ export function makeApi(settings) {
     memo.set(id, request);
     request.catch(() => memo.delete(id));
     return request;
+  }
+
+  // Identifiants des plateformes du pays (même requête que la liste des réglages)
+  async function regionProviderIds() {
+    const lists = await Promise.all(['movie', 'tv'].map((type) => tmdb(`/watch/providers/${type}`, { watch_region: region, language })));
+    return new Set(lists.flatMap((l) => l.results).map((p) => p.provider_id));
+  }
+
+  // Offres du pays d'une fiche TMDB : logos, créations d'une plateforme pas encore référencées dans le pays,
+  // chaînes de Canal+
+  async function regionOffers(data) {
+    const offers = withLogos(data['watch/providers']?.results?.[region] ?? null);
+    const available = data.networks?.length ? await regionProviderIds().catch(() => new Set()) : new Set();
+    return withVirtualChannels(withOriginals(offers, data, available), region);
   }
 
   return {
@@ -174,13 +188,15 @@ export function makeApi(settings) {
         append_to_response: 'watch/providers,videos,credits',
         include_video_language: `${language.slice(0, 2)},en,null`,
       });
-      const results = data['watch/providers']?.results;
-      if (results?.[region]) results[region] = withVirtualChannels(withLogos(results[region]), region); // option HBO Max de Canal+
+      const offers = await regionOffers(data);
+      if (offers) (data['watch/providers'] ??= { results: {} }).results[region] = offers;
       return data;
     },
 
-    // Offres pour le pays choisi : { link, flatrate, free, ads, rent, buy } ou null
+    // Offres pour le pays choisi : { link, flatrate, free, ads, rent, buy } ou null. Pour une série, la fiche
+    // entière (ses diffuseurs et ses dates servent à regionOffers)
     async offers(type, id) {
+      if (type === 'tv') return regionOffers(await tmdb(`/tv/${id}`, { language, append_to_response: 'watch/providers' }));
       const data = await tmdb(`/${type}/${id}/watch/providers`);
       return withVirtualChannels(withLogos(data.results?.[region] ?? null), region);
     },

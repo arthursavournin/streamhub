@@ -26,7 +26,7 @@ final class AppModel {
     }
 
     var tmdb: TMDBClient { TMDBClient(key: store.tmdbKey, region: store.region, language: store.language) }
-    var resolver: LinkResolver { LinkResolver(saKey: store.saKey, relayURL: store.relayURL, region: store.region) }
+    var resolver: LinkResolver { LinkResolver(saKey: store.saKey, relayURL: store.relayURL, region: store.region, providers: store.providers) }
     var isConfigured: Bool { !store.tmdbKey.isEmpty }
 
     // Change quand le catalogue affiché doit être rechargé (clé, pays, abonnements)

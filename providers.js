@@ -124,6 +124,64 @@ export function withVirtualProviders(list, region) {
   return out;
 }
 
+// Plateformes TMDB (= JustWatch) des services, pour ajouter une offre que les données du pays n'ont pas encore
+const TMDB_PROVIDERS = {
+  netflix: { provider_id: 8, provider_name: 'Netflix', logo_path: '/rK1KljqmbvO9HQa1PBFLILWah72.png' },
+  prime: { provider_id: 119, provider_name: 'Amazon Prime Video', logo_path: '/gMZdpavHmxFNnLpMHwVxfqeux2g.png' },
+  apple: { provider_id: 350, provider_name: 'Apple TV', logo_path: '/9icYBfYFcwgCbky5VdGUIKJ4C5i.png' },
+  disney: { provider_id: 337, provider_name: 'Disney Plus', logo_path: '/5eZ872CghnHFLB1j8grszbrx0dx.png' },
+  canal: { provider_id: 381, provider_name: 'Canal+', logo_path: '/gliWKhLJVdm7QwL1braBCRko5dx.png' },
+  hbo: { provider_id: 1899, provider_name: 'HBO Max', logo_path: '/skypuy7SXuugIQeYg0IglmzoKaS.png' },
+  paramount: { provider_id: 531, provider_name: 'Paramount Plus', logo_path: '/pkx3klJlwW5JdtaulvDx6hDNtch.png' },
+  mubi: { provider_id: 11, provider_name: 'MUBI', logo_path: '/k7iSlvgWzZuO4zU5PcBjhABMuia.png' },
+  tf1: { provider_id: 1754, provider_name: 'TF1+', logo_path: '/j5w5U61YwOM6Adiaa5zuEVqrpP8.png' },
+  m6: { provider_id: 147, provider_name: 'M6+', logo_path: '/9o7nQnmlVE94XqPcMhVPGycatxU.png' },
+  arte: { provider_id: 234, provider_name: 'Arte', logo_path: '/ieo2l4zOaljYqJNGxWY8jWryld5.png' },
+};
+
+// Créations des grandes plateformes : diffuseur TMDB (« networks » d'une série) → service. Une nouvelle série
+// (VisionQuest, Disney+, octobre 2026) peut sortir partout le même jour sans que JustWatch l'ait encore référencée
+// dans le pays (TMDB n'avait d'offre qu'aux États-Unis, en Suisse et en Allemagne ; Streaming Availability la
+// donnait bien sur Disney+ en France, constaté par l'utilisateur).
+const ORIGINALS = { 213: 'netflix', 2739: 'disney', 1024: 'prime', 2552: 'apple', 3186: 'hbo', 49: 'hbo', 4330: 'paramount' };
+const RECENT_MS = 60 * 24 * 3600 * 1000;
+
+// Série en cours de diffusion (ou sortie il y a moins de 60 jours), création d'une plateforme présente dans le
+// pays (available : identifiants des plateformes du pays), sans aucune offre d'abonnement ou gratuite dans le
+// pays : la plateforme est ajoutée (unlisted: 'network'). offers : offres TMDB du pays (ou null).
+export function withOriginals(offers, item, available) {
+  if (!item?.networks?.length) return offers;
+  if (['flatrate', 'free', 'ads'].some((k) => offers?.[k]?.length)) return offers;
+  const dates = [item.first_air_date, item.last_episode_to_air?.air_date].map((d) => Date.parse(d)).filter(Boolean);
+  const recent = item.next_episode_to_air || dates.some((d) => Date.now() - d < RECENT_MS);
+  if (!recent) return offers;
+  const added = [];
+  for (const network of item.networks) {
+    const provider = TMDB_PROVIDERS[ORIGINALS[network.id]];
+    if (!provider || !available.has(provider.provider_id) || added.some((p) => p.provider_id === provider.provider_id)) continue;
+    added.push({ ...provider, unlisted: 'network' });
+  }
+  return added.length ? { ...offers, flatrate: [...(offers?.flatrate ?? []), ...added] } : offers;
+}
+
+// Offres de Streaming Availability absentes des données TMDB du pays (abonnement ou gratuit, plateformes connues
+// seulement ; pas les chaînes vendues en option) : ajoutées avec unlisted: 'sa'. Renvoie les offres complétées,
+// ou les mêmes s'il n'y a rien à ajouter.
+export function withSaOffers(offers, options) {
+  const present = new Set(['flatrate', 'free', 'ads'].flatMap((k) => offers?.[k] ?? []).map((p) => hostServiceFor(p.provider_name)?.id));
+  const out = { ...offers };
+  let changed = false;
+  for (const o of options ?? []) {
+    const kind = o.type === 'subscription' ? 'flatrate' : o.type === 'free' ? 'free' : null;
+    const provider = TMDB_PROVIDERS[o.service];
+    if (!kind || !provider || present.has(o.service)) continue;
+    present.add(o.service);
+    out[kind] = [...(out[kind] ?? []), { ...provider, unlisted: 'sa' }];
+    changed = true;
+  }
+  return changed ? out : offers;
+}
+
 // Page qui liste les épisodes d'une série sur la plateforme, quand on sait la construire
 export function episodesLink(providerName, title) {
   return hostServiceFor(providerName)?.episodes?.(title) ?? null;

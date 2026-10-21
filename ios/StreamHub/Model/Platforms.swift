@@ -121,6 +121,70 @@ nonisolated enum Platforms {
         return out
     }
 
+    // ---------- Offres pas encore référencées dans le pays ----------
+
+    // Plateformes TMDB (= JustWatch) des services, pour ajouter une offre que les données du pays n'ont pas encore
+    static let tmdbProviders: [String: ProviderOffer] = [
+        "netflix": ProviderOffer(providerId: 8, providerName: "Netflix", logoPath: "/rK1KljqmbvO9HQa1PBFLILWah72.png"),
+        "prime": ProviderOffer(providerId: 119, providerName: "Amazon Prime Video", logoPath: "/gMZdpavHmxFNnLpMHwVxfqeux2g.png"),
+        "apple": ProviderOffer(providerId: 350, providerName: "Apple TV", logoPath: "/9icYBfYFcwgCbky5VdGUIKJ4C5i.png"),
+        "disney": ProviderOffer(providerId: 337, providerName: "Disney Plus", logoPath: "/5eZ872CghnHFLB1j8grszbrx0dx.png"),
+        "canal": ProviderOffer(providerId: 381, providerName: "Canal+", logoPath: "/gliWKhLJVdm7QwL1braBCRko5dx.png"),
+        "hbo": ProviderOffer(providerId: 1899, providerName: "HBO Max", logoPath: "/skypuy7SXuugIQeYg0IglmzoKaS.png"),
+        "paramount": ProviderOffer(providerId: 531, providerName: "Paramount Plus", logoPath: "/pkx3klJlwW5JdtaulvDx6hDNtch.png"),
+        "mubi": ProviderOffer(providerId: 11, providerName: "MUBI", logoPath: "/k7iSlvgWzZuO4zU5PcBjhABMuia.png"),
+        "tf1": ProviderOffer(providerId: 1754, providerName: "TF1+", logoPath: "/j5w5U61YwOM6Adiaa5zuEVqrpP8.png"),
+        "m6": ProviderOffer(providerId: 147, providerName: "M6+", logoPath: "/9o7nQnmlVE94XqPcMhVPGycatxU.png"),
+        "arte": ProviderOffer(providerId: 234, providerName: "Arte", logoPath: "/ieo2l4zOaljYqJNGxWY8jWryld5.png"),
+    ]
+
+    // Créations des grandes plateformes : diffuseur TMDB (« networks » d'une série) → service. Une nouvelle série
+    // (VisionQuest, Disney+, octobre 2026) peut sortir partout le même jour sans que JustWatch l'ait encore référencée
+    // dans le pays.
+    static let originals: [Int: String] = [213: "netflix", 2739: "disney", 1024: "prime", 2552: "apple", 3186: "hbo", 49: "hbo", 4330: "paramount"]
+
+    // Série en cours de diffusion (ou sortie il y a moins de 60 jours), création d'une plateforme présente dans le pays
+    // (available), sans aucune offre d'abonnement ou gratuite dans le pays : la plateforme est ajoutée (unlisted "network")
+    static func withOriginals(_ offers: Offers?, networks: [Int], dates: [String], airing: Bool, available: Set<Int>) -> Offers? {
+        guard offers?.streamable.isEmpty ?? true else { return offers }
+        let parser = DateFormatter()
+        parser.dateFormat = "yyyy-MM-dd"
+        parser.locale = Locale(identifier: "en_US_POSIX")
+        let recent = airing || dates.compactMap(parser.date(from:)).contains { Date.now.timeIntervalSince($0) < 60 * 24 * 3600 }
+        guard recent else { return offers }
+        var added: [ProviderOffer] = []
+        for network in networks {
+            guard var provider = originals[network].flatMap({ tmdbProviders[$0] }), available.contains(provider.providerId),
+                  !added.contains(where: { $0.providerId == provider.providerId }) else { continue }
+            provider.unlisted = "network"
+            added.append(provider)
+        }
+        guard !added.isEmpty else { return offers }
+        var out = offers ?? Offers()
+        out.flatrate = (out.flatrate ?? []) + added
+        return out
+    }
+
+    // Offres de Streaming Availability absentes des données TMDB du pays (abonnement ou gratuit, plateformes connues
+    // seulement ; pas les chaînes vendues en option) : ajoutées avec unlisted "sa". nil s'il n'y a rien à ajouter.
+    static func withSaOffers(_ offers: Offers?, services: [(service: String?, type: String)]) -> Offers? {
+        var present = Set((offers?.streamable ?? []).compactMap { hostService(for: $0.providerName)?.id })
+        var out = offers ?? Offers()
+        var changed = false
+        for option in services {
+            guard let service = option.service, var provider = tmdbProviders[service], !present.contains(service) else { continue }
+            provider.unlisted = "sa"
+            switch option.type {
+            case "subscription": out.flatrate = (out.flatrate ?? []) + [provider]
+            case "free": out.free = (out.free ?? []) + [provider]
+            default: continue
+            }
+            present.insert(service)
+            changed = true
+        }
+        return changed ? out : nil
+    }
+
     // Liste des abonnements (France) : Ciné Séries juste après Canal+, chaque chaîne juste après sa plateforme
     static func withVirtualProviders(_ list: [ProviderChoice], region: String) -> [ProviderChoice] {
         guard region == "FR" else { return list }

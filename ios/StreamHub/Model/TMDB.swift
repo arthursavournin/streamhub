@@ -62,6 +62,7 @@ nonisolated struct ProviderOffer: Codable, Hashable, Sendable {
     var providerName: String
     var logoPath: String?
     var displayPriority: Int?
+    var unlisted: String? = nil // pas encore référencée dans le pays : "network" (diffuseur) ou "sa"
 }
 
 // Offres d'un titre pour un pays : { link, flatrate, free, ads, rent, buy }
@@ -83,6 +84,7 @@ nonisolated struct TitleDetails: Decodable, Sendable {
     struct Video: Decodable, Sendable { let key: String; let site: String; let type: String }
     struct Videos: Decodable, Sendable { let results: [Video] }
     struct WatchProviders: Decodable, Sendable { var results: [String: Offers] }
+    struct Network: Decodable, Sendable { let id: Int; let name: String }
 
     let id: Int
     let title: String?
@@ -107,12 +109,15 @@ nonisolated struct TitleDetails: Decodable, Sendable {
     let credits: Credits?
     let videos: Videos?
     let seasons: [SeasonSummary]?
+    let networks: [Network]?
+    let lastEpisodeToAir: LatestEpisode?
+    let nextEpisodeToAir: LatestEpisode?
     var watchProviders: WatchProviders?
 
     enum CodingKeys: String, CodingKey {
         case id, title, name, originalTitle, originalName, overview, tagline, posterPath, backdropPath, releaseDate
         case firstAirDate, lastAirDate, inProduction, runtime, numberOfSeasons, numberOfEpisodes, voteAverage, voteCount
-        case genres, createdBy, credits, videos, seasons
+        case genres, createdBy, credits, videos, seasons, networks, lastEpisodeToAir, nextEpisodeToAir
         case watchProviders = "watch/providers"
     }
 
@@ -334,8 +339,16 @@ struct TMDBClient {
             "append_to_response": "watch/providers,videos,credits",
             "include_video_language": "\(language.prefix(2)),en,null",
         ])
-        if let offers = details.watchProviders?.results[region] {
-            details.watchProviders?.results[region] = Platforms.withVirtualChannels(Platforms.withLogos(offers), region: region)
+        // Créations d'une plateforme pas encore référencées dans le pays (voir Platforms.withOriginals)
+        var offers = details.watchProviders?.results[region].map(Platforms.withLogos)
+        if let networks = details.networks, !networks.isEmpty {
+            let available = Set((try? await providers())?.map(\.id) ?? [])
+            let dates = [details.firstAirDate, details.lastEpisodeToAir?.airDate].compactMap { $0 }
+            offers = Platforms.withOriginals(offers, networks: networks.map(\.id), dates: dates, airing: details.nextEpisodeToAir != nil, available: available)
+        }
+        if let offers {
+            if details.watchProviders == nil { details.watchProviders = TitleDetails.WatchProviders(results: [:]) }
+            details.watchProviders?.results[region] = Platforms.withVirtualChannels(offers, region: region)
         }
         return details
     }

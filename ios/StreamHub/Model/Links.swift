@@ -29,6 +29,7 @@ nonisolated struct WatchEntry: Identifiable, Hashable, Sendable {
     var hint: String
     var direct = false
     var resumeClick = false // Disney+ : il faut appuyer sur « Reprendre » dans l'appli
+    var unlisted: String? = nil // pas encore référencée dans le pays : "network" (diffuseur) ou "sa"
 
     var displayName: String { Platforms.shortName(name) }
     var title: String { kind.isPaid ? displayName : "Regarder sur \(displayName)" }
@@ -73,7 +74,7 @@ nonisolated enum Links {
                     name: p.providerName, logo: p.logoPath, kind: kind,
                     mine: !kind.isPaid && isMine(p, providers: providers),
                     service: Platforms.hostService(for: p.providerName)?.id,
-                    href: fallback.href, hint: fallback.hint
+                    href: fallback.href, hint: fallback.hint, unlisted: p.unlisted
                 ))
             }
         }
@@ -87,6 +88,7 @@ struct LinkResolver {
     let saKey: String
     let relayURL: String
     let region: String
+    let providers: [Provider] // tes abonnements, pour les boutons ajoutés d'après Streaming Availability
 
     private static var saCache: [String: (options: [SAOption], seasons: [SASeason])] = [:]
     private static var relayCache: [String: [RelayOffer]] = [:]
@@ -114,6 +116,13 @@ struct LinkResolver {
         async let relay = relayOffers(type: type, id: details.id, title: details.displayTitle)
         var out = entries
         let found = await sa
+        // Plateformes que Streaming Availability donne dans le pays mais que TMDB (JustWatch) n'a pas encore
+        if let added = Platforms.withSaOffers(details.watchProviders?.results[region], services: found.options.map { ($0.service, $0.type) }) {
+            var completed = details
+            if completed.watchProviders == nil { completed.watchProviders = TitleDetails.WatchProviders(results: [:]) }
+            completed.watchProviders?.results[region] = Platforms.withVirtualChannels(added, region: region)
+            out = Links.entries(for: completed, type: type, region: region, providers: providers)
+        }
         apply(sa: found.options, to: &out)
         apply(relay: await relay, to: &out)
         await applyCanalChannels(&out, details: details, type: type)

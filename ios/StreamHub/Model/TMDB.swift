@@ -12,13 +12,13 @@ nonisolated struct TitleRef: Hashable, Codable, Sendable {
 nonisolated struct TMDBTitle: Decodable, Identifiable, Hashable, Sendable {
     let id: Int
     var mediaType: String?
-    let title: String?
-    let name: String?
+    var title: String?
+    var name: String?
     let originalTitle: String?
     let originalName: String?
-    let posterPath: String?
+    var posterPath: String?
     let backdropPath: String?
-    let overview: String?
+    var overview: String?
     let releaseDate: String?
     let firstAirDate: String?
     let voteAverage: Double?
@@ -87,13 +87,13 @@ nonisolated struct TitleDetails: Decodable, Sendable {
     struct Network: Decodable, Sendable { let id: Int; let name: String }
 
     let id: Int
-    let title: String?
-    let name: String?
+    var title: String?
+    var name: String?
     let originalTitle: String?
     let originalName: String?
-    let overview: String?
+    var overview: String?
     let tagline: String?
-    let posterPath: String?
+    var posterPath: String?
     let backdropPath: String?
     let releaseDate: String?
     let firstAirDate: String?
@@ -246,7 +246,7 @@ struct TMDBClient {
             ]
             for (k, v) in extra { params[k] = v }
             let page: Page<TMDBTitle> = try await get("/discover/tv", params)
-            return (page.results.map { var t = $0; t.mediaType = "tv"; return t }, min(page.totalPages ?? 1, 500))
+            return (await localized(page.results.map { var t = $0; t.mediaType = "tv"; return t }), min(page.totalPages ?? 1, 500))
         }
         let sortBy = switch sort {
         case .popularity: "popularity.desc"
@@ -269,7 +269,7 @@ struct TMDBClient {
         ]
         for (k, v) in extra { params[k] = v }
         let page: Page<TMDBTitle> = try await get("/discover/\(type.rawValue)", params)
-        return (page.results.map { var t = $0; t.mediaType = type.rawValue; return t }, min(page.totalPages ?? 1, 500))
+        return (await localized(page.results.map { var t = $0; t.mediaType = type.rawValue; return t }), min(page.totalPages ?? 1, 500))
     }
 
     // Genres d'un type (« Action », « Comédie »…)
@@ -290,7 +290,55 @@ struct TMDBClient {
     func title(_ type: MediaType, _ id: Int) async throws -> TMDBTitle {
         var title: TMDBTitle = try await get("/\(type.rawValue)/\(id)", ["language": language])
         title.mediaType = type.rawValue
-        return title
+        return await localized(title)
+    }
+
+    // ---------- Titres sans traduction ----------
+
+    // Titre sans traduction dans la langue choisie : TMDB renvoie le titre d'origine, parfois dans un autre alphabet
+    // (« रिपोर्टिंग लाइव », « Reporting Live » sur Netflix France), avec l'affiche d'un autre pays. On prend alors le
+    // titre, le résumé manquant et l'affiche de la version anglaise (comme le site). Un titre d'origine en alphabet latin
+    // est gardé.
+    nonisolated static func foreignScript(_ text: String) -> Bool {
+        text.unicodeScalars.contains { c in
+            let v = c.value
+            let latin = v <= 0x024F || (0x0300...0x036F).contains(v) || (0x1E00...0x1EFF).contains(v)
+                || (0x2C60...0x2C7F).contains(v) || (0xA720...0xA7FF).contains(v) || (0xAB30...0xAB6F).contains(v)
+                || (0xFF21...0xFF5A).contains(v)
+            return c.properties.isAlphabetic && !latin
+        }
+    }
+
+    private nonisolated struct English: Decodable, Sendable {
+        let title: String?
+        let name: String?
+        let overview: String?
+        let posterPath: String?
+    }
+
+    private func english(_ type: MediaType, _ id: Int, name: String?) async -> English? {
+        guard let name, Self.foreignScript(name), !language.hasPrefix("en"),
+              let en: English = try? await get("/\(type.rawValue)/\(id)", ["language": "en-US"]),
+              let enName = en.title ?? en.name, !Self.foreignScript(enName) else { return nil }
+        return en
+    }
+
+    func localized(_ item: TMDBTitle) async -> TMDBTitle {
+        guard let en = await english(item.type, item.id, name: item.title ?? item.name) else { return item }
+        var out = item
+        if out.title != nil { out.title = en.title ?? en.name } else { out.name = en.name ?? en.title }
+        if (out.overview ?? "").isEmpty { out.overview = en.overview }
+        out.posterPath = en.posterPath ?? out.posterPath
+        return out
+    }
+
+    func localized(_ items: [TMDBTitle]) async -> [TMDBTitle] {
+        await withTaskGroup(of: (Int, TMDBTitle).self) { group in
+            for (i, item) in items.enumerated() { group.addTask { (i, await localized(item)) } }
+            var out = items
+            for await (i, item) in group { out[i] = item }
+            return out
+        }
     }
 
     // Détail d'une saison : épisodes avec résumé, image, date, durée
@@ -303,7 +351,7 @@ struct TMDBClient {
     nonisolated struct Collection: Decodable, Sendable {
         let id: Int
         let name: String
-        let parts: [TMDBTitle]
+        var parts: [TMDBTitle]
     }
 
     nonisolated struct CollectionRef: Decodable, Sendable {
@@ -324,13 +372,15 @@ struct TMDBClient {
     }
 
     func collection(_ id: Int) async throws -> Collection {
-        try await get("/collection/\(id)", ["language": language])
+        var collection: Collection = try await get("/collection/\(id)", ["language": language])
+        collection.parts = await localized(collection.parts.map { var t = $0; t.mediaType = t.mediaType ?? "movie"; return t })
+        return collection
     }
 
     // Films et séries (pas les personnes)
     func search(_ query: String) async throws -> [TMDBTitle] {
         let page: Page<TMDBTitle> = try await get("/search/multi", ["query": query, "language": language, "include_adult": "false"])
-        return page.results.filter { $0.mediaType == "movie" || $0.mediaType == "tv" }
+        return await localized(page.results.filter { $0.mediaType == "movie" || $0.mediaType == "tv" })
     }
 
     func details(_ type: MediaType, _ id: Int) async throws -> TitleDetails {
@@ -349,6 +399,11 @@ struct TMDBClient {
         if let offers {
             if details.watchProviders == nil { details.watchProviders = TitleDetails.WatchProviders(results: [:]) }
             details.watchProviders?.results[region] = Platforms.withVirtualChannels(offers, region: region)
+        }
+        if let en = await english(type, id, name: details.title ?? details.name) {
+            if details.title != nil { details.title = en.title ?? en.name } else { details.name = en.name ?? en.title }
+            if (details.overview ?? "").isEmpty { details.overview = en.overview }
+            details.posterPath = en.posterPath ?? details.posterPath
         }
         return details
     }

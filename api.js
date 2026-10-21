@@ -28,6 +28,9 @@ const SORTS = {
   recent: { movie: 'primary_release_date.desc', tv: 'first_air_date.desc' },
 };
 
+// Un mot écrit dans un autre alphabet que le latin (devanagari, cyrillique, coréen…)
+const foreignScript = (text) => /[^\P{L}\p{Script=Latin}]/u.test(text);
+
 // Partagé entre instances : une même URL n'est demandée qu'une fois par session.
 const memo = new Map();
 
@@ -73,6 +76,21 @@ export function makeApi(settings) {
     return withVirtualChannels(withOriginals(offers, data, available), region);
   }
 
+  // Titre sans traduction dans la langue choisie : TMDB renvoie le titre d'origine, parfois dans un autre alphabet
+  // (« रिपोर्टिंग लाइव », film indien de Netflix, signalé par l'utilisateur ; « Reporting Live » sur Netflix France),
+  // avec une affiche d'un autre pays (brésilienne). On prend alors le titre, le résumé manquant et l'affiche de la
+  // version anglaise. Un titre d'origine en alphabet latin (espagnol, italien…) est gardé : c'est souvent celui
+  // qu'utilisent les plateformes françaises.
+  async function localized(item, type = item?.media_type) {
+    const name = item?.title ?? item?.name;
+    if (!name || !foreignScript(name) || language.startsWith('en') || (type !== 'movie' && type !== 'tv')) return item;
+    const en = await tmdb(`/${type}/${item.id}`, { language: 'en-US' }).catch(() => null);
+    const enName = en?.title ?? en?.name;
+    if (!enName || foreignScript(enName)) return item;
+    return { ...item, [item.title != null ? 'title' : 'name']: enName, overview: item.overview || en.overview, poster_path: en.poster_path ?? item.poster_path };
+  }
+  const localizedList = async (res, type) => ({ ...res, results: await Promise.all(res.results.map((m) => localized(m, type ?? m.media_type))) });
+
   return {
     // Plateformes du pays, films et séries confondus (certaines ne proposent que des séries)
     async providers() {
@@ -93,8 +111,8 @@ export function makeApi(settings) {
     },
 
     // Fiche courte d'un titre (affiche, titre, date) : pour les titres venus du classement du moment
-    title(type, id) {
-      return tmdb(`/${type}/${id}`, { language });
+    async title(type, id) {
+      return localized(await tmdb(`/${type}/${id}`, { language }), type);
     },
 
     // Sagas (« Harry Potter - Saga ») : recherche par nom, et films d'une saga
@@ -102,8 +120,9 @@ export function makeApi(settings) {
       return (await tmdb('/search/collection', { query, language })).results ?? [];
     },
 
-    collection(id) {
-      return tmdb(`/collection/${id}`, { language });
+    async collection(id) {
+      const data = await tmdb(`/collection/${id}`, { language });
+      return { ...data, parts: await Promise.all((data.parts ?? []).map((m) => localized(m, 'movie'))) };
     },
 
     async genres(type) {
@@ -114,10 +133,14 @@ export function makeApi(settings) {
     // extra : paramètres TMDB supplémentaires (ex. { with_origin_country: 'JP' })
     // networks : séries de ces diffuseurs (créations des plateformes) diffusées ces 60 derniers jours, sans filtre de
     // plateforme (pour celles que JustWatch n'a pas encore dans le pays, voir withOriginals)
-    discover(type, { page, genre, sort, providers, networks, extra = {} }) {
+    async discover(type, options) {
+      return localizedList(await this.discoverRaw(type, options), type);
+    },
+
+    discoverRaw(type, { page, genre, sort, providers, networks, extra = {} }) {
       if (type === 'tv' && networks?.length) {
         const recentFrom = new Date(Date.now() - (sort === 'recent' ? 7 : 60) * 864e5).toISOString().slice(0, 10);
-        return this.discover('tv', { page, genre, sort, providers: [], extra: { with_networks: networks.join('|'), 'air_date.gte': recentFrom, ...extra } });
+        return this.discoverRaw('tv', { page, genre, sort, providers: [], extra: { with_networks: networks.join('|'), 'air_date.gte': recentFrom, ...extra } });
       }
       const today = new Date().toISOString().slice(0, 10);
       // Séries les plus récentes : celles qui ont eu un épisode ces 7 derniers jours (nouvelle saison ou épisode de la
@@ -164,13 +187,13 @@ export function makeApi(settings) {
         type === 'all'
           ? res.results.filter((r) => r.media_type === 'movie' || r.media_type === 'tv') // pas les personnes
           : res.results.map((r) => ({ ...r, media_type: type }));
-      return { ...res, results };
+      return localizedList({ ...res, results });
     },
 
     // Films et séries les plus vus de la semaine (sans les personnes)
     async trending() {
       const res = await tmdb('/trending/all/week', { language });
-      return { ...res, results: res.results.filter((r) => r.media_type === 'movie' || r.media_type === 'tv') };
+      return localizedList({ ...res, results: res.results.filter((r) => r.media_type === 'movie' || r.media_type === 'tv') });
     },
 
     // Autres découpages d'une série proposés sur TMDB (ex. « TF1+ » : les saisons telles que la plateforme les présente)
@@ -196,7 +219,7 @@ export function makeApi(settings) {
       });
       const offers = await regionOffers(data);
       if (offers) (data['watch/providers'] ??= { results: {} }).results[region] = offers;
-      return data;
+      return localized(data, type);
     },
 
     // Offres pour le pays choisi : { link, flatrate, free, ads, rent, buy } ou null. Pour une série, la fiche

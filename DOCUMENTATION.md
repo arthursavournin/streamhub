@@ -453,6 +453,12 @@ JustWatch ne l'a pas encore référencé dans ton pays. StreamHub le complète t
 plateformes et avec une clé Streaming Availability (voir [La fiche d’un titre](#la-fiche-dun-titre)) ; sinon,
 il apparaîtra quand JustWatch l'aura ajouté, en général sous quelques jours.
 
+**Un titre s'affiche avec un titre anglais.**
+TMDB n'a pas encore de titre français pour lui. Quand son titre d'origine est écrit dans un autre alphabet (hindi,
+coréen, japonais…), StreamHub affiche le titre, le résumé et l'affiche de la version anglaise, souvent ceux qu'utilise
+la plateforme en France (exemple : « Reporting Live » sur Netflix). Un titre d'origine en alphabet latin (espagnol,
+italien…) est gardé tel quel.
+
 **« Quota Streaming Availability atteint ».**
 L'offre gratuite est limitée par jour : StreamHub utilise les liens JustWatch en attendant le lendemain.
 

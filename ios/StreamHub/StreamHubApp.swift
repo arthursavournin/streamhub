@@ -66,15 +66,6 @@ struct RootView: View {
             }
         }
         #endif
-        .alert(
-            model.question.map { "Tu as regardé « \($0.entry.title) » ?" } ?? "",
-            isPresented: Binding(get: { model.question != nil }, set: { if !$0 { model.question = nil } })
-        ) {
-            Button("Oui") { model.answer(true) }
-            Button("Non", role: .cancel) { model.answer(false) }
-        } message: {
-            Text("S’il est dans ton historique, tu le retrouves dans « Reprendre ».")
-        }
     }
 }
 

@@ -2,24 +2,11 @@ import Foundation
 import Observation
 import UIKit
 
-// Lien qui laisse la question « Tu as regardé… ? » en attente du retour dans l'appli
-struct PendingWatch: Identifiable {
-    let entry: LibraryEntry
-    let at: Date
-    var id: String { entry.key }
-}
-
 // L'état de l'appli : réglages et bibliothèque, synchronisation, ouverture des titres sur les plateformes
 @Observable
 final class AppModel {
     let store = AppStore()
     let sync: SyncService
-    var pending: PendingWatch?
-    var question: PendingWatch?
-
-    // « Tu as regardé… ? » n'est posé qu'après 3 minutes : un retour plus rapide, c'est souvent juste pour changer de
-    // profil ou se connecter (comme sur le site)
-    static let questionDelay: TimeInterval = 3 * 60
 
     init() {
         sync = SyncService(store: store)
@@ -176,7 +163,9 @@ final class AppModel {
         entry.raw["platform"] = .string(watch.name)
         if let service = watch.service { entry.raw["service"] = .string(service) }
         entry.raw["href"] = .string(watch.page ?? watch.href)
-        pending = PendingWatch(entry: entry, at: Date())
+        // Lancé = regardé : dans l'historique tout de suite, sans « Tu as regardé… ? » au retour (demande de
+        // l'utilisateur, comme le site depuis la version 1.9.2)
+        store.recordWatch(entry)
 
         if let app = Platforms.appLink(watch.href).flatMap(URL.init(string:)), await UIApplication.shared.open(app) { return }
         guard let url = URL(string: watch.href) else { return }
@@ -189,17 +178,9 @@ final class AppModel {
         UIApplication.shared.open(url)
     }
 
-    // Retour dans l'appli : question « Tu as regardé… ? » si le titre a été lancé il y a plus de 3 minutes
+    // Retour dans l'appli : synchronisation
     func appBecameActive() {
         sync.appBecameActive()
-        guard let pending, Date().timeIntervalSince(pending.at) >= Self.questionDelay else { return }
-        question = pending
-        self.pending = nil
-    }
-
-    func answer(_ watched: Bool) {
-        if watched, let question { store.recordWatch(question.entry) }
-        question = nil
     }
 }
 

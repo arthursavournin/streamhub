@@ -132,10 +132,9 @@ Sous le résumé, la fiche a des **onglets** (aussi dans l'appli iPhone) :
 - **Historique** : les 30 derniers titres regardés depuis StreamHub.
 - **Téléchargements** : un rappel des titres téléchargés dans les applis des plateformes (voir plus bas).
 
-Quand tu reviens dans StreamHub après avoir lancé un titre, une question confirme ce qui s'est passé :
-« Tu as regardé *Naruto* sur Prime Video ? » (posée au moins 3 minutes après le lancement) ou « Le téléchargement a
-bien démarré ? ». Un titre n'entre dans l'historique ou les téléchargements que si tu réponds oui. La question
-propose aussi d'aimer le titre.
+Un film ou un épisode lancé depuis StreamHub entre tout de suite dans l'historique, sans question. Pour un
+téléchargement, StreamHub demande à ton retour « Le téléchargement a bien démarré ? » : le titre n'entre dans les
+téléchargements que si tu réponds oui.
 
 ### Liker aussi sur la plateforme
 
@@ -351,7 +350,7 @@ ta progression est protégée par ta connexion) : il leur envoie le lien qu'elle
 | **Prime Video** | Lien de lecture de la série : Prime Video reprend où tu t'es arrêté (site et appli) |
 | **Canal+** | Fiche de la série avec lecture automatique : Canal+ lance son bouton « Reprendre » |
 | **Disney+** | Page de la série, qui affiche « Reprendre S1 E7 » (ou « Lecture ») ; sur ordinateur, le [script](#8-le-script--reprise-après-connexion-) appuie dessus à ta place, sur iPhone et iPad il reste un appui |
-| **TF1+**, **M6+** | Pas de reprise par lien : StreamHub lance l'épisode qui suit le dernier que tu as regardé **depuis StreamHub** (quand tu as répondu « Oui » à « Tu as regardé… ? »), grâce à son index des épisodes |
+| **TF1+**, **M6+** | Pas de reprise par lien : StreamHub lance l'épisode qui suit le dernier que tu as regardé **depuis StreamHub** (chaque épisode lancé y est noté), grâce à son index des épisodes |
 
 ### Sur ordinateur
 

@@ -79,6 +79,16 @@ const pendingId = (kind, entry) => {
   return `download:${downloadKey(entry.type, entry.id, entry.season, entry.episode)}`;
 };
 
+// Titres lancés avant la version 1.9.2, quand « Tu as regardé… ? » décidait de l'historique : ils y entrent
+// (l'historique se remplit maintenant dès le lancement, demande de l'utilisateur)
+export function flushWatchPending() {
+  const watched = lib.pending.filter((p) => p.kind === 'watch');
+  if (!watched.length) return;
+  lib.pending = lib.pending.filter((p) => p.kind !== 'watch');
+  for (const p of [...watched].sort((a, b) => a.at - b.at)) putFirst('history', { ...p.entry, key: titleKey(p.entry.type, p.entry.id) }, HISTORY_MAX);
+  saveLibrary(lib);
+}
+
 // Relancer le même titre remplace la question précédente (pour une série : le dernier épisode lancé)
 export function addPending(kind, entry) {
   const id = pendingId(kind, entry);

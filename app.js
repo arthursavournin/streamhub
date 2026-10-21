@@ -10,7 +10,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.9.1';
+const APP_VERSION = '1.9.2';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -463,7 +463,7 @@ const LIBRARY_TEXT = {
   },
   history: {
     intro: `Les ${HISTORY_MAX} derniers titres regardés depuis StreamHub.`,
-    empty: 'Ton historique est vide. Quand tu reviens dans StreamHub après avoir lancé un film ou un épisode, réponds « Oui » à « Tu as regardé… ? » pour l’y ajouter.',
+    empty: 'Ton historique est vide. Les films et épisodes que tu lances depuis StreamHub s’ajoutent ici.',
     remove: 'Retirer de l’historique',
   },
   downloads: {
@@ -1914,7 +1914,11 @@ function onLaunch(link, event) {
     const titlePage = service && $(`a.watch[data-service="${service}"]`, el.detail)?.dataset.page;
     entry = { ...currentEntry(), platform, service, page: link.dataset.page || titlePage || link.href, ...episodeInfo(link) };
   }
-  if (entry) library.addPending('watch', { ...entry, platform, page: entry.page ?? entry.href });
+  // Lancé = regardé : dans l'historique tout de suite, sans « Tu as regardé… ? » au retour (demande de l'utilisateur)
+  if (entry) {
+    library.recordWatch({ ...entry, platform, page: entry.page ?? entry.href });
+    updateCounts();
+  }
   if (IOS_WEB_APP && /^https:\/\//.test(link.href)) {
     // Appli de l'écran d'accueil : le lien est suivi tel quel, comme un lien touché dans Safari (c'est ce cas
     // qu'iOS reconnaît pour ouvrir l'appli de la plateforme), dans la même fenêtre et sans « #streamhub= ».
@@ -1933,9 +1937,9 @@ function onLaunch(link, event) {
 
 // ---------- Questions au retour dans StreamHub ----------
 
-// « Tu as regardé… ? » n'est posé qu'après 3 minutes : un retour plus rapide, c'est souvent juste
-// pour relancer après le choix du profil. Le téléchargement, lui, se vérifie dès le retour.
-const PENDING_DELAYS = { watch: 3 * 60 * 1000, download: 3 * 1000, platformLike: 3 * 1000, platformUnlike: 3 * 1000 };
+// Questions posées au retour : téléchargement, like sur la plateforme (un titre lancé entre directement dans
+// l'historique depuis la version 1.9.2). watch : anciennes questions, vidées au démarrage (flushWatchPending).
+const PENDING_DELAYS = { download: 3 * 1000, platformLike: 3 * 1000, platformUnlike: 3 * 1000 };
 let promptedId = null;
 
 function checkPending() {
@@ -2765,7 +2769,8 @@ initSpatialNav({
 
 // ---------- Démarrage ----------
 
-checkPending(); // l'appli a pu être fermée pendant le film ou le téléchargement
+library.flushWatchPending();
+checkPending(); // l'appli a pu être fermée pendant le téléchargement
 showView('home');
 if (!settings.tmdbKey) openSettings(true);
 startAutoSync(applySynced); // réglages et listes des autres appareils

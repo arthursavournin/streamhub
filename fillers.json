@@ -1,6 +1,6 @@
 {
  "source": "https://animotaku.fr/blog/naruto-naruto-shippuden-liste-complete-episodes-sans-hors-serie/",
- "note": "Saisons [numéro, premier épisode, dernier épisode] et épisodes hors-série (filler), en numérotation absolue (celle de TMDB)",
+ "note": "Saisons [numéro, premier épisode, dernier épisode] : Naruto comme animotaku.fr (9 saisons), Naruto Shippuden comme Netflix France (21 saisons, captures de l'utilisateur) ; épisodes hors-série (filler) d'après animotaku.fr, en numérotation absolue (celle de TMDB)",
  "shows": {
   "46260": {
    "name": "Netflix - Sans filler",
@@ -80,100 +80,105 @@
     [
      1,
      1,
-     30
+     32
     ],
     [
      2,
-     31,
+     33,
      53
     ],
     [
      3,
      54,
-     77
+     71
     ],
     [
      4,
-     78,
-     102
+     72,
+     88
     ],
     [
      5,
-     103,
-     128
+     89,
+     112
     ],
     [
      6,
-     129,
-     153
+     113,
+     143
     ],
     [
      7,
-     154,
-     179
+     144,
+     151
     ],
     [
      8,
-     180,
-     205
+     152,
+     175
     ],
     [
      9,
-     206,
-     230
+     176,
+     196
     ],
     [
      10,
-     231,
-     256
+     197,
+     221
     ],
     [
      11,
-     257,
-     281
+     222,
+     242
     ],
     [
      12,
-     282,
-     306
+     243,
+     275
     ],
     [
      13,
-     307,
-     332
+     276,
+     295
     ],
     [
      14,
-     333,
-     356
+     296,
+     320
     ],
     [
      15,
-     357,
-     379
+     321,
+     348
     ],
     [
      16,
-     380,
-     405
+     349,
+     361
     ],
     [
      17,
-     406,
-     431
+     362,
+     372
     ],
     [
      18,
-     432,
-     458
+     373,
+     393
     ],
     [
      19,
-     459,
-     479
+     394,
+     413
     ],
     [
      20,
+     414,
+     479
+    ],
+    [
+     21,
      480,
      500
     ]

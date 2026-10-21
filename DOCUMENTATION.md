@@ -114,7 +114,10 @@ l'épisode 1 si tu ne l'as jamais regardée ([détails](#reprendre-une-série)).
 Sous le résumé, la fiche a des **onglets** (aussi dans l'appli iPhone) :
 
 - **Épisodes** (séries, ouvert d'abord) : chaque saison se déplie pour afficher ses épisodes (résumé, date, durée),
-  avec un bouton pour lancer directement celui que tu veux quand la plateforme le permet.
+  avec un bouton pour lancer directement celui que tu veux quand la plateforme le permet. Pour **Naruto** et
+  **Naruto Shippuden**, le découpage **« Netflix - Sans filler »** est choisi d'office (9 et 20 saisons) : les
+  épisodes hors-série (fillers, d'après la liste d'animotaku.fr) sont en rouge avec l'étiquette « Filler », et une
+  saison qui n'a que des fillers est entièrement en rouge. Le menu « Découpage » permet de revenir à celui de TMDB.
 - **Suggestions** (ouvert d'abord pour un film, seul onglet) : des affiches à ouvrir, en trois rangées :
   - **La saga** : les autres films de la saga, dans l'ordre de sortie (les 7 autres Harry Potter) ;
   - **Dans le même univers** : les films et séries de la même franchise, que TMDB ne relie pas entre eux. Exemples :

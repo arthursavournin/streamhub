@@ -10,7 +10,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.10.0';
+const APP_VERSION = '1.11.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -1343,12 +1343,13 @@ function seasonsHtml() {
     <ol class="season-list">
       ${seasons
         .map(
-          (s) => `<li class="season" data-season="${s.number}" data-orig-season="${s.origSeason}">
+          (s) => `<li class="season${s.fillers && s.fillers === s.count ? ' filler' : ''}" data-season="${s.number}" data-orig-season="${s.origSeason}">
             <button type="button" class="season-head" data-season-toggle="${s.number}" aria-expanded="false">
               ${s.poster ? `<img src="${img(s.poster, 'w92')}" alt="" loading="lazy">` : '<span class="season-placeholder"></span>'}
               <span class="season-text">
                 <strong>${esc(s.name)}</strong>
                 <small>${[plural(s.count, 'épisode', 'épisodes'), year(s.airDate)].filter(Boolean).join(' · ')}</small>
+                ${s.fillers ? `<small class="season-fillers">${s.fillers === s.count ? 'Que des fillers' : plural(s.fillers, 'filler', 'fillers')}</small>` : ''}
                 <small class="season-platforms"></small>
               </span>
               <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
@@ -1368,23 +1369,49 @@ const frDate = (date) =>
 function episodeHtml(ep) {
   const upcoming = ep.air_date && ep.air_date > new Date().toISOString().slice(0, 10);
   const number = ep.display_number ?? ep.episode_number;
-  return `<li class="episode" data-episode="${number}" data-orig-season="${ep.season_number}" data-orig-episode="${ep.episode_number}" data-air="${esc(ep.air_date ?? '')}">
+  return `<li class="episode${ep.filler ? ' filler' : ''}" data-episode="${number}" data-orig-season="${ep.season_number}" data-orig-episode="${ep.episode_number}" data-air="${esc(ep.air_date ?? '')}">
     ${ep.still_path ? `<img src="${img(ep.still_path, 'w300')}" alt="" loading="lazy">` : '<span class="episode-placeholder"></span>'}
     <div class="episode-text">
-      <strong>${number}. ${esc(ep.name)}</strong>
-      <small>${[upcoming ? `Diffusion le ${frDate(ep.air_date)}` : frDate(ep.air_date), ep.runtime ? `${ep.runtime} min` : ''].filter(Boolean).join(' · ')}</small>
+      <strong>${number}. ${esc(ep.name)}${ep.filler ? '<span class="filler-tag">Filler</span>' : ''}</strong>
+      <small>${[ep.filler != null ? `épisode ${ep.episode_number}` : '', upcoming ? `Diffusion le ${frDate(ep.air_date)}` : frDate(ep.air_date), ep.runtime ? `${ep.runtime} min` : ''].filter(Boolean).join(' · ')}</small>
       <p class="episode-overview">${esc(ep.overview || 'Pas encore de résumé en français.')}</p>
       <div class="episode-links"></div>
     </div>
   </li>`;
 }
 
+// Découpage « Netflix - Sans filler » (Naruto, Naruto Shippuden ; demande de l'utilisateur) : saisons et épisodes
+// hors-série d'après la liste d'animotaku.fr, dans fillers.json (numérotation absolue, la même que TMDB)
+const FILLER_GROUP = 'fillers';
+let fillersData;
+const loadFillers = () => (fillersData ??= fetch('fillers.json').then((res) => (res.ok ? res.json() : null)).catch(() => null));
+const inRanges = (n, ranges) => ranges.some(([first, last]) => n >= first && n <= last);
+
+async function fillerSeasons(item, def) {
+  const numbers = (item.seasons ?? []).map((s) => s.season_number).filter((n) => n > 0);
+  const all = (await Promise.all(numbers.map((n) => api.season(item.id, n).catch(() => null)))).flatMap((s) => s?.episodes ?? []);
+  return def.seasons
+    .map(([number, first, last]) => {
+      const episodes = all
+        .filter((e) => e.episode_number >= first && e.episode_number <= last)
+        .sort((a, b) => a.episode_number - b.episode_number)
+        .map((e, j) => ({ ...e, display_number: j + 1, filler: inRanges(e.episode_number, def.fillers) }));
+      return { number, name: `Saison ${number}`, episodes, fillers: episodes.filter((e) => e.filler).length };
+    })
+    .filter((s) => s.episodes.length)
+    .map((s) => ({ ...s, count: s.episodes.length, airDate: s.episodes[0].air_date, poster: seasonImage(s.episodes, item), origSeason: s.episodes[0].season_number }));
+}
+
 // Autres découpages proposés sur TMDB. Si l'un porte le nom d'une plateforme où la série est disponible
-// (ex. « TF1+ »), on l'utilise d'office : ce sont les saisons que tu verras sur cette plateforme.
+// (ex. « TF1+ »), on l'utilise d'office : ce sont les saisons que tu verras sur cette plateforme. Le découpage
+// « Sans filler » passe avant, quand la série en a un.
 async function loadEpisodeGroups(item, key) {
-  const groups = await api.episodeGroups(item.id).catch(() => []);
+  const [found, fillers] = await Promise.all([api.episodeGroups(item.id).catch(() => []), loadFillers()]);
+  const def = fillers?.shows?.[item.id];
+  const groups = def ? [{ id: FILLER_GROUP, name: def.name, group_count: def.seasons.length }, ...found] : found;
   if (current?.key !== key || !groups.length) return;
   current.groupChoices = groups;
+  if (def) return selectEpisodeGroup(FILLER_GROUP, key);
   const platforms = streamable(item['watch/providers']?.results?.[settings.region]).map((p) => p.provider_name.toLowerCase());
   const matches = (g) => platforms.some((p) => p === g.name.trim().toLowerCase() || p.startsWith(`${g.name.trim().toLowerCase()} `));
   const preferred = groups.find(matches);
@@ -1397,7 +1424,9 @@ async function selectEpisodeGroup(id, key = current?.key) {
     current.seasons =
       id === 'tmdb'
         ? tmdbSeasons(current.item)
-        : await completeGroupSeasons(groupSeasons(await api.episodeGroup(id), current.item), current.item);
+        : id === FILLER_GROUP
+          ? await fillerSeasons(current.item, (await loadFillers()).shows[current.id])
+          : await completeGroupSeasons(groupSeasons(await api.episodeGroup(id), current.item), current.item);
     current.groupId = id;
   } catch (err) {
     toast(err.message);

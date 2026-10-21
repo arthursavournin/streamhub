@@ -860,6 +860,22 @@ html:has(dialog[open]) { overflow: hidden; }
 .season-head .chevron { color: var(--muted); transition: transform 0.2s ease; }
 .season-head[aria-expanded="true"] .chevron { transform: rotate(180deg); }
 
+/* Découpage « Sans filler » : épisodes hors-série en rouge, saison en rouge si elle n'a que des fillers */
+.season.filler { background: rgba(255, 69, 58, 0.1); border-color: rgba(255, 69, 58, 0.55); }
+.season-text .season-fillers { color: #ff7b72; }
+.episode.filler { background: rgba(255, 69, 58, 0.12); box-shadow: inset 3px 0 0 #ff453a; }
+.filler-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #ff453a;
+  color: #fff;
+  font-size: 0.72em;
+  font-weight: 700;
+  vertical-align: 2px;
+}
+
 .episodes { padding: 0 10px 10px; }
 .episodes > p { margin: 4px 6px 8px; }
 .episode-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }

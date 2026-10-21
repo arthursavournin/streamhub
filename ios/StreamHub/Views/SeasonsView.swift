@@ -16,6 +16,11 @@ struct SeasonsSection: View {
     @State private var loading = false
     @State private var error: String?
     @State private var shown = 30 // feuilletons : des centaines d'épisodes par saison, affichés par paquets
+    @State private var fillerShow: FillerShow? // découpage « Netflix - Sans filler » (Naruto, Naruto Shippuden)
+    @State private var useFillers = true // choix du découpage : sans filler (par défaut) ou TMDB
+    @State private var allEpisodes: [Episode]? // tous les épisodes TMDB, pour le découpage sans filler
+
+    private var fillerMode: Bool { fillerShow != nil && useFillers }
 
     // Saisons régulières d'abord, épisodes spéciaux (saison 0) à la fin
     private var seasons: [SeasonSummary] {
@@ -24,25 +29,53 @@ struct SeasonsSection: View {
             .sorted { ($0.seasonNumber == 0 ? 999 : $0.seasonNumber) < ($1.seasonNumber == 0 ? 999 : $1.seasonNumber) }
     }
 
+    // Boutons de saison : numéro, titre, et pour le découpage sans filler, s'il n'y a que des fillers
+    private var seasonButtons: [(number: Int, title: String, allFiller: Bool)] {
+        if fillerMode, let fillerShow {
+            return fillerShow.seasons.compactMap { $0.first }.map { ($0, "Saison \($0)", fillerShow.fillerCount(of: $0).all) }
+        }
+        return seasons.map { ($0.seasonNumber, $0.title, false) }
+    }
+
     var body: some View {
         if !seasons.isEmpty {
             VStack(alignment: .leading, spacing: 14) {
+                if let fillerShow {
+                    Picker("Découpage", selection: $useFillers) {
+                        Text("Découpage \(fillerShow.name)").tag(true)
+                        Text("Découpage TMDB").tag(false)
+                    }
+                    .pickerStyle(.menu)
+                    .padding(.horizontal, 6)
+                }
                 ScrollViewReader { proxy in
                     ScrollView(.horizontal) {
                         HStack(spacing: 8) {
-                            ForEach(seasons, id: \.seasonNumber) { season in
-                                let active = season.seasonNumber == selected
-                                Button(season.title) { selected = season.seasonNumber }
+                            ForEach(seasonButtons, id: \.number) { season in
+                                let active = season.number == selected
+                                Button(season.title) { selected = season.number }
                                     .buttonStyle(.glass)
-                                    .tint(active ? .accentColor : nil)
+                                    .tint(season.allFiller ? .red : active ? .accentColor : nil)
                                     .fontWeight(active ? .semibold : .regular)
-                                    .id(season.seasonNumber)
+                                    .overlay {
+                                        if active && season.allFiller { Capsule().stroke(.white.opacity(0.8), lineWidth: 1.5) }
+                                    }
+                                    .id(season.number)
                             }
                         }
                         .padding(.horizontal, 16)
                     }
                     .scrollIndicators(.hidden)
                     .onChange(of: selected) { _, value in withAnimation { proxy.scrollTo(value, anchor: .center) } }
+                }
+                if fillerMode, let fillerShow, let selected {
+                    let fillers = fillerShow.fillerCount(of: selected)
+                    if fillers.count > 0 {
+                        Text(fillers.all ? "Que des fillers dans cette saison" : "\(fillers.count) filler\(fillers.count > 1 ? "s" : "") dans cette saison")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.red)
+                            .padding(.horizontal, 16)
+                    }
                 }
                 if let error {
                     Text(error).foregroundStyle(.secondary).padding(.horizontal, 16)
@@ -52,8 +85,11 @@ struct SeasonsSection: View {
                     Text("Pas encore d’épisodes annoncés.").foregroundStyle(.secondary).padding(.horizontal, 16)
                 } else {
                     LazyVStack(alignment: .leading, spacing: 18) {
-                        ForEach(episodes.prefix(shown)) { ep in
-                            EpisodeRow(episode: ep, links: links[ep.id], linksReady: linksReady, watched: isLastWatched(ep)) { link in
+                        ForEach(Array(episodes.prefix(shown).enumerated()), id: \.element.id) { i, ep in
+                            EpisodeRow(
+                                episode: ep, links: links[ep.id], linksReady: linksReady, watched: isLastWatched(ep),
+                                number: fillerMode ? i + 1 : nil, filler: fillerMode && fillerShow?.isFiller(ep.episodeNumber) == true
+                            ) { link in
                                 onLaunch(link, ep)
                             }
                         }
@@ -67,11 +103,21 @@ struct SeasonsSection: View {
                 }
             }
             .task(id: details.id) {
-                // Saison du dernier épisode regardé, sinon la première
-                selected = lastWatched?.season.flatMap { s in seasons.contains { $0.seasonNumber == s } ? s : nil } ?? seasons.first?.seasonNumber
+                fillerShow = await Fillers.show(details.id)
+                selectStart()
             }
-            .task(id: selected) { await loadSeason() }
+            .onChange(of: useFillers) { selectStart() }
+            .task(id: "\(selected ?? -1)|\(fillerMode)") { await loadSeason() }
             .task(id: "\(selected ?? -1)|\(linksReady)|\(episodes.count)|\(shown)") { await loadLinks() }
+        }
+    }
+
+    // Saison du dernier épisode regardé, sinon la première (découpage sans filler : la saison qui le contient)
+    private func selectStart() {
+        if fillerMode, let fillerShow {
+            selected = lastWatched?.episode.flatMap { fillerShow.season(of: $0) } ?? fillerShow.seasons.first?.first
+        } else {
+            selected = lastWatched?.season.flatMap { s in seasons.contains { $0.seasonNumber == s } ? s : nil } ?? seasons.first?.seasonNumber
         }
     }
 
@@ -86,7 +132,19 @@ struct SeasonsSection: View {
         shown = 30
         defer { loading = false }
         do {
-            episodes = try await model.tmdb.season(details.id, selected).episodes
+            if fillerMode, let range = fillerShow?.range(of: selected) {
+                // Toutes les saisons TMDB une fois (Naruto : 4 saisons, Shippuden : 20), puis les épisodes de la saison
+                if allEpisodes == nil {
+                    let tmdb = model.tmdb
+                    let numbers = seasons.map(\.seasonNumber).filter { $0 > 0 }
+                    var all: [Episode] = []
+                    for n in numbers { all += (try? await tmdb.season(details.id, n).episodes) ?? [] }
+                    allEpisodes = all
+                }
+                episodes = (allEpisodes ?? []).filter { range.contains($0.episodeNumber) }.sorted { $0.episodeNumber < $1.episodeNumber }
+            } else {
+                episodes = try await model.tmdb.season(details.id, selected).episodes
+            }
             links = [:]
         } catch {
             if !Task.isCancelled { self.error = error.localizedDescription }
@@ -120,6 +178,8 @@ private struct EpisodeRow: View {
     let links: [EpisodeLink]?
     let linksReady: Bool
     let watched: Bool
+    var number: Int? // numéro dans la saison du découpage sans filler (sinon celui de TMDB)
+    var filler = false
     let onLaunch: (EpisodeLink) -> Void
 
     private static let day: DateFormatter = {
@@ -131,6 +191,7 @@ private struct EpisodeRow: View {
 
     private var meta: String {
         var parts: [String] = []
+        if number != nil { parts.append("épisode \(episode.episodeNumber)") }
         if let air = episode.airDate, let date = Self.day.date(from: air) {
             let text = date.formatted(.dateTime.day().month(.wide).year().locale(Locale(identifier: "fr_FR")))
             parts.append(date > Date() ? "Diffusion le \(text)" : text)
@@ -153,9 +214,14 @@ private struct EpisodeRow: View {
                         }
                     }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("\(episode.episodeNumber). \(episode.name ?? "Épisode \(episode.episodeNumber)")")
+                    Text("\(number ?? episode.episodeNumber). \(episode.name ?? "Épisode \(episode.episodeNumber)")")
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(2)
+                    if filler {
+                        Text("Filler").font(.caption2.weight(.bold)).foregroundStyle(.white)
+                            .padding(.horizontal, 7).padding(.vertical, 2)
+                            .background(.red, in: .capsule)
+                    }
                     if !meta.isEmpty {
                         Text(meta).font(.caption).foregroundStyle(.secondary)
                     }
@@ -185,6 +251,12 @@ private struct EpisodeRow: View {
             } else {
                 Text("Recherche des liens…").font(.caption).foregroundStyle(.secondary)
             }
+        }
+        // Filler : fond et bord rouges, comme sur le site
+        .padding(filler ? 8 : 0)
+        .background(filler ? Color.red.opacity(0.12) : .clear, in: .rect(cornerRadius: 12))
+        .overlay(alignment: .leading) {
+            if filler { Rectangle().fill(.red).frame(width: 3).clipShape(.rect(cornerRadius: 2)) }
         }
     }
 }

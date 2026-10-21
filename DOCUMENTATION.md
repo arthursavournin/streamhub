@@ -401,21 +401,15 @@ Quand tu lances un titre depuis StreamHub et que la plateforme te demande d'abor
 profil (code PIN compris), elle t'envoie ensuite sur son accueil et oublie le titre. Ce petit script s'en souvient :
 une fois connecté et le profil choisi, il ouvre le titre demandé. Il sert surtout **sur ordinateur**.
 
-Il fait aussi quatre choses de plus :
+Il fait aussi trois choses de plus :
 - il rouvre une fois le titre quand M6+ affiche son accueil, ou TF1+ la fiche du programme, au lieu de la vidéo ;
 - sur le site Prime Video, si la lecture a été demandée mais que la fiche reste affichée, il appuie une fois sur
   « Reprendre » ou « Lecture » ;
 - sur Disney+, quand tu lances une série, il appuie sur « Reprendre » (ou « Lecture ») sur la page de la série :
-  la série reprend à l'épisode suivant ;
-- sur les sites **Netflix** et **Prime Video** (depuis la version 2.9), il signale les **épisodes hors-série
-  (fillers)** de Naruto, Naruto Shippuden et Boruto : cadre rouge et étiquette « FILLER » dans la liste des
-  épisodes (sans autre message). La liste des fillers
-  est celle de StreamHub, qu'il relit en ligne. Dans les applis Netflix et Prime Video de l'iPhone, c'est impossible :
-  aucun script ne peut modifier une appli.
+  la série reprend à l'épisode suivant.
 
-La reprise n'agit que dans un parcours lancé depuis StreamHub (moins de 15 minutes) et ne garde, dans ton
-navigateur, que l'adresse du titre lancé ; le repérage des fillers ne fait que lire la liste des fillers sur le site
-de StreamHub. Une fois installé, la ligne « Script… installé » apparaît dans
+Il n'agit que dans un parcours lancé depuis StreamHub (moins de 15 minutes), n'envoie rien sur Internet et ne garde,
+dans ton navigateur, que l'adresse du titre lancé. Une fois installé, la ligne « Script… installé » apparaît dans
 Réglages → Pays et lecture, et la barre « Relancer » ne s'affiche plus.
 
 | Navigateur | Installation |

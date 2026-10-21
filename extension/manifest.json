@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "StreamHub – reprise après connexion",
-  "description": "Quand une plateforme demande de se connecter ou de choisir un profil, ouvre ensuite le titre lancé depuis StreamHub. Signale aussi les épisodes hors-série (fillers) de Naruto, Shippuden et Boruto sur Netflix et Prime Video.",
-  "version": "3.0",
+  "description": "Quand une plateforme demande de se connecter ou de choisir un profil, ouvre ensuite le titre lancé depuis StreamHub. N'agit que dans les onglets ouverts depuis StreamHub.",
+  "version": "3.1",
   "icons": {
     "128": "icon-128.png"
   },

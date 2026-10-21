@@ -1,6 +1,6 @@
 {
  "source": "https://animotaku.fr/blog/naruto-naruto-shippuden-liste-complete-episodes-sans-hors-serie/",
- "note": "Saisons [numéro, premier épisode, dernier épisode] : Naruto comme animotaku.fr (9 saisons), Naruto Shippuden comme Netflix France (21 saisons, captures de l'utilisateur) ; épisodes hors-série (filler) d'après animotaku.fr, en numérotation absolue (celle de TMDB)",
+ "note": "Saisons [numéro, premier épisode, dernier épisode] (seasonNames : titres des saisons sur Netflix) : Naruto comme animotaku.fr (9 saisons), Naruto Shippuden et Boruto comme Netflix France (21 saisons chacun, captures de l'utilisateur) ; épisodes hors-série (filler, en rouge) d'après animotaku.fr, en numérotation absolue (celle de TMDB)",
  "shows": {
   "46260": {
    "name": "Netflix - Sans filler",
@@ -271,6 +271,176 @@
     [
      480,
      500
+    ]
+   ]
+  },
+  "70881": {
+   "name": "Netflix - Sans filler",
+   "seasons": [
+    [
+     1,
+     1,
+     15
+    ],
+    [
+     2,
+     16,
+     24
+    ],
+    [
+     3,
+     25,
+     32
+    ],
+    [
+     4,
+     33,
+     39
+    ],
+    [
+     5,
+     40,
+     50
+    ],
+    [
+     6,
+     51,
+     70
+    ],
+    [
+     7,
+     71,
+     92
+    ],
+    [
+     8,
+     93,
+     105
+    ],
+    [
+     9,
+     106,
+     115
+    ],
+    [
+     10,
+     116,
+     136
+    ],
+    [
+     11,
+     137,
+     156
+    ],
+    [
+     12,
+     157,
+     176
+    ],
+    [
+     13,
+     177,
+     192
+    ],
+    [
+     14,
+     193,
+     205
+    ],
+    [
+     15,
+     206,
+     220
+    ],
+    [
+     16,
+     221,
+     232
+    ],
+    [
+     17,
+     233,
+     260
+    ],
+    [
+     18,
+     261,
+     273
+    ],
+    [
+     19,
+     274,
+     281
+    ],
+    [
+     20,
+     282,
+     286
+    ],
+    [
+     21,
+     287,
+     293
+    ]
+   ],
+   "seasonNames": {
+    "1": "Débuts à l'académie ninja",
+    "2": "Sarada Uchiwa",
+    "3": "Excursion scolaire",
+    "4": "Examens de fin d'études",
+    "5": "Les Nuits blanches",
+    "6": "Examen Chûnin",
+    "7": "Disparition de Mitsuki",
+    "8": "Naruto Shinden",
+    "9": "Konoha Shinden : Chroniques vaporeuses",
+    "10": "Saut dans le temps",
+    "11": "Bandits de Mujina",
+    "12": "Mise en marche de Kara",
+    "13": "Réceptacle",
+    "14": "Kawaki : Clash avec Kara",
+    "15": "Kawaki : Éveil Ôtsutsuki",
+    "16": "Repassage de l'examen Chûnin"
+   },
+   "fillers": [
+    [
+     2,
+     18
+    ],
+    [
+     25,
+     38
+    ],
+    [
+     40,
+     52
+    ],
+    [
+     60,
+     60
+    ],
+    [
+     67,
+     105
+    ],
+    [
+     107,
+     147
+    ],
+    [
+     152,
+     180
+    ],
+    [
+     190,
+     191
+    ],
+    [
+     209,
+     210
+    ],
+    [
+     221,
+     286
     ]
    ]
   }

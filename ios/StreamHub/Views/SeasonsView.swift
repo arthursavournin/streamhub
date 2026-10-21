@@ -69,6 +69,9 @@ struct SeasonsSection: View {
                     .onChange(of: selected) { _, value in withAnimation { proxy.scrollTo(value, anchor: .center) } }
                 }
                 if fillerMode, let fillerShow, let selected {
+                    if let title = fillerShow.seasonNames?[String(selected)] {
+                        Text(title).font(.subheadline.weight(.semibold)).padding(.horizontal, 16)
+                    }
                     let fillers = fillerShow.fillerCount(of: selected)
                     if fillers.count > 0 {
                         Text(fillers.all ? "Que des fillers dans cette saison" : "\(fillers.count) filler\(fillers.count > 1 ? "s" : "") dans cette saison")

@@ -10,7 +10,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.11.1';
+const APP_VERSION = '1.11.2';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -1396,7 +1396,9 @@ async function fillerSeasons(item, def) {
         .filter((e) => e.episode_number >= first && e.episode_number <= last)
         .sort((a, b) => a.episode_number - b.episode_number)
         .map((e, j) => ({ ...e, display_number: j + 1, filler: inRanges(e.episode_number, def.fillers) }));
-      return { number, name: `Saison ${number}`, episodes, fillers: episodes.filter((e) => e.filler).length };
+      // Titre de la saison sur Netflix quand il y en a un (Boruto : « Saison 1 · Débuts à l'académie ninja »)
+      const title = def.seasonNames?.[number];
+      return { number, name: title ? `Saison ${number} · ${title}` : `Saison ${number}`, episodes, fillers: episodes.filter((e) => e.filler).length };
     })
     .filter((s) => s.episodes.length)
     .map((s) => ({ ...s, count: s.episodes.length, airDate: s.episodes[0].air_date, poster: seasonImage(s.episodes, item), origSeason: s.episodes[0].season_number }));

@@ -6,6 +6,7 @@ nonisolated struct FillerShow: Decodable, Sendable {
     let name: String
     let seasons: [[Int]] // [numéro, premier épisode, dernier épisode]
     let fillers: [[Int]] // [premier, dernier]
+    let seasonNames: [String: String]? // titres des saisons sur Netflix (Boruto), par numéro
 
     func isFiller(_ episode: Int) -> Bool { fillers.contains { $0.count == 2 && episode >= $0[0] && episode <= $0[1] } }
 

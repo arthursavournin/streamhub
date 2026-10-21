@@ -35,6 +35,10 @@ appli sur téléphone, tablette et ordinateur.
 - **Accueil** : une affiche mise en avant et des rangées façon Netflix : Top 50 du moment, Reprendre, Ma liste,
   Nouveautés, Nouveaux épisodes, Nouveaux films, Les mieux notés, puis une rangée par genre (Action & aventure, Comédie, Horreur, Science-fiction &
   fantastique, Thriller & policier, Drame, Animation, Animés japonais, Romance, Famille, Documentaires).
+  **Personnaliser l'accueil** (Réglages → Accueil) : coche les rangées à afficher et range-les avec les flèches. Le
+  titre en grand en haut est le n° 1 du Top 50 du moment, sauf si tu en choisis un : bouton « ☆ À l’affiche » dans sa
+  fiche (un second appui, ou « Automatique » dans les réglages, revient au n° 1). Synchronisé avec tes autres appareils
+  et l'appli iPhone.
   Une série compte comme nouvelle quand elle a eu un **épisode ces 7 derniers jours** (nouvelle saison ou épisode de la
   semaine), même si elle a commencé il y a des années ; son affiche indique le dernier épisode (« S3 E2 · 16 oct. »).
   Ces dates sont celles de la première diffusion dans le monde : un épisode diffusé aux États-Unis n'est pas forcément

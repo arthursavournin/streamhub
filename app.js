@@ -9,7 +9,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.7.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -612,18 +612,43 @@ let heroItem = null;
 // Rangées par genre de l'accueil, films et séries mélangés. TMDB n'a pas les mêmes genres pour les
 // deux : un genre sans identifiant pour un type (ex. Horreur pour les séries) n'affiche que l'autre.
 const HOME_GENRES = [
-  { title: 'Action & aventure', genres: { movie: 28, tv: 10759 } },
-  { title: 'Comédie', genres: { movie: 35, tv: 35 } },
-  { title: 'Horreur', genres: { movie: 27 } },
-  { title: 'Science-fiction & fantastique', genres: { movie: 878, tv: 10765 } },
-  { title: 'Thriller & policier', genres: { movie: 53, tv: 80 } },
-  { title: 'Drame', genres: { movie: 18, tv: 18 } },
-  { title: 'Animation', genres: { movie: 16, tv: 16 } },
-  { title: 'Animés japonais', genres: { movie: 16, tv: 16 }, extra: { with_origin_country: 'JP' } },
-  { title: 'Romance', genres: { movie: 10749 } },
-  { title: 'Famille', genres: { movie: 10751, tv: 10751 } },
-  { title: 'Documentaires', genres: { movie: 99, tv: 99 } },
+  { key: 'action', title: 'Action & aventure', genres: { movie: 28, tv: 10759 } },
+  { key: 'comedy', title: 'Comédie', genres: { movie: 35, tv: 35 } },
+  { key: 'horror', title: 'Horreur', genres: { movie: 27 } },
+  { key: 'scifi', title: 'Science-fiction & fantastique', genres: { movie: 878, tv: 10765 } },
+  { key: 'thriller', title: 'Thriller & policier', genres: { movie: 53, tv: 80 } },
+  { key: 'drama', title: 'Drame', genres: { movie: 18, tv: 18 } },
+  { key: 'animation', title: 'Animation', genres: { movie: 16, tv: 16 } },
+  { key: 'anime', title: 'Animés japonais', genres: { movie: 16, tv: 16 }, extra: { with_origin_country: 'JP' } },
+  { key: 'romance', title: 'Romance', genres: { movie: 10749 } },
+  { key: 'family', title: 'Famille', genres: { movie: 10751, tv: 10751 } },
+  { key: 'documentary', title: 'Documentaires', genres: { movie: 99, tv: 99 } },
 ];
+
+// Rangées de l'accueil, dans l'ordre par défaut. Réglages → Accueil : l'utilisateur choisit celles qu'il affiche et leur
+// ordre (settings.home.rows : [{ key, on }]), et le titre à l'affiche (settings.home.hero, sinon le n° 1 du Top 50).
+// Clés communes avec l'appli iPhone (réglages synchronisés).
+// Top 50 : classement « populaire » de JustWatch dans ton pays (activité récente, publié avec le site toutes les 6 heures),
+// limité à tes plateformes. Avant : popularité TMDB, qui mettait en tête de vieilles séries très consultées (New York
+// Police Judiciaire, Les Simpson), signalé par l'utilisateur. Sans classement : popularité TMDB.
+const HOME_ROWS = [
+  { key: 'top', top: true, title: 'Top 50 du moment', type: 'all', sort: 'popularity', pages: 2, limit: 50, ranked: true },
+  { key: 'history', title: 'Reprendre', local: 'history' },
+  { key: 'watchlist', title: 'Ma liste', local: 'watchlist' },
+  { key: 'recent', title: 'Nouveautés', type: 'all', sort: 'recent', pages: 2, limit: 30 },
+  { key: 'new-episodes', title: 'Nouveaux épisodes', type: 'tv', sort: 'recent', pages: 2, limit: 40 },
+  { key: 'new-movies', title: 'Nouveaux films', type: 'movie', sort: 'recent' },
+  { key: 'rating', title: 'Les mieux notés', type: 'all', sort: 'rating' },
+  ...HOME_GENRES.map((g) => ({ ...g, type: 'all', sort: 'popularity' })),
+];
+
+// Ordre et choix des rangées : ceux enregistrés, puis les rangées inconnues de l'enregistrement (ajoutées depuis), affichées
+function homeLayout(home = settings.home) {
+  const known = new Set(HOME_ROWS.map((r) => r.key));
+  const saved = (home?.rows ?? []).filter((r) => known.has(r.key));
+  const seen = new Set(saved.map((r) => r.key));
+  return [...saved.map((r) => ({ key: r.key, on: r.on !== false })), ...HOME_ROWS.filter((r) => !seen.has(r.key)).map((r) => ({ key: r.key, on: true }))];
+}
 
 // Genres mis en avant dans les pages Films et Séries (identifiants TMDB, dans cet ordre)
 const ROW_GENRES = {
@@ -636,19 +661,12 @@ const ROW_GENRES = {
 async function rowsFor(view) {
   const filter = defaultFilter();
   if (view === 'home') {
-    return [
-      // Classement « populaire » de JustWatch dans ton pays (activité récente, publié avec le site toutes les 6 heures),
-      // limité à tes plateformes. Avant : popularité TMDB, qui mettait en tête de vieilles séries très consultées
-      // (New York Police Judiciaire, Les Simpson), signalé par l'utilisateur. Sans classement : popularité TMDB.
-      { hero: true, top: true, title: 'Top 50 du moment', type: 'all', sort: 'popularity', filter, pages: 2, limit: 50, ranked: true },
-      { title: 'Reprendre', local: 'history' },
-      { title: 'Ma liste', local: 'watchlist' },
-      { title: 'Nouveautés', type: 'all', sort: 'recent', filter, pages: 2, limit: 30 },
-      { title: 'Nouveaux épisodes', type: 'tv', sort: 'recent', filter, pages: 2, limit: 40 },
-      { title: 'Nouveaux films', type: 'movie', sort: 'recent', filter },
-      { title: 'Les mieux notés', type: 'all', sort: 'rating', filter },
-      ...HOME_GENRES.map((g) => ({ ...g, type: 'all', sort: 'popularity', filter })),
-    ];
+    // L'affiche vient du Top 50 (son n° 1), sauf si un titre a été choisi
+    const chosenHero = Boolean(settings.home?.hero);
+    return homeLayout()
+      .filter((r) => r.on)
+      .map((r) => HOME_ROWS.find((d) => d.key === r.key))
+      .map((d) => ({ ...d, filter, hero: Boolean(d.top) && !chosenHero }));
   }
   if (view === 'movies' || view === 'tv') {
     const type = view === 'movies' ? 'movie' : 'tv';
@@ -795,6 +813,24 @@ async function renderRowsPage(view) {
     if (row.local) fillLocalRow(section);
     else if (row.hero) loadRow(section); // tout de suite : elle fournit l'affiche
     else rowObserver.observe(section);
+  }
+  if (view === 'home' && !rows.some((r) => r.hero)) loadHomeHero(token);
+  updateTopbar();
+}
+
+// Affiche de l'accueil quand elle ne vient pas de la rangée Top 50 : le titre choisi (Réglages → Accueil, ou « ☆ À
+// l'affiche » dans sa fiche), sinon le n° 1 du Top 50 (rangée masquée)
+async function loadHomeHero(token) {
+  try {
+    const chosen = settings.home?.hero;
+    const item = chosen
+      ? { ...(await api.title(chosen.type, chosen.id)), media_type: chosen.type }
+      : (await fetchTop({ filter: defaultFilter(), limit: 1 }))?.[0];
+    if (token !== rowsToken) return;
+    if (item) renderHero(item);
+    else $('.hero', el.rowsPage)?.remove();
+  } catch {
+    if (token === rowsToken) $('.hero', el.rowsPage)?.remove();
   }
   updateTopbar();
 }
@@ -1042,6 +1078,15 @@ function refreshListButton() {
   const inList = library.has('watchlist', library.titleKey(current.type, current.id));
   btn.setAttribute('aria-pressed', inList);
   btn.textContent = inList ? '✓ Ma liste' : '+ Ma liste';
+}
+
+function refreshHeroPick() {
+  const btn = $('[data-hero-pick]', el.detail);
+  if (!btn || !current) return;
+  const chosen = settings.home?.hero;
+  const on = chosen?.type === current.type && chosen?.id === current.id;
+  btn.setAttribute('aria-pressed', on);
+  btn.textContent = on ? '★ À l’affiche' : '☆ À l’affiche';
 }
 
 function refreshLikeButton() {
@@ -1490,6 +1535,7 @@ function renderDetail(item, type) {
           <div class="detail-actions">
             <button type="button" class="btn list-btn" data-list aria-pressed="false">+ Ma liste</button>
             <button type="button" class="btn like-btn" data-like aria-pressed="false">♡ J’aime</button>
+            <button type="button" class="btn hero-pick" data-hero-pick aria-pressed="false" title="Mettre ce titre en grand en haut de l’accueil">☆ À l’affiche</button>
             ${trailer ? `<a class="btn" href="https://www.youtube.com/watch?v=${esc(trailer.key)}" target="_blank" rel="noopener">▶ Bande-annonce</a>` : ''}
           </div>
         </div>
@@ -1506,6 +1552,7 @@ function renderDetail(item, type) {
       ${type === 'tv' ? seasonsHtml() : ''}
     </div>`);
   refreshLikeButton();
+  refreshHeroPick();
   refreshDownloadButtons();
   $('.watch', el.detail)?.focus({ preventScroll: true });
   if (!$('.watch', el.detail)) el.detail.focus({ preventScroll: true });
@@ -1931,6 +1978,11 @@ el.settings.addEventListener('close', () => {
 });
 // Résumés des sections, et aperçu immédiat de l'effet verre
 el.settingsForm.addEventListener('input', (e) => {
+  const row = e.target.closest?.('[data-home-row]');
+  if (row) {
+    draftHome.rows = draftHome.rows.map((r) => (r.key === row.dataset.homeRow ? { ...r, on: row.checked } : r));
+    row.closest('li').classList.toggle('off', !row.checked);
+  }
   if (e.target.name === 'glass') document.documentElement.dataset.glass = e.target.value;
   renderSettingsSummaries();
 });
@@ -1972,9 +2024,31 @@ function fillSettings() {
     status.innerHTML = status.dataset.default;
   }
   draftProviders = new Map(settings.providers.map((p) => [p.id, p]));
+  draftHome = { rows: homeLayout(), hero: settings.home?.hero ?? null };
+  renderHomeSettings();
   renderSync();
   loadProviderChoices();
   renderSettingsSummaries();
+}
+
+// ---------- Réglages : accueil ----------
+
+let draftHome = { rows: [], hero: null };
+
+function renderHomeSettings() {
+  $('#homeHero').textContent = draftHome.hero ? `« ${draftHome.hero.title} »` : 'Automatique (n° 1 du Top 50)';
+  $('[data-home-hero-auto]').hidden = !draftHome.hero;
+  const last = draftHome.rows.length - 1;
+  $('#homeRows').innerHTML = draftHome.rows
+    .map((r, i) => {
+      const def = HOME_ROWS.find((d) => d.key === r.key);
+      return `<li class="home-row ${r.on ? '' : 'off'}">
+        <label><input type="checkbox" data-home-row="${r.key}" ${r.on ? 'checked' : ''}> ${esc(def.title)}</label>
+        <button type="button" class="icon-btn" data-home-move="${i}" data-dir="-1" ${i === 0 ? 'disabled' : ''} aria-label="Monter ${esc(def.title)}">↑</button>
+        <button type="button" class="icon-btn" data-home-move="${i}" data-dir="1" ${i === last ? 'disabled' : ''} aria-label="Descendre ${esc(def.title)}">↓</button>
+      </li>`;
+    })
+    .join('');
 }
 
 // Résumé affiché sous le titre de chaque section repliée des réglages
@@ -1988,6 +2062,8 @@ function renderSettingsSummaries() {
   const keys = [f.tmdbKey.value.trim() ? 'TMDB ✓' : 'TMDB manquante', f.saKey.value.trim() ? 'Streaming Availability ✓' : 'Streaming Availability —'];
   summary('keys', keys.join(' · '));
   summary('look', GLASS_NAMES[f.glass.value] ?? GLASS_NAMES.auto);
+  const shown = draftHome.rows.filter((r) => r.on).length;
+  summary('home', `${shown} rangée${shown > 1 ? 's' : ''} sur ${draftHome.rows.length} · ${draftHome.hero ? `à l’affiche : ${draftHome.hero.title}` : 'affiche automatique'}`);
   const openIn = !CAN_DOWNLOAD && f.openIn.value === 'app' ? ' · titres dans l’appli' : '';
   summary('device', `${f.region.selectedOptions[0]?.textContent ?? f.region.value}${openIn}${hasResumeExtension() ? ' · script de reprise installé' : ''}`);
 }
@@ -2058,6 +2134,23 @@ function setKeyStatus(status, kind, message) {
 }
 
 el.settingsForm.addEventListener('click', async (e) => {
+  // Accueil : monter / descendre une rangée, affiche automatique
+  const move = e.target.closest('[data-home-move]');
+  if (move) {
+    const i = Number(move.dataset.homeMove);
+    const j = i + Number(move.dataset.dir);
+    [draftHome.rows[i], draftHome.rows[j]] = [draftHome.rows[j], draftHome.rows[i]];
+    renderHomeSettings();
+    renderSettingsSummaries();
+    $(`[data-home-move="${j}"][data-dir="${move.dataset.dir}"]`)?.focus() ?? $(`[data-home-move="${j}"]`)?.focus();
+    return;
+  }
+  if (e.target.closest('[data-home-hero-auto]')) {
+    draftHome.hero = null;
+    renderHomeSettings();
+    renderSettingsSummaries();
+    return;
+  }
   const test = e.target.closest('[data-test-key]');
   if (test) {
     const name = test.dataset.testKey;
@@ -2276,6 +2369,7 @@ el.settingsForm.addEventListener('submit', (e) => {
     desktopApps: f.openIn.value === 'app',
     glass: f.glass.value,
     providers: [...draftProviders.values()],
+    home: { rows: draftHome.rows, hero: draftHome.hero },
   };
   saveSettings(settings);
   applyGlass();
@@ -2349,6 +2443,19 @@ document.addEventListener('click', (e) => {
   if (target.closest('[data-toast-action]')) {
     toastAction?.();
     hideToast();
+    return;
+  }
+
+  // « ☆ À l'affiche » : ce titre en grand en haut de l'accueil (un second appui revient au n° 1 du Top 50)
+  if (target.closest('[data-hero-pick]') && current?.item) {
+    const { type, id, title, poster } = currentEntry();
+    const chosen = settings.home?.hero;
+    const same = chosen?.type === type && chosen?.id === id;
+    settings = { ...settings, home: { rows: homeLayout(), hero: same ? null : { type, id, title, poster } } };
+    saveSettings(settings);
+    refreshHeroPick();
+    toast(same ? 'L’accueil affiche à nouveau le n° 1 du Top 50.' : `« ${title} » est à l’affiche de l’accueil.`, null, { duration: 4000 });
+    if (state.view === 'home') renderRowsPage('home');
     return;
   }
 

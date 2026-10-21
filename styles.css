@@ -612,6 +612,14 @@ html:has(dialog[open]) { overflow: hidden; }
 #syncOff[hidden], #syncOn[hidden] { display: none; }
 
 /* Choix de l'effet verre */
+.home-hero-choice { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+.home-hero-choice #homeHero { font-weight: 600; }
+.home-rows { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+.home-row { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); }
+.home-row label { flex: 1; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.home-row.off label { color: var(--muted); }
+.home-row .icon-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; }
+.home-row .icon-btn:disabled { opacity: 0.3; cursor: default; }
 .choice-list { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; border: 0; min-width: 0; }
 .choice-list legend { padding: 0; margin-bottom: 8px; font-weight: 600; }
 .choice-list legend em { display: block; font-weight: 400; font-style: normal; color: var(--muted); font-size: 0.9em; }

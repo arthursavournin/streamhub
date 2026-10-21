@@ -217,6 +217,11 @@ struct TMDBClient {
 
     // extra : paramètres TMDB supplémentaires (ex. with_origin_country = JP)
     func discover(_ type: MediaType, page: Int = 1, genre: Int? = nil, sort: Sort, providers: [Int], extra: [String: String] = [:]) async throws -> [TMDBTitle] {
+        try await discoverPage(type, page: page, genre: genre, sort: sort, providers: providers, extra: extra).results
+    }
+
+    // Une page du catalogue, avec le nombre de pages (TMDB en donne 500 au plus)
+    func discoverPage(_ type: MediaType, page: Int = 1, genre: Int? = nil, sort: Sort, providers: [Int], extra: [String: String] = [:]) async throws -> (results: [TMDBTitle], totalPages: Int) {
         let today = String(ISO8601DateFormatter().string(from: Date()).prefix(10))
         // Séries les plus récentes : celles qui ont eu un épisode ces 7 derniers jours (nouvelle saison ou épisode de la
         // semaine), les plus populaires d'abord, sans talk-shows, infos, feuilletons quotidiens ni téléréalité (comme le site)
@@ -236,7 +241,7 @@ struct TMDBClient {
             ]
             for (k, v) in extra { params[k] = v }
             let page: Page<TMDBTitle> = try await get("/discover/tv", params)
-            return page.results.map { var t = $0; t.mediaType = "tv"; return t }
+            return (page.results.map { var t = $0; t.mediaType = "tv"; return t }, min(page.totalPages ?? 1, 500))
         }
         let sortBy = switch sort {
         case .popularity: "popularity.desc"
@@ -259,7 +264,14 @@ struct TMDBClient {
         ]
         for (k, v) in extra { params[k] = v }
         let page: Page<TMDBTitle> = try await get("/discover/\(type.rawValue)", params)
-        return page.results.map { var t = $0; t.mediaType = type.rawValue; return t }
+        return (page.results.map { var t = $0; t.mediaType = type.rawValue; return t }, min(page.totalPages ?? 1, 500))
+    }
+
+    // Genres d'un type (« Action », « Comédie »…)
+    func genres(_ type: MediaType) async throws -> [TitleDetails.Genre] {
+        nonisolated struct List: Decodable { let genres: [TitleDetails.Genre] }
+        let list: List = try await get("/genre/\(type.rawValue)/list", ["language": language])
+        return list.genres
     }
 
     // Dernier épisode diffusé d'une série

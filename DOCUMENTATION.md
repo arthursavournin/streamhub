@@ -47,9 +47,13 @@ appli sur téléphone, tablette et ordinateur.
   consultent en ce moment), mis à jour toutes les 6 heures et limité à tes abonnements : ce n'est pas un classement
   de tous les temps.
 - **Films** et **Séries** : les mêmes rangées, réservées aux films ou aux séries.
+- **Animés** : l'animation japonaise (genre Animation avec le Japon comme pays d'origine), films et séries : Animés
+  populaires, Nouveaux épisodes, Séries animées, Films d’animation, Les mieux notés, puis Action & aventure,
+  Science-fiction & fantastique, Comédie, Drame, Mystère et Famille. Le « Tout voir » de la rangée Animés japonais de
+  l'accueil ouvre cette page.
 - **Bibliothèque** : tout le catalogue en grille, avec des filtres (Tout / Films / Séries, plateforme, genre) et un
   tri (Populaires, Mieux notés, Plus récents). Le lien « Tout voir » de chaque rangée ouvre la Bibliothèque déjà
-  filtrée.
+  filtrée. Le genre « Animés japonais » y est proposé avec les autres (aussi dans l'appli iPhone).
 - **Mon espace** : tes listes (Ma liste, J'aime, Historique, Téléchargements) et tes plateformes.
 - **Recherche** : par titre, mais aussi par surnom ou sigle (« DNA » trouve *Demain nous appartient*, grâce à une
   liste intégrée et à Wikidata).

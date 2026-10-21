@@ -194,7 +194,7 @@ struct HomeRow: Identifiable {
         guard case .catalog(let types, let sort, let genres, let extra, _) = kind, !ranked else { return nil }
         return CatalogPreset(
             title: title, type: types.count > 1 ? .all : (types[0] == .movie ? .movie : .tv), sort: sort,
-            genre: genres.isEmpty ? nil : CatalogGenre(name: title, movie: genres[.movie], tv: genres[.tv]), extra: extra
+            genre: genres.isEmpty ? nil : CatalogGenre(name: title, movie: genres[.movie], tv: genres[.tv], extra: extra)
         )
     }
 

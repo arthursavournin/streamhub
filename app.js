@@ -9,7 +9,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.7.1';
+const APP_VERSION = '1.8.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -47,12 +47,13 @@ const applyGlass = () => (document.documentElement.dataset.glass = settings.glas
 applyGlass();
 
 const state = {
-  // Pages en rangées : 'home' | 'movies' | 'tv' | 'me' ; pages en grille : 'library' | 'likes' | 'history' | 'downloads'
+  // Pages en rangées : 'home' | 'movies' | 'tv' | 'anime' | 'me' ; pages en grille : 'library' | 'likes' | 'history' | 'downloads'
   view: 'home',
   type: ['movie', 'tv', 'all'].includes(settings.type) ? settings.type : 'all', // films, séries ou les deux
   filter: settings.providers.length ? 'mine' : 'all', // 'mine' | 'all' | id d'une plateforme
   genre: '', // nom du genre (les identifiants diffèrent entre films et séries)
   genreIds: null, // { movie, tv } quand le genre vient d'une rangée de l'accueil
+  genreExtra: null, // paramètres TMDB du genre venu d'une rangée (animés : pays d'origine)
   sort: 'popularity',
   query: '',
   page: 0,
@@ -64,8 +65,12 @@ const state = {
   token: 0,
 };
 
-// Genres proposés : [{ name, movie: id | undefined, tv: id | undefined }]
+// Genres proposés : [{ name, movie: id | undefined, tv: id | undefined, extra? }]
 let genreOptions = [];
+
+// Animation japonaise : TMDB n'a pas de genre « animé », c'est le genre Animation avec le Japon comme pays d'origine.
+// Proposé comme un genre de la Bibliothèque, et page Animés (rangées) dans la navigation.
+const ANIME = { name: 'Animés japonais', movie: 16, tv: 16, extra: { with_origin_country: 'JP' } };
 
 // ---------- Utilitaires ----------
 
@@ -112,8 +117,20 @@ const typesShown = () => (state.type === 'all' ? ['movie', 'tv'] : [state.type])
 
 // Identifiant du genre choisi pour un type, ou undefined si ce genre n'existe pas pour ce type
 // state.genreIds, s'il est défini (venu d'une rangée), donne directement les identifiants par type
+// (« 16,28 » : animés d'action, les deux genres à la fois)
 const genreIdFor = (type) =>
   state.genreIds ? state.genreIds[type] : genreOptions.find((g) => g.name === state.genre)?.[type];
+// Paramètres TMDB en plus du genre (animés japonais : { with_origin_country: 'JP' })
+const genreExtra = () =>
+  (state.genreIds ? state.genreExtra : genreOptions.find((g) => g.name === state.genre)?.extra) ?? undefined;
+
+// Recherche : le genre est vérifié sur chaque résultat (tous les genres de « 16,28 », et l'origine japonaise des animés)
+function matchesGenre(m) {
+  const ids = String(genreIdFor(m.media_type) ?? '').split(',').filter(Boolean).map(Number);
+  if (!ids.length || !ids.every((id) => m.genre_ids?.includes(id))) return false;
+  const country = genreExtra()?.with_origin_country;
+  return !country || Boolean(m.origin_country?.includes(country)) || (country === 'JP' && m.original_language === 'ja');
+}
 
 // En mode « Tout », on mélange les deux listes selon le tri choisi
 const SORT_KEYS = {
@@ -209,7 +226,7 @@ async function loadGenres() {
     for (const { t, genres } of lists) {
       for (const g of genres) byName.set(g.name, { ...byName.get(g.name), name: g.name, [t]: g.id });
     }
-    genreOptions = [...byName.values()].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+    genreOptions = [...byName.values(), ANIME].sort((a, b) => a.name.localeCompare(b.name, 'fr'));
     el.genre.innerHTML =
       '<option value="">Tous les genres</option>' +
       genreOptions.map((g) => `<option value="${esc(g.name)}">${esc(g.name)}</option>`).join('');
@@ -286,7 +303,7 @@ async function loadMore() {
       const found = suggestion ? [...more.flatMap((r) => r.results), ...res.results] : [...res.results, ...more.flatMap((r) => r.results)];
       results = [...(await aliasResults(aliases, found)), ...found];
       if (page === 1) results = await arrangeSagas(results, suggestion ?? state.query, api).catch(() => results);
-      if (state.genre) results = results.filter((m) => m.genre_ids?.includes(genreIdFor(m.media_type)));
+      if (state.genre) results = results.filter(matchesGenre);
     } else {
       // Un type est ignoré si le genre choisi n'existe pas pour lui, ou s'il n'a plus de pages
       const types = typesShown().filter(
@@ -295,7 +312,7 @@ async function loadMore() {
       const responses = await Promise.all(
         types.map((t) =>
           api
-            .discover(t, { page, genre: genreIdFor(t), sort: state.sort, providers: activeProviderIds() })
+            .discover(t, { page, genre: genreIdFor(t), sort: state.sort, providers: activeProviderIds(), extra: genreExtra() })
             .then((res) => ({ t, res })),
         ),
       );
@@ -532,7 +549,7 @@ async function showView(view, { library: filters } = {}) {
 
   if (view === 'library') {
     if (filters) {
-      Object.assign(state, { genre: '', genreIds: null, query: '', ...filters });
+      Object.assign(state, { genre: '', genreIds: null, genreExtra: null, query: '', ...filters });
       el.search.value = state.query;
       el.pageTitle.textContent = PAGE_TITLES.library;
     }
@@ -619,7 +636,7 @@ const HOME_GENRES = [
   { key: 'thriller', title: 'Thriller & policier', genres: { movie: 53, tv: 80 } },
   { key: 'drama', title: 'Drame', genres: { movie: 18, tv: 18 } },
   { key: 'animation', title: 'Animation', genres: { movie: 16, tv: 16 } },
-  { key: 'anime', title: 'Animés japonais', genres: { movie: 16, tv: 16 }, extra: { with_origin_country: 'JP' } },
+  { key: 'anime', title: 'Animés japonais', genres: { movie: ANIME.movie, tv: ANIME.tv }, extra: ANIME.extra, section: 'anime' },
   { key: 'romance', title: 'Romance', genres: { movie: 10749 } },
   { key: 'family', title: 'Famille', genres: { movie: 10751, tv: 10751 } },
   { key: 'documentary', title: 'Documentaires', genres: { movie: 99, tv: 99 } },
@@ -650,6 +667,16 @@ function homeLayout(home = settings.home) {
   return [...saved.map((r) => ({ key: r.key, on: r.on !== false })), ...HOME_ROWS.filter((r) => !seen.has(r.key)).map((r) => ({ key: r.key, on: true }))];
 }
 
+// Genres de la page Animés, croisés avec Animation (identifiants TMDB films / séries)
+const ANIME_GENRES = [
+  { title: 'Action & aventure', movie: 28, tv: 10759 },
+  { title: 'Science-fiction & fantastique', movie: 878, tv: 10765 },
+  { title: 'Comédie', movie: 35, tv: 35 },
+  { title: 'Drame', movie: 18, tv: 18 },
+  { title: 'Mystère', movie: 9648, tv: 9648 },
+  { title: 'Famille', movie: 10751, tv: 10751 },
+];
+
 // Genres mis en avant dans les pages Films et Séries (identifiants TMDB, dans cet ordre)
 const ROW_GENRES = {
   movie: [28, 35, 18, 16, 878, 53, 12, 80, 27, 10749, 10751, 99],
@@ -679,6 +706,23 @@ async function rowsFor(view) {
         .map((id) => genres.find((g) => g.id === id))
         .filter(Boolean)
         .map((genre) => ({ title: genre.name, type, sort: 'popularity', filter, genre })),
+    ];
+  }
+  if (view === 'anime') {
+    // Toutes les rangées sont des animés japonais ; « Tout voir » ouvre la Bibliothèque sur ce genre
+    const anime = (title, more) => ({
+      title, type: 'all', sort: 'popularity', filter,
+      genres: { movie: ANIME.movie, tv: ANIME.tv }, extra: ANIME.extra, genreName: ANIME.name, ...more,
+    });
+    return [
+      anime('Animés populaires', { hero: true }),
+      anime('Nouveaux épisodes', { type: 'tv', sort: 'recent', pages: 2, limit: 40 }),
+      anime('Séries animées', { type: 'tv' }),
+      anime('Films d’animation', { type: 'movie' }),
+      anime('Les mieux notés', { sort: 'rating' }),
+      ...ANIME_GENRES.map((g) =>
+        anime(g.title, { genres: { movie: `${ANIME.movie},${g.movie}`, tv: `${ANIME.tv},${g.tv}` }, genreName: `${ANIME.name} : ${g.title}` }),
+      ),
     ];
   }
   return [
@@ -802,7 +846,7 @@ async function renderRowsPage(view) {
     section.innerHTML = `
       <div class="row-head">
         <h2>${esc(row.title)}${row.local ? ' <span class="count"></span>' : ''}</h2>
-        ${row.extra ? '' : '<button type="button" class="see-all" data-see-all>Tout voir <span aria-hidden="true">›</span></button>'}
+        <button type="button" class="see-all" data-see-all>Tout voir <span aria-hidden="true">›</span></button>
       </div>
       <div class="row-body">
         <button type="button" class="row-arrow prev" data-row-scroll="-1" tabindex="-1" aria-label="Défiler vers la gauche">‹</button>
@@ -879,17 +923,20 @@ function refreshLocalRows() {
   for (const section of el.rowsPage.querySelectorAll('.row')) if (section.rowDef?.local) fillLocalRow(section);
 }
 
-// « Tout voir » : la page perso correspondante, ou la Bibliothèque avec les filtres de la rangée
+// « Tout voir » : la page perso correspondante, la page de la rangée (Animés japonais de l'accueil → page Animés), ou
+// la Bibliothèque avec les filtres de la rangée
 function seeAllRow(btn) {
   const row = btn.closest('.row')?.rowDef;
   if (!row) return;
   if (row.local) return showView(row.local);
+  if (row.section) return showView(row.section);
   return showView('library', {
     library: {
       type: row.type === 'trending' ? 'all' : row.type,
       sort: row.sort,
-      genre: row.genres ? row.title : (row.genre?.name ?? ''),
+      genre: row.genres ? (row.genreName ?? row.title) : (row.genre?.name ?? ''),
       genreIds: row.genres ?? null,
+      genreExtra: row.extra ?? null,
       filter: row.filter,
     },
   });
@@ -2559,6 +2606,7 @@ el.platform.addEventListener('change', () => {
 el.genre.addEventListener('change', () => {
   state.genre = el.genre.value;
   state.genreIds = null;
+  state.genreExtra = null;
   reload();
 });
 el.sort.addEventListener('change', () => {

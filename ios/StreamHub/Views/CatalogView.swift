@@ -26,7 +26,11 @@ struct CatalogGenre: Hashable {
     let name: String
     let movie: Int?
     let tv: Int?
+    var extra: [String: String] = [:] // paramètres TMDB en plus (animés japonais : pays d'origine)
     func id(for type: MediaType) -> Int? { type == .movie ? movie : tv }
+
+    // Animation japonaise : genre Animation avec le Japon comme pays d'origine (comme le site, ANIME dans app.js)
+    static let anime = CatalogGenre(name: "Animés japonais", movie: 16, tv: 16, extra: ["with_origin_country": "JP"])
 }
 
 // Plateformes : tes abonnements, tout le catalogue, ou un seul abonnement
@@ -39,7 +43,6 @@ struct CatalogPreset: Hashable {
     var type: CatalogType = .all
     var sort: Sort = .popularity
     var genre: CatalogGenre?
-    var extra: [String: String] = [:]
 }
 
 nonisolated extension Sort: CaseIterable {
@@ -173,7 +176,7 @@ struct CatalogView: View {
         var byName: [String: CatalogGenre] = [:]
         for g in await movies { byName[g.name] = CatalogGenre(name: g.name, movie: g.id, tv: byName[g.name]?.tv) }
         for g in await shows { byName[g.name] = CatalogGenre(name: g.name, movie: byName[g.name]?.movie, tv: g.id) }
-        genres = byName.values.sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
+        genres = (Array(byName.values) + [.anime]).sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
     }
 
     // ---------- Chargement ----------
@@ -205,7 +208,7 @@ struct CatalogView: View {
         loading = true
         defer { loading = false }
         let tmdb = model.tmdb
-        let (sort, genre, extra, providers, key) = (sort, genre, genre == preset.genre ? preset.extra : [:], providerIDs, filterKey)
+        let (sort, genre, extra, providers, key) = (sort, genre, genre?.extra ?? [:], providerIDs, filterKey)
         do {
             var found: [TMDBTitle] = []
             for t in types {

@@ -648,23 +648,24 @@ correction, 1.1.0 pour une nouvelle fonction. Le script « reprise après connex
 
 `relay/worker.js` est publié sur https://streamhub-relay.arthursavournin.workers.dev (offre gratuite Cloudflare :
 100 000 requêtes et 1 000 enregistrements par jour). Il donne les **liens JustWatch** (`/offers`) : JustWatch refuse les
-appels venant d'autres sites, le relais l'interroge à la place du navigateur. Réponses gardées 6 heures. (Son ancienne
-route `/sync/<id>`, pour le code de synchronisation d'avant la version 2.1.0, ne sert plus.)
+appels venant d'autres sites, le relais l'interroge à la place du navigateur. Réponses gardées 6 heures. Il ne stocke
+rien (son ancienne route `/sync/<id>`, pour le code de synchronisation d'avant la version 2.1.0, a été supprimée en
+version 2.3.3, avec son espace Workers KV).
 
 Il n'accepte que les appels venant de l'adresse de StreamHub et de `localhost:8080`. Une copie de StreamHub publiée
-ailleurs doit publier son propre relais, avec son compte Cloudflare et son propre espace Workers KV, puis en mettre
+ailleurs doit publier son propre relais, avec son compte Cloudflare, puis en mettre
 l'adresse dans Réglages → Clés API → Relais StreamHub.
 
-Pour le publier, il faut un jeton Cloudflare (droit « Edit Cloudflare Workers »), l'identifiant du compte et celui
-de l'espace Workers KV. Rien de tout cela n'est enregistré dans le projet.
+Pour le publier, il faut un jeton Cloudflare (droit « Edit Cloudflare Workers ») et l'identifiant du compte. Rien de
+tout cela n'est enregistré dans le projet.
 
 - **Mac, Linux** :
   ```bash
-  CF_API_TOKEN=… CF_ACCOUNT_ID=… CF_KV_NAMESPACE_ID=… scripts/deploy_relay.sh
+  CF_API_TOKEN=… CF_ACCOUNT_ID=… scripts/deploy_relay.sh
   ```
 - **Windows** (avec Git Bash, installé avec Git pour Windows, ou WSL) :
   ```bash
-  CF_API_TOKEN=… CF_ACCOUNT_ID=… CF_KV_NAMESPACE_ID=… bash scripts/deploy_relay.sh
+  CF_API_TOKEN=… CF_ACCOUNT_ID=… bash scripts/deploy_relay.sh
   ```
 
 ### Hébergement

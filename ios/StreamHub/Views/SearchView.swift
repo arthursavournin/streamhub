@@ -8,9 +8,10 @@ struct SearchView: View {
     @State private var suggestion: String?
     @State private var error: String?
     @State private var searching = false
+    @FocusState private var focused: Bool
 
+    // Ouverte depuis la barre du haut, dans la pile de l'onglet en cours
     var body: some View {
-        NavigationStack {
             ScrollView {
                 if query.trimmingCharacters(in: .whitespaces).isEmpty {
                     EmptyMessage(title: "Rechercher", systemImage: "magnifyingglass", message: "Un film, une série, sur toutes tes plateformes.")
@@ -44,7 +45,8 @@ struct SearchView: View {
             .navigationTitle("Recherche")
             // Champ toujours visible sous le titre (sinon il reste caché jusqu'à ce qu'on tire la page vers le bas)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Films, séries…")
-            .titleDestinations()
+            .searchFocused($focused)
+            .onAppear { focused = true }
             .task(id: query) { await search() }
             #if DEBUG
             // Tests dans le simulateur : recherche passée au lancement (STREAMHUB_SEARCH)
@@ -52,7 +54,6 @@ struct SearchView: View {
                 if query.isEmpty, let q = ProcessInfo.processInfo.environment["STREAMHUB_SEARCH"] { query = q }
             }
             #endif
-        }
     }
 
     private func searchOrEmpty(_ tmdb: TMDBClient, _ query: String?) async -> [TMDBTitle] {

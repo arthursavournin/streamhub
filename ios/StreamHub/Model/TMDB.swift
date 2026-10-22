@@ -255,6 +255,14 @@ struct TMDBClient {
     }
 
     // extra : paramètres TMDB supplémentaires (ex. with_origin_country = JP)
+    // Paramètres propres à un type : « with_genres_movie » / « with_genres_tv » deviennent « with_genres » pour ce type
+    // (genres croisés de la page Animés, « 16,28 » pour un film, « 16,10759 » pour une série, comme le site)
+    nonisolated static func typed(_ extra: [String: String], _ type: MediaType) -> [String: String] {
+        var out = extra.filter { !$0.key.hasPrefix("with_genres_") }
+        if let genres = extra["with_genres_\(type.rawValue)"] { out["with_genres"] = genres }
+        return out
+    }
+
     func discover(_ type: MediaType, page: Int = 1, genre: Int? = nil, sort: Sort, providers: [Int], extra: [String: String] = [:]) async throws -> [TMDBTitle] {
         try await discoverPage(type, page: page, genre: genre, sort: sort, providers: providers, extra: extra).results
     }
@@ -278,7 +286,7 @@ struct TMDBClient {
                 "sort_by": "popularity.desc",
                 "include_adult": "false",
             ]
-            for (k, v) in extra { params[k] = v }
+            for (k, v) in Self.typed(extra, type) { params[k] = v }
             let page: Page<TMDBTitle> = try await get("/discover/tv", params)
             return (await localized(page.results.map { var t = $0; t.mediaType = "tv"; return t }), min(page.totalPages ?? 1, 500))
         }
@@ -301,7 +309,7 @@ struct TMDBClient {
             "\(dateField).lte": sort == .recent ? String(ISO8601DateFormatter().string(from: Date()).prefix(10)) : nil,
             "include_adult": "false",
         ]
-        for (k, v) in extra { params[k] = v }
+        for (k, v) in Self.typed(extra, type) { params[k] = v }
         let page: Page<TMDBTitle> = try await get("/discover/\(type.rawValue)", params)
         return (await localized(page.results.map { var t = $0; t.mediaType = type.rawValue; return t }), min(page.totalPages ?? 1, 500))
     }

@@ -59,6 +59,7 @@ nonisolated extension Sort: CaseIterable {
 struct CatalogView: View {
     @Environment(AppModel.self) private var model
     let preset: CatalogPreset
+    var showsTitle = false // onglet Bibliothèque : titre dans la page (la barre du haut remplace celle d'iOS)
 
     @State private var type: CatalogType = .all
     @State private var platform: PlatformChoice = .mine
@@ -77,6 +78,9 @@ struct CatalogView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
+                if showsTitle {
+                    Text(preset.title).font(.largeTitle.weight(.bold)).padding(.horizontal, 16)
+                }
                 controls
                 if let error, items.isEmpty {
                     EmptyMessage(title: "Catalogue indisponible", systemImage: "wifi.exclamationmark", message: error)

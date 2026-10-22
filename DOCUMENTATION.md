@@ -32,6 +32,13 @@ appli sur téléphone, tablette et ordinateur.
 
 ### Parcourir le catalogue
 
+**Sur téléphone (site dans Safari et appli iPhone, même interface)** : en haut, le logo, la recherche et la roue des
+réglages ; en bas, trois onglets : **Accueil**, **Bibliothèque** et **Mon espace**. Les pages Films, Séries et Animés
+s'ouvrent depuis l'accueil, par les pastilles **Tout · Films · Séries · Animés** sous la barre du haut. Les affiches
+s'affichent sans texte dessous (le dernier épisode d'une série récente est posé sur l'affiche), la grande affiche de
+l'accueil propose « ▶ Voir » et « + Ma liste », et Mon espace se présente en segments (Ma liste, J'aime, Historique,
+Téléchargés). Sur ordinateur, rien ne change : les rubriques sont dans la barre du haut.
+
 - **Accueil** : une affiche mise en avant et des rangées façon Netflix : Top 50 du moment, Reprendre, Ma liste,
   Nouveautés, Nouveaux épisodes, Nouveaux films, Les mieux notés, puis une rangée par genre (Action & aventure, Comédie, Horreur, Science-fiction &
   fantastique, Thriller & policier, Drame, Animation, Animés japonais, Romance, Famille, Documentaires).
@@ -158,8 +165,11 @@ Retirer un J'aime dans StreamHub rappelle que le like est toujours là sur la pl
 
 Seules les applis mobiles des plateformes savent télécharger, et elles ne permettent pas de le faire à distance. Le
 bouton **« ⬇ Télécharger »** ouvre donc le titre dans l'appli de la plateforme, où tu appuies sur son bouton de
-téléchargement, et le note dans l'onglet Téléchargements, qui sert de rappel. Il n'apparaît que sur iPhone, iPad et
-Android : sur ordinateur et TV, les plateformes ne permettent pas de télécharger.
+téléchargement, et le note dans Téléchargements (Mon espace → Téléchargés sur téléphone), qui sert de rappel. Il
+n'apparaît que sur iPhone, iPad et Android, et dans l'appli iPhone (version 2.4.0 : bouton sous « Regarder sur… »
+pour un film, ⬇ à côté de chaque épisode) : sur ordinateur et TV, les plateformes ne permettent pas de télécharger.
+Au retour, StreamHub demande si le téléchargement a bien démarré. Un appui sur un titre téléchargé l'ouvre dans
+l'appli de la plateforme ; sa croix le retire de la liste (le fichier reste dans l'appli de la plateforme).
 
 ### Et aussi
 

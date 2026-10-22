@@ -4,6 +4,7 @@ import SwiftUI
 // propre page. Sur le site, c'est la barre latérale ; sur téléphone, la même liste.
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -35,6 +36,12 @@ struct SettingsView: View {
             }
             .background(Color.appBackground)
             .navigationTitle("Réglages")
+            // Ouverts par la roue de la barre du haut, par-dessus la page
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("OK") { dismiss() }
+                }
+            }
         }
     }
 

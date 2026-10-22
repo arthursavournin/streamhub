@@ -5,19 +5,20 @@ struct HomeView: View {
     @State private var top: [TMDBTitle] = []
     @State private var hero: TMDBTitle?
     @State private var error: String?
+    @State private var path = NavigationPath()
 
     // Rangées choisies dans Réglages → Accueil, dans l'ordre choisi
     private var rows: [HomeRow] { model.store.homeLayout.filter(\.on).compactMap { HomeRow.named($0.key) } }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 26) {
                     if let hero = hero ?? top.first {
-                        HeroView(title: hero)
+                        HeroView(title: hero, subtitle: "\(hero.type == .tv ? "Série" : "Film") · \(self.hero != nil ? "à l’affiche" : "n° 1 du moment")")
                     } else if let error {
                         EmptyMessage(title: "Impossible de charger l’accueil", systemImage: "wifi.exclamationmark", message: error)
-                            .padding(.top, 80)
+                            .padding(.top, 170) // sous la barre du haut et ses pastilles
                     } else {
                         Color.appSurface.frame(height: 460).overlay(ProgressView())
                     }
@@ -38,12 +39,19 @@ struct HomeView: View {
             }
             .ignoresSafeArea(edges: .top)
             .background(Color.appBackground)
+            .appTopBar(section: .some(nil), transparent: true, onSection: showSection)
             .titleDestinations()
+            .navigationDestination(for: HomeSection.self) { SectionView(section: $0, onSection: showSection) }
             .navigationDestination(for: CatalogPreset.self) { CatalogView(preset: $0) }
             .navigationDestination(for: LibraryList.self) { LocalListPage(list: $0) }
             .refreshable { await loadTop() }
             .task(id: "\(model.catalogKey)|\(model.store.homeHero?.id ?? 0)") { await loadTop() }
         }
+    }
+
+    // Pastilles : Tout (l'accueil) ou une rubrique, à la place de celle affichée
+    private func showSection(_ section: HomeSection?) {
+        path = section.map { NavigationPath([$0]) } ?? NavigationPath()
     }
 
     // Top 50 (rangée et affiche), et titre choisi pour l'affiche (Réglages → Accueil ou « À l'affiche » dans sa fiche)
@@ -62,14 +70,14 @@ struct HomeView: View {
     }
 }
 
-// Grande affiche en haut de l'accueil : le titre n° 1 du moment
-private struct HeroView: View {
+// Grande affiche en haut de l'accueil (le titre n° 1 du moment ou celui choisi) et des pages Films, Séries, Animés
+struct HeroView: View {
     @Environment(AppModel.self) private var model
     let title: TMDBTitle
+    let subtitle: String // « Série · n° 1 du moment »
 
     var body: some View {
         let ref = title.ref
-        let chosen = model.store.homeHero?.id == title.id
         ZStack(alignment: .bottom) {
             Color.appSurface
                 .frame(height: 520)
@@ -81,7 +89,7 @@ private struct HeroView: View {
                     .font(.largeTitle.weight(.heavy))
                     .multilineTextAlignment(.center)
                     .shadow(radius: 8)
-                Text(title.type == .tv ? (chosen ? "Série · à l’affiche" : "Série · n° 1 du moment") : (chosen ? "Film · à l’affiche" : "Film · n° 1 du moment"))
+                Text(subtitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 HStack(spacing: 12) {
@@ -139,7 +147,7 @@ struct TitleRow: View {
 
 // Rangée du catalogue (TMDB), chargée quand elle apparaît. Pendant le chargement, une rangée provisoire tient la
 // place : une vue vide n'apparaît jamais à l'écran, et sa tâche de chargement ne partirait pas.
-private struct CatalogRow: View {
+struct CatalogRow: View {
     @Environment(AppModel.self) private var model
     let row: HomeRow
     @State private var items: [TMDBTitle] = []

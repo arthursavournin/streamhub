@@ -19,17 +19,21 @@ nonisolated struct HomeChoice: Codable, Hashable, Identifiable, Sendable {
     var id: String { key }
 }
 
-// Les listes de la bibliothèque synchronisées avec le site
+// Les listes de la bibliothèque : synchronisées avec le site, sauf les téléchargements (propres à l'appareil, comme
+// sur le site : le fichier est dans l'appli de la plateforme de cet iPhone)
 enum LibraryList: String, CaseIterable, Identifiable {
-    case watchlist, likes, history
+    case watchlist, likes, history, downloads
     var id: String { rawValue }
     var title: String {
         switch self {
         case .watchlist: "Ma liste"
         case .likes: "J’aime"
         case .history: "Historique"
+        case .downloads: "Téléchargements"
         }
     }
+    var shortTitle: String { self == .downloads ? "Téléchargés" : title }
+    var synced: Bool { self != .downloads }
 }
 
 // Une entrée de la bibliothèque, telle que le site l'écrit :
@@ -199,6 +203,7 @@ final class AppStore {
         let rest = entries(list).filter { $0.key != key }
         updateLibrary { library in
             library[list.rawValue] = .array(rest.map { .object($0.raw) })
+            guard list.synced else { return }
             var removed = library["removed"]?[list.rawValue]?.object ?? [:]
             removed[key] = .double(nowMs)
             let cleared = removed.removeValue(forKey: "*")
@@ -235,6 +240,22 @@ final class AppStore {
     // Pour une série, une seule ligne par série : le dernier épisode lancé
     func recordWatch(_ entry: LibraryEntry) {
         putFirst(.history, entry, max: Self.historyMax)
+    }
+
+    // Téléchargement : un film, ou un épisode (clé « tv:id:s1e3 », comme downloadKey du site)
+    static func downloadKey(_ entry: LibraryEntry) -> String {
+        guard let season = entry.season, let episode = entry.episode else { return LibraryEntry.key(entry.type, entry.tmdbID) }
+        return "\(LibraryEntry.key(entry.type, entry.tmdbID)):s\(season)e\(episode)"
+    }
+
+    func addDownload(_ entry: LibraryEntry) {
+        var entry = entry
+        entry.raw["key"] = .string(Self.downloadKey(entry))
+        putFirst(.downloads, entry)
+    }
+
+    func isDownloaded(_ entry: LibraryEntry) -> Bool {
+        entries(.downloads).contains { $0.key == Self.downloadKey(entry) }
     }
 }
 

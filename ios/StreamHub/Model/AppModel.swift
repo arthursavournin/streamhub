@@ -9,6 +9,13 @@ struct PendingProgress: Identifiable {
     var id: String { entry.key }
 }
 
+// Téléchargement demandé : au retour, « Le téléchargement a bien démarré ? » (comme le site)
+struct PendingDownload: Identifiable {
+    let entry: LibraryEntry
+    let at: Date
+    var id: String { entry.key }
+}
+
 // L'état de l'appli : réglages et bibliothèque, synchronisation, ouverture des titres sur les plateformes
 @Observable
 final class AppModel {
@@ -17,6 +24,9 @@ final class AppModel {
     let sync: SyncService
     var pendingProgress: PendingProgress?
     var progressQuestion: PendingProgress?
+    var pendingDownload: PendingDownload?
+    var downloadQuestion: PendingDownload?
+    var showSettings = false // roue des réglages en haut de chaque page
 
     // « Où en es-tu ? » n'est posé qu'après 3 minutes : un retour plus rapide, c'est souvent juste pour changer de profil
     // ou se connecter
@@ -168,6 +178,37 @@ final class AppModel {
     // Safari, où tu es peut-être déjà connecté. Épisodes M6+ : l'adresse propre à l'appli d'abord.
     // episode : saison et épisode lancés (gardés dans l'historique, comme sur le site)
     func open(_ watch: WatchEntry, for ref: TitleRef, date: String?, episode: Episode? = nil) async {
+        let entry = libraryEntry(watch, for: ref, date: date, episode: episode)
+        // Lancé = regardé : dans l'historique tout de suite, sans « Tu as regardé… ? » au retour (demande de
+        // l'utilisateur, comme le site depuis la version 1.9.2)
+        store.recordWatch(entry)
+        // Série : on enchaîne souvent plusieurs épisodes sur la plateforme
+        if ref.type == .tv { pendingProgress = PendingProgress(entry: entry, at: Date()) }
+        await openPlatform(watch.href)
+    }
+
+    // « Télécharger » : ouvre le titre dans l'appli de la plateforme (c'est là qu'on télécharge) ; au retour, StreamHub
+    // demande si le téléchargement a démarré, et le note dans Mon espace → Téléchargés
+    func startDownload(_ watch: WatchEntry, for ref: TitleRef, date: String?, episode: Episode? = nil) async {
+        var entry = libraryEntry(watch, for: ref, date: date, episode: episode)
+        if episode != nil { entry.raw["href"] = .string(watch.href) } // épisode : son propre lien, pas la page de la série
+        pendingDownload = PendingDownload(entry: entry, at: Date())
+        await openPlatform(watch.page ?? watch.href)
+    }
+
+    func answerDownload(_ yes: Bool) {
+        if yes, let entry = downloadQuestion?.entry { store.addDownload(entry) }
+        downloadQuestion = nil
+    }
+
+    // Titre téléchargé : ouvert directement dans l'appli de la plateforme, où se trouve le fichier
+    func openDownload(_ entry: LibraryEntry) async {
+        guard let href = entry.raw["href"]?.string else { return }
+        await openPlatform(href)
+    }
+
+    // Entrée de la bibliothèque pour un lancement ou un téléchargement : plateforme, lien, saison et épisode
+    private func libraryEntry(_ watch: WatchEntry, for ref: TitleRef, date: String?, episode: Episode?) -> LibraryEntry {
         var entry = LibraryEntry(ref: ref, date: date)
         if let episode {
             entry.raw["season"] = .int(Int64(episode.seasonNumber))
@@ -177,14 +218,12 @@ final class AppModel {
         entry.raw["platform"] = .string(watch.name)
         if let service = watch.service { entry.raw["service"] = .string(service) }
         entry.raw["href"] = .string(watch.page ?? watch.href)
-        // Lancé = regardé : dans l'historique tout de suite, sans « Tu as regardé… ? » au retour (demande de
-        // l'utilisateur, comme le site depuis la version 1.9.2)
-        store.recordWatch(entry)
-        // Série : on enchaîne souvent plusieurs épisodes sur la plateforme
-        if ref.type == .tv { pendingProgress = PendingProgress(entry: entry, at: Date()) }
+        return entry
+    }
 
-        if let app = Platforms.appLink(watch.href).flatMap(URL.init(string:)), await UIApplication.shared.open(app) { return }
-        guard let url = Platforms.webLink(watch.href).flatMap(URL.init(string:)) else { return } // liens web seulement
+    private func openPlatform(_ href: String) async {
+        if let app = Platforms.appLink(href).flatMap(URL.init(string:)), await UIApplication.shared.open(app) { return }
+        guard let url = Platforms.webLink(href).flatMap(URL.init(string:)) else { return } // liens web seulement
         if await UIApplication.shared.open(url, options: [.universalLinksOnly: true]) { return }
         await UIApplication.shared.open(url)
     }
@@ -197,6 +236,10 @@ final class AppModel {
     // Retour dans l'appli : synchronisation, et « Où en es-tu ? » si une série a été lancée il y a plus de 3 minutes
     func appBecameActive() {
         sync.appBecameActive()
+        if let pendingDownload, Date().timeIntervalSince(pendingDownload.at) >= 3 {
+            downloadQuestion = pendingDownload
+            self.pendingDownload = nil
+        }
         guard let pendingProgress, Date().timeIntervalSince(pendingProgress.at) >= Self.progressDelay else { return }
         progressQuestion = pendingProgress
         self.pendingProgress = nil

@@ -1370,6 +1370,7 @@ html:has(dialog[open]) { overflow: hidden; }
   min-height: clamp(420px, 62vw, 760px);
   padding: 0 var(--gutter) clamp(40px, 7vw, 110px);
   background: var(--surface) center 20% / cover no-repeat;
+  background-image: var(--backdrop, none);
 }
 .hero::before {
   content: "";
@@ -1635,6 +1636,145 @@ html:has(dialog[open]) { overflow: hidden; }
   }
   .bottom-nav button { border-radius: 24px; }
   .bottom-nav button[aria-current="page"] { background: rgba(var(--accent-rgb), 0.18); }
+}
+
+/* ---------- Téléphone : interface de l'appli iPhone (version 2.4.0) ---------- */
+
+/* Pastilles Films / Séries / Animés (accueil), segments de Mon espace, textes propres au téléphone : jamais sur
+   ordinateur */
+.section-chips, .me-tabs, .phone-only, .hero-label { display: none; }
+
+@media (max-width: 860px) {
+  .wide-only { display: none; }
+  .phone-only { display: inline; }
+
+  /* Barre du bas : trois onglets de même largeur, capsule centrée */
+  .bottom-nav {
+    left: 50%;
+    right: auto;
+    width: min(380px, calc(100vw - 24px));
+    transform: translateX(-50%);
+  }
+  .bottom-nav button { flex: 1 1 0; font-size: 0.74em; }
+
+  /* Accueil, Films, Séries, Animés : la barre du haut porte une seconde ligne, les pastilles */
+  body:is([data-view="home"], [data-view="movies"], [data-view="tv"], [data-view="anime"]) { --topbar-h: 110px; }
+  body:is([data-view="home"], [data-view="movies"], [data-view="tv"], [data-view="anime"]) .topbar {
+    flex-wrap: wrap;
+    align-content: center;
+    row-gap: 10px;
+  }
+  body:is([data-view="home"], [data-view="movies"], [data-view="tv"], [data-view="anime"]) .section-chips {
+    display: flex;
+    flex-basis: 100%;
+    justify-content: center;
+    gap: 8px;
+  }
+  .section-chips button {
+    padding: 6px 16px;
+    background: rgba(var(--glass-rgb), var(--glass-alpha));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-edge);
+    border-radius: 999px;
+    color: var(--text);
+    font: inherit;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .section-chips button[aria-current="page"] { background: var(--text); border-color: var(--text); color: var(--bg); }
+
+  /* Grande affiche : l'affiche du titre en hauteur, le titre, « Série · n° 1 du moment », Voir et Ma liste */
+  .hero {
+    min-height: min(138vw, 80vh);
+    padding-bottom: 12px;
+    background-image: var(--poster, var(--backdrop, none));
+    background-position: center top;
+  }
+  .hero::before { background: linear-gradient(to bottom, rgba(7, 13, 26, 0) 45%, rgba(7, 13, 26, 0.6) 72%, var(--bg) 100%); }
+  .hero .type-badge, .hero-meta, .hero-overview, .hero-like { display: none; }
+  .hero h1 { font-size: 2.1em; font-weight: 800; }
+  .hero-label { display: block; margin: 0; color: var(--muted); font-size: 0.95em; }
+  .hero-actions { justify-content: center; margin-top: 14px; }
+  .hero-actions .btn { flex: 0 1 150px; }
+  .hero + .row { margin-top: 22px; }
+
+  /* Affiches sans texte dessous ; le dernier épisode d'une série récente est posé sur l'affiche */
+  .card-title, .card-meta, .card-tag, .card-providers { display: none; }
+  .poster { margin-bottom: 0; border-radius: 10px; }
+  .card-caption {
+    position: absolute;
+    left: 50%;
+    bottom: 6px;
+    transform: translateX(-50%);
+    max-width: calc(100% - 12px);
+    overflow: hidden;
+    padding: 3px 7px;
+    background: rgba(0, 0, 0, 0.65);
+    border-radius: 999px;
+    font-size: 0.68em;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .card-rank { left: 6px; right: auto; bottom: 2px; color: #fff; -webkit-text-stroke: 0; font-size: 2.2em; }
+  .row-track > .card, .row-track > .card-wrap { width: 118px; }
+
+  /* Mon espace : segments (Ma liste, J'aime, Historique, Téléchargés) au lieu du lien « ‹ Mon espace » */
+  body:is([data-view="watchlist"], [data-view="likes"], [data-view="history"], [data-view="downloads"]) .back-btn { display: none; }
+  body:is([data-view="watchlist"], [data-view="likes"], [data-view="history"], [data-view="downloads"]) .me-tabs {
+    display: flex;
+    align-self: stretch;
+    margin: 8px 0 4px;
+    padding: 3px;
+    background: rgba(var(--glass-rgb), var(--glass-alpha));
+    border: 1px solid var(--glass-edge);
+    border-radius: 999px;
+  }
+  .me-tabs button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 7px 2px;
+    background: none;
+    border: 0;
+    border-radius: 999px;
+    color: var(--text);
+    font: inherit;
+    font-size: 0.82em;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .me-tabs button[aria-pressed="true"] { background: rgba(255, 255, 255, 0.18); font-weight: 600; }
+  .grid-page .page-head h1 { font-size: 2em; }
+
+  /* Fiche : affiche et titre côte à côte, puis les infos et une ligne de boutons qui défile */
+  .detail-head {
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr);
+    grid-template-rows: 1fr auto auto auto auto;
+    column-gap: 14px;
+    align-items: end;
+  }
+  .detail-head > div { display: contents; }
+  .detail-poster { grid-column: 1; grid-row: 1 / 4; width: 104px; }
+  .detail-head .type-badge, .detail-head h2, .detail-head > div > .muted { grid-column: 2; justify-self: start; }
+  .detail-head .type-badge { grid-row: 1; align-self: end; }
+  .detail-head h2 { grid-row: 2; font-size: 1.45em; }
+  .detail-head .detail-meta { grid-column: 1 / -1; grid-row: 4; margin-top: 14px; }
+  .detail-actions {
+    grid-column: 1 / -1;
+    grid-row: 5;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin: 0 calc(-1 * var(--detail-pad, 16px));
+    padding: 2px var(--detail-pad, 16px) 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .detail-actions::-webkit-scrollbar { display: none; }
+  .detail-actions .btn { flex: none; margin-top: 0; white-space: nowrap; }
 }
 
 /* ---------- Chrome, Edge, Firefox (surtout Windows) ---------- */

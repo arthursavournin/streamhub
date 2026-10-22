@@ -12,7 +12,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.3.6';
+const APP_VERSION = '2.4.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -406,7 +406,8 @@ function updateStatus() {
 
 // Carte d'affiche. Options : meta (ligne sous le titre), href (la carte ouvre ce lien au lieu de la fiche),
 // typeTag (étiquette « Série » sur l'affiche)
-function buildCard(m, { meta, href, target, typeTag = state.type === 'all', rank = null } = {}) {
+// caption : légende posée sur l'affiche (téléphone : dernier épisode d'une série récente, comme l'appli)
+function buildCard(m, { meta, href, target, typeTag = state.type === 'all', rank = null, caption = '' } = {}) {
   const type = m.media_type;
   const title = titleOf(m);
   const date = dateOf(m);
@@ -427,6 +428,7 @@ function buildCard(m, { meta, href, target, typeTag = state.type === 'all', rank
       ${m.poster_path ? `<img src="${esc(img(m.poster_path))}" alt="" loading="lazy">` : `<span class="no-poster">${esc(title)}</span>`}
       ${typeTag ? `<span class="card-tag">${type === 'tv' ? 'Série' : 'Film'}</span>` : ''}
       ${rank ? `<span class="card-rank" aria-label="Numéro ${rank}">${rank}</span>` : ''}
+      ${caption ? `<span class="card-caption" aria-hidden="true">${caption}</span>` : ''}
       <div class="card-providers"></div>
     </div>
     <span class="card-title">${esc(title)}</span>
@@ -565,14 +567,27 @@ function updateCounts() {
 const PAGE_TITLES = { library: 'Bibliothèque', watchlist: 'Ma liste', likes: 'J’aime', history: 'Historique', downloads: 'Téléchargements' };
 const GRID_VIEWS = Object.keys(PAGE_TITLES);
 
+// Téléphone (barre d'onglets en bas) : interface de l'appli iPhone (version 2.4.0, demande de l'utilisateur) : trois
+// onglets (Accueil, Bibliothèque, Mon espace), Tout / Films / Séries / Animés en pastilles sur l'accueil, Mon espace en
+// segments (Ma liste, J'aime, Historique, Téléchargés). L'ordinateur garde sa barre et sa page Mon espace.
+const PHONE = window.matchMedia('(max-width: 860px)');
+const SECTIONS = ['movies', 'tv', 'anime'];
+let lastPersonal = 'watchlist';
+
 // Changement de page. options.library : filtres à appliquer en ouvrant la Bibliothèque (depuis « Tout voir »)
 async function showView(view, { library: filters } = {}) {
+  if (view === 'me' && PHONE.matches) view = lastPersonal;
+  if (PERSONAL_VIEWS.includes(view)) lastPersonal = view;
   state.view = view;
   const navKey = PERSONAL_VIEWS.includes(view) ? 'me' : view;
   for (const btn of document.querySelectorAll('[data-nav]')) {
     if (btn.classList.contains('brand') || btn === el.backBtn) continue;
-    btn.setAttribute('aria-current', btn.dataset.nav === navKey ? 'page' : 'false');
+    // Barre du bas : Films, Séries, Animés font partie de l'accueil
+    const key = btn.closest('.bottom-nav') && SECTIONS.includes(navKey) ? 'home' : navKey;
+    btn.setAttribute('aria-current', btn.dataset.nav === key ? 'page' : 'false');
   }
+  for (const chip of document.querySelectorAll('[data-chip]')) chip.setAttribute('aria-current', chip.dataset.chip === view ? 'page' : 'false');
+  for (const tab of document.querySelectorAll('[data-personal]')) tab.setAttribute('aria-pressed', tab.dataset.personal === view);
   const grid = GRID_VIEWS.includes(view);
   el.rowsPage.hidden = grid;
   el.gridPage.hidden = !grid;
@@ -947,7 +962,7 @@ async function loadRow(section) {
     const track = $('.row-track', section);
     track.innerHTML = '';
     for (const [i, m] of items.entries()) {
-      const card = buildCard(m, { typeTag: true, rank: row.ranked ? i + 1 : null, meta: latestEpisodeMeta(m) });
+      const card = buildCard(m, { typeTag: true, rank: row.ranked ? i + 1 : null, meta: latestEpisodeMeta(m), caption: latestEpisodeMeta(m) });
       track.append(card);
       logoObserver.observe(card);
     }
@@ -1007,16 +1022,21 @@ function renderHero(m) {
   if (!hero || !m) return;
   heroItem = m;
   hero.classList.remove('hero-loading');
-  hero.style.backgroundImage = m.backdrop_path ? `url('${img(m.backdrop_path, 'w1280')}')` : '';
+  // Téléphone : l'affiche du titre, en hauteur, comme l'appli iPhone ; ordinateur : l'image large
+  hero.style.setProperty('--backdrop', m.backdrop_path ? `url('${img(m.backdrop_path, 'w1280')}')` : 'none');
+  hero.style.setProperty('--poster', m.poster_path ? `url('${img(m.poster_path, 'w780')}')` : 'none');
   const meta = [year(dateOf(m)), m.vote_count ? `★ ${m.vote_average.toFixed(1)}` : ''].filter(Boolean).join(' · ');
+  const chosen = state.view === 'home' && settings.home?.hero?.id === m.id && settings.home?.hero?.type === m.media_type;
+  const label = `${m.media_type === 'tv' ? 'Série' : 'Film'} · ${chosen ? 'à l’affiche' : state.view === 'home' ? 'n° 1 du moment' : 'à la une'}`;
   hero.innerHTML = `
     <div class="hero-content">
       <span class="type-badge">${m.media_type === 'tv' ? 'Série' : 'Film'}</span>
       <h1>${esc(titleOf(m))}</h1>
       ${meta ? `<p class="hero-meta">${esc(meta)}</p>` : ''}
+      <p class="hero-label">${esc(label)}</p>
       ${m.overview ? `<p class="hero-overview">${esc(m.overview)}</p>` : ''}
       <div class="hero-actions">
-        <button type="button" class="btn primary" data-hero="open">▶ Regarder</button>
+        <button type="button" class="btn primary" data-hero="open">▶ <span class="wide-only">Regarder</span><span class="phone-only">Voir</span></button>
         <button type="button" class="btn hero-list" data-hero="list" aria-pressed="false"></button>
         <button type="button" class="btn hero-like" data-hero="like" aria-pressed="false"></button>
       </div>
@@ -2814,6 +2834,11 @@ document.addEventListener('click', (e) => {
   const heroAction = target.closest('[data-hero]');
   if (heroAction) return onHeroAction(heroAction);
 
+  // Pastilles de l'accueil : Tout (l'accueil), Films, Séries, Animés
+  const chip = target.closest('[data-chip]');
+  if (chip) return chip.dataset.chip === state.view ? undefined : showView(chip.dataset.chip);
+  const personal = target.closest('[data-personal]');
+  if (personal) return showView(personal.dataset.personal);
   const clearHistory = target.closest('[data-clear-history]');
   if (clearHistory) return onClearHistory(clearHistory);
   const remove = target.closest('[data-remove]');

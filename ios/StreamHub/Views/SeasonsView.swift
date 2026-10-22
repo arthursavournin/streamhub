@@ -9,6 +9,7 @@ struct SeasonsSection: View {
     let linksReady: Bool
     let lastWatched: LibraryEntry?
     let onLaunch: (EpisodeLink, Episode) -> Void
+    let onDownload: (EpisodeLink, Episode) -> Void // ⬇ : téléchargement dans l'appli de la plateforme
 
     @State private var selected: Int?
     @State private var episodes: [Episode] = []
@@ -95,6 +96,8 @@ struct SeasonsSection: View {
                                 number: fillerMode ? i + 1 : nil, filler: fillerMode && fillerShow?.isFiller(ep.episodeNumber) == true
                             ) { link in
                                 onLaunch(link, ep)
+                            } onDownload: { link in
+                                onDownload(link, ep)
                             }
                         }
                         if episodes.count > shown {
@@ -199,6 +202,7 @@ private struct EpisodeRow: View {
     var number: Int? // numéro dans la saison du découpage sans filler (sinon celui de TMDB)
     var filler = false
     let onLaunch: (EpisodeLink) -> Void
+    let onDownload: (EpisodeLink) -> Void
 
     private static let day: DateFormatter = {
         let f = DateFormatter()
@@ -260,6 +264,16 @@ private struct EpisodeRow: View {
                             }
                             .buttonStyle(.glass)
                             .tint(link.entry.mine ? .accentColor : nil)
+                            // Tes abonnements : télécharger l'épisode (comme le ⬇ du site sur téléphone)
+                            if link.entry.mine, !link.entry.kind.isPaid {
+                                Button {
+                                    onDownload(link)
+                                } label: {
+                                    Image(systemName: "arrow.down.circle").font(.footnote.weight(.semibold))
+                                }
+                                .buttonStyle(.glass)
+                                .accessibilityLabel("Télécharger sur \(link.entry.displayName)")
+                            }
                         }
                     }
                 }

@@ -200,7 +200,11 @@ struct DetailView: View {
             }
             if !mine.isEmpty {
                 Text("Dans tes abonnements").font(.headline)
-                ForEach(mine) { entry in watchButton(entry) }
+                ForEach(mine) { entry in
+                    watchButton(entry)
+                    // Film : « Télécharger » ouvre l'appli de la plateforme (épisodes : dans la liste des épisodes)
+                    if ref.type == .movie, !entry.kind.isPaid { downloadButton(entry, d) }
+                }
             } else if !entries.isEmpty, !model.store.providers.isEmpty {
                 Text("\(what) n’est \(ref.type == .tv ? "incluse" : "inclus") dans aucun de tes abonnements.")
                     .foregroundStyle(.secondary)
@@ -240,6 +244,23 @@ struct DetailView: View {
             }
         }
         .padding(.horizontal, 16)
+    }
+
+    private func downloadButton(_ entry: WatchEntry, _ d: TitleDetails) -> some View {
+        let full = TitleRef(type: ref.type, id: ref.id, title: d.displayTitle, poster: d.posterPath)
+        let done = model.store.isDownloaded(LibraryEntry(ref: full))
+        return Button {
+            Task { await model.startDownload(entry, for: full, date: d.date) }
+        } label: {
+            Label(done ? "Téléchargé" : "Télécharger", systemImage: done ? "checkmark.circle" : "arrow.down.circle")
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 14))
+        .accessibilityLabel("Télécharger sur \(entry.displayName)")
     }
 
     private func watchButton(_ entry: WatchEntry) -> some View {
@@ -302,6 +323,9 @@ struct DetailView: View {
                     lastWatched: model.store.entries(.history).first { $0.key == LibraryEntry.key(.tv, ref.id) }
                 ) { link, episode in
                     Task { await model.open(link.entry, for: ref, date: d.date, episode: episode) }
+                } onDownload: { link, episode in
+                    let full = TitleRef(type: ref.type, id: ref.id, title: d.displayTitle, poster: d.posterPath)
+                    Task { await model.startDownload(link.entry, for: full, date: d.date, episode: episode) }
                 }
                 .frame(height: current == .episodes ? nil : 0, alignment: .top)
                 .clipped()

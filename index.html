@@ -39,6 +39,13 @@
     <button class="icon-btn" id="settingsBtn" type="button" aria-label="Réglages" title="Réglages et abonnements">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
     </button>
+    <!-- Téléphone : pastilles Tout, Films, Séries, Animés, seulement sur l'accueil (demande de l'utilisateur, version 2.4.0) -->
+    <nav class="section-chips" aria-label="Rubriques">
+      <button type="button" data-chip="home" aria-current="false">Tout</button>
+      <button type="button" data-chip="movies" aria-current="false">Films</button>
+      <button type="button" data-chip="tv" aria-current="false">Séries</button>
+      <button type="button" data-chip="anime" aria-current="false">Animés</button>
+    </nav>
   </header>
 
   <main id="main">
@@ -50,6 +57,13 @@
       <div class="page-head">
         <button type="button" class="back-btn" id="backBtn" data-nav="me" hidden>‹ Mon espace</button>
         <h1 id="pageTitle">Bibliothèque</h1>
+        <!-- Téléphone : Mon espace en segments, comme l'appli iPhone (version 2.4.0) -->
+        <div class="me-tabs" id="meTabs" role="group" aria-label="Mon espace">
+          <button type="button" data-personal="watchlist" aria-pressed="false">Ma liste</button>
+          <button type="button" data-personal="likes" aria-pressed="false">J’aime</button>
+          <button type="button" data-personal="history" aria-pressed="false">Historique</button>
+          <button type="button" data-personal="downloads" aria-pressed="false">Téléchargés</button>
+        </div>
       </div>
       <nav class="filters" id="filters" aria-label="Filtres">
         <div class="type-switch" id="typeSwitch" role="group" aria-label="Films ou séries">
@@ -76,9 +90,6 @@
   <!-- Sur téléphone : navigation en bas, comme l'appli Netflix -->
   <nav class="bottom-nav" aria-label="Navigation">
     <button type="button" data-nav="home" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Accueil</span></button>
-    <button type="button" data-nav="movies" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/></svg><span>Films</span></button>
-    <button type="button" data-nav="tv" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="m8 2 4 4 4-4M8 21h8"/></svg><span>Séries</span></button>
-    <button type="button" data-nav="anime" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6l-5.4 2.9 1.2-6-4.5-4.2 6.1-.7z"/></svg><span>Animés</span></button>
     <button type="button" data-nav="library" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Bibliothèque</span></button>
     <button type="button" data-nav="me" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg><span>Mon espace</span></button>
   </nav>

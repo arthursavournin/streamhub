@@ -72,7 +72,8 @@ struct AccountSections: View {
         } header: {
             Text("Compte")
         } footer: {
-            Text("Avec un compte, tes réglages, clés, abonnements, J’aime, Ma liste et historique te suivent sur tous tes appareils, chiffrés sur l’iPhone avant l’envoi : personne d’autre que toi ne peut les lire. Sans compte, tu restes en invité : tout reste sur cet iPhone.")
+            // Information au moment de la collecte (recommandation de la CNIL) : conditions et confidentialité
+            Text("Avec un compte, tes réglages, clés, abonnements, J’aime, Ma liste et historique te suivent sur tous tes appareils, chiffrés sur l’iPhone avant l’envoi : personne d’autre que toi ne peut les lire. Sans compte, tu restes en invité : tout reste sur cet iPhone.\n\nEn créant un compte ou en te connectant, tu acceptes les [conditions d’utilisation](https://arthursavournin.github.io/streamhub/conditions.html). Ce que StreamHub fait de tes données : [politique de confidentialité](https://arthursavournin.github.io/streamhub/confidentialite.html).")
         }
     }
 

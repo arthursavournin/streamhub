@@ -471,6 +471,10 @@ Le pas à pas complet pour chaque navigateur est dans **[extension/README.md](ex
 
 ## 9. Tes données et ta vie privée
 
+Le détail est dans la **[politique de confidentialité](https://arthursavournin.github.io/streamhub/confidentialite.html)**
+(aussi : [mentions légales](https://arthursavournin.github.io/streamhub/mentions-legales.html) et
+[conditions d'utilisation](https://arthursavournin.github.io/streamhub/conditions.html), liens en bas des réglages).
+
 - **Compte facultatif** : en invité, tout est stocké dans ton navigateur (localStorage). Avec un compte, une copie
   **chiffrée de bout en bout** est gardée chez Supabase ([partie 6](#chiffrement-de-bout-en-bout)).
 - **Ce qui sort de ton appareil** : les recherches et fiches demandées à TMDB et Streaming Availability (avec tes
@@ -587,6 +591,8 @@ Puis ouvre **http://localhost:8080**. Le relais accepte les appels venant de `lo
 | `account.js` | Comptes Supabase (Auth et base, appels HTTP directs) : inscription, connexion, coffre, clé de secours |
 | `account-ui.js` | Réglages → Compte |
 | `supabase/schema.sql` | Tables `vaults` et `sync_data`, règles d'accès (chacun sa ligne), `delete_my_account`, `keepalive` |
+| `mentions-legales.html`, `confidentialite.html`, `conditions.html`, `legal.css` | Pages légales (LCEN, RGPD, conditions d'utilisation demandées par Google pour la connexion) |
+| `supabase/menage.sql` | Ménage quotidien (pg_cron) : durées de conservation annoncées dans la politique |
 | `supabase/templates/` | E-mails en français (confirmation, mot de passe oublié), à coller dans Supabase : Authentication → Emails → Templates |
 | `episodes.js` | Liens directs vers les épisodes TF1+ et M6+ (index publié dans `data/`) |
 | `aliases.js` | Recherche par surnom ou sigle (liste intégrée + Wikidata) |

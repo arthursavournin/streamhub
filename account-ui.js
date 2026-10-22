@@ -27,6 +27,11 @@ const actions = (...buttons) => `<div class="key-actions">${buttons.join('')}</d
 const button = (action, text, kind = '') => `<button type="button" class="btn ${kind}" data-acc="${action}">${text}</button>`;
 const link = (action, text) => `<button type="button" class="link-btn" data-acc="${action}">${text}</button>`;
 
+// Information au moment de la collecte (recommandation de la CNIL) : liens vers les conditions et la confidentialité
+const LEGAL = `<p class="hint account-legal">En créant un compte ou en te connectant, tu acceptes les
+  <a href="conditions.html" target="_blank" rel="noopener">conditions d’utilisation</a>. Ce que StreamHub fait de tes
+  données : <a href="confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>.</p>`;
+
 // Rempli quand Supabase a dit quels fournisseurs sont activés (rien s'il n'y en a aucun)
 const providerSlot = () => '<div id="accProviders"></div>';
 async function fillProviders() {
@@ -85,7 +90,8 @@ function renderGuest() {
     ${emailField()}
     ${signup ? newPasswordFields() : field('accPassword', 'Mot de passe', 'password', 'autocomplete="current-password"')}
     ${actions(button(signup ? 'signup' : 'signin', signup ? 'Créer mon compte' : 'Se connecter', 'primary'), signup ? '' : link('forgotMode', 'Mot de passe oublié ?'))}
-    ${providerSlot()}`;
+    ${providerSlot()}
+    ${LEGAL}`;
   fillProviders();
 }
 

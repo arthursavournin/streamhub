@@ -31,6 +31,9 @@ struct SettingsView: View {
                 Section {
                     LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
                     Link("StreamHub sur le web", destination: AppStore.site)
+                    Link("Mentions légales", destination: AppStore.site.appending(path: "mentions-legales.html"))
+                    Link("Politique de confidentialité", destination: AppStore.site.appending(path: "confidentialite.html"))
+                    Link("Conditions d’utilisation", destination: AppStore.site.appending(path: "conditions.html"))
                 } footer: {
                     Text("Catalogue et images : TMDB. Liens vers les plateformes : JustWatch et Streaming Availability.")
                 }

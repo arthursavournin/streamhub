@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070d1a">
+  <title>Politique de confidentialité · StreamHub</title>
+  <link rel="icon" href="icon.svg?v=3" type="image/svg+xml">
+  <link rel="stylesheet" href="legal.css">
+</head>
+<body>
+  <main class="legal">
+    <div class="legal-top">
+      <a class="brand" href="./"><img src="icon.svg?v=3" alt="" width="32" height="32">StreamHub</a>
+      <nav class="legal-nav" aria-label="Pages légales">
+        <a href="mentions-legales.html">Mentions légales</a>
+        <a href="confidentialite.html" aria-current="page">Confidentialité</a>
+        <a href="conditions.html">Conditions d’utilisation</a>
+      </nav>
+    </div>
+
+    <h1>Politique de confidentialité</h1>
+    <p class="updated">Dernière mise à jour : 22 octobre 2026</p>
+
+    <div class="card summary">
+      <p><strong>En bref</strong></p>
+      <ul>
+        <li><strong>Sans compte (invité)</strong>, StreamHub ne collecte aucune donnée personnelle : tout reste dans ton
+          navigateur ou ton appareil.</li>
+        <li><strong>Avec un compte</strong>, StreamHub garde ton adresse e-mail et une copie de tes réglages et listes,
+          <strong>chiffrée de bout en bout</strong> : ni l’éditeur ni l’hébergeur ne peuvent la lire.</li>
+        <li>Pas de publicité, pas de pistage, pas de mesure d’audience, pas de revente de données.</li>
+        <li>Tu peux supprimer ton compte et ses données à tout moment : Réglages → Compte → Supprimer mon compte.</li>
+      </ul>
+    </div>
+
+    <h2>1. Responsable du traitement</h2>
+    <p><strong>Arthur Savournin</strong>, éditeur de StreamHub à titre non professionnel.<br>
+      Contact pour toute question sur tes données : <a href="mailto:streamhub.projet@gmail.com">streamhub.projet@gmail.com</a>.</p>
+
+    <h2>2. Sans compte : rien ne quitte ton appareil</h2>
+    <p>Réglages, clés API, abonnements, J’aime, Ma liste, historique et téléchargements sont enregistrés dans le
+      stockage local de ton navigateur (<em>localStorage</em>) ou de l’appli. L’éditeur n’y a pas accès. Ce stockage est
+      strictement nécessaire au service que tu demandes : il ne demande donc pas de consentement (article 82 de la loi
+      Informatique et Libertés). StreamHub n’utilise aucun cookie publicitaire ou de mesure d’audience. Tu peux tout
+      effacer en supprimant les données du site dans ton navigateur.</p>
+
+    <h2>3. Avec un compte</h2>
+    <h3>Données traitées</h3>
+    <ul>
+      <li><strong>Adresse e-mail</strong>, dates de création et de dernière connexion du compte.</li>
+      <li><strong>Mot de passe</strong> : ton vrai mot de passe ne quitte jamais ton appareil. StreamHub en tire un
+        autre secret, que Supabase garde sous forme d’empreinte (non réversible).</li>
+      <li><strong>Sessions</strong> : adresse IP, type de navigateur ou d’appareil et dates, pour garder ta connexion
+        ouverte et la protéger.</li>
+      <li><strong>Coffre et données synchronisées</strong> : réglages, clés API, abonnements, accueil, J’aime, Ma liste,
+        historique et likes sur les plateformes, <strong>chiffrés sur ton appareil</strong> (AES-256-GCM) avec une clé
+        que seuls ton mot de passe et ta clé de secours permettent d’ouvrir. L’hébergeur ne voit qu’un contenu illisible,
+        sa taille et la date de sa dernière modification.</li>
+    </ul>
+    <h3>Pourquoi et sur quelle base</h3>
+    <p>Pour créer ton compte, te connecter et synchroniser tes données entre tes appareils, c’est-à-dire fournir le
+      service prévu par les <a href="conditions.html">conditions d’utilisation</a> (exécution du contrat, article 6.1.b du
+      RGPD). Les informations de session servent aussi à la sécurité du service (intérêt légitime, article 6.1.f).</p>
+    <h3>Combien de temps</h3>
+    <ul>
+      <li>Compte et données synchronisées : jusqu’à ce que tu supprimes ton compte. Un compte sans aucune activité
+        (connexion ou synchronisation) pendant <strong>3 ans</strong> est supprimé automatiquement.</li>
+      <li>Inscription jamais confirmée : supprimée au bout de <strong>7 jours</strong>.</li>
+      <li>Sessions : jusqu’à la déconnexion, et au plus <strong>90 jours</strong> après leur dernière utilisation.</li>
+      <li>Journaux techniques de Supabase (requêtes, adresses IP) : 1 jour.</li>
+    </ul>
+
+    <h2>4. E-mails</h2>
+    <p>Ton adresse e-mail sert uniquement à t’envoyer les messages nécessaires au compte : confirmation de l’adresse et
+      mot de passe oublié. Ils partent par <strong>Mailjet</strong> (groupe Sinch). Aucune lettre d’information, aucun
+      message commercial.</p>
+
+    <h2>5. Connexion avec Google ou GitHub</h2>
+    <p>Si tu choisis « Continuer avec Google » ou « Continuer avec GitHub », ce service transmet à StreamHub ton
+      <strong>adresse e-mail</strong>, ton <strong>nom</strong> et l’adresse de ta <strong>photo de profil</strong>.
+      StreamHub n’utilise que l’adresse e-mail, pour identifier ton compte ; le nom et la photo sont conservés tels que
+      transmis par le service de connexion mais ne sont ni affichés, ni utilisés, ni partagés. StreamHub ne demande
+      l’accès à aucune autre donnée de ton compte Google ou GitHub (ni e-mails, ni contacts, ni fichiers), ne publie
+      rien en ton nom et ne transmet ces informations à personne. Tes données synchronisées restent chiffrées avec ton
+      mot de passe du coffre, que Google et GitHub ne connaissent pas.</p>
+
+    <h2>6. Fonctionnement du site</h2>
+    <ul>
+      <li><strong>Hébergement du site</strong> : GitHub Pages enregistre l’adresse IP des visiteurs pour la sécurité de
+        son service.</li>
+      <li><strong>Relais StreamHub</strong> (Cloudflare) : pour trouver les liens vers les plateformes, ton navigateur lui
+        envoie l’identifiant et le titre du film ou de la série. Le relais ne garde que ces réponses (quelques heures),
+        sans lien avec toi.</li>
+      <li><strong>Services appelés directement par ton navigateur</strong> : TMDB (catalogue et images), Streaming
+        Availability (avec ta clé, si tu en as mis une), Wikidata (recherche par surnom) et, quand tu choisis d’y aller,
+        les sites des plateformes de streaming. Ils reçoivent ton adresse IP et ce que tu demandes, et appliquent leurs
+        propres règles de confidentialité. Tes clés API ne sont envoyées qu’au service concerné.</li>
+      <li><strong>Script « reprise après connexion »</strong> (facultatif) : il garde le lien du titre dans ton
+        navigateur, sur le site de la plateforme, le temps de te connecter. Il n’envoie rien à StreamHub.</li>
+    </ul>
+
+    <h2>7. Destinataires et lieux de stockage</h2>
+    <p>L’éditeur ne vend, ne loue et ne partage tes données avec personne. Seuls des prestataires techniques les
+      traitent, pour son compte :</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Prestataire</th><th>Rôle</th><th>Lieu</th></tr></thead>
+        <tbody>
+          <tr><td>Supabase</td><td>Comptes, données synchronisées (chiffrées)</td><td>Londres (Royaume-Uni)</td></tr>
+          <tr><td>Mailjet (Sinch)</td><td>Envoi des e-mails du compte</td><td>Union européenne</td></tr>
+          <tr><td>GitHub</td><td>Hébergement du site</td><td>États-Unis</td></tr>
+          <tr><td>Cloudflare</td><td>Relais des liens vers les plateformes</td><td>Réseau mondial</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Le Royaume-Uni bénéficie d’une décision d’adéquation de la Commission européenne. Les transferts vers d’autres
+      pays hors de l’Union européenne sont encadrés par les garanties prévues par le RGPD (Data Privacy Framework UE –
+      États-Unis ou clauses contractuelles types de la Commission européenne).</p>
+
+    <h2>8. Sécurité</h2>
+    <p>Échanges chiffrés (HTTPS), données synchronisées chiffrées de bout en bout, règles d’accès qui limitent chaque
+      compte à ses propres données. Garde ton mot de passe et ta clé de secours pour toi : sans eux, personne, pas même
+      l’éditeur, ne peut rouvrir tes données synchronisées.</p>
+
+    <h2>9. Tes droits</h2>
+    <p>Tu peux demander l’accès à tes données, leur rectification, leur effacement, la limitation de leur traitement ou
+      t’y opposer, et récupérer tes données (portabilité). Le plus simple :</p>
+    <ul>
+      <li><strong>Effacer</strong> : Réglages → Compte → Supprimer mon compte (effacement immédiat du compte, du coffre et
+        des données synchronisées).</li>
+      <li><strong>Consulter ou récupérer</strong> : tes données sont lisibles dans StreamHub sur tes appareils ; comme
+        elles sont chiffrées, l’éditeur ne peut pas les lire à ta place.</li>
+      <li>Pour toute autre demande : <a href="mailto:streamhub.projet@gmail.com">streamhub.projet@gmail.com</a>. Réponse
+        sous un mois au plus.</li>
+    </ul>
+    <p>Si tu estimes que tes droits ne sont pas respectés, tu peux adresser une réclamation à la CNIL
+      (<a href="https://www.cnil.fr" rel="noopener">cnil.fr</a>, 3 place de Fontenoy, TSA 80715, 75334 Paris Cedex 07).</p>
+
+    <h2>10. Mineurs</h2>
+    <p>Il faut avoir au moins 15 ans pour créer un compte, ou l’accord d’un parent avant 15 ans (article 45 de la loi
+      Informatique et Libertés).</p>
+
+    <h2>11. Modifications</h2>
+    <p>Cette politique peut évoluer avec StreamHub. La date de mise à jour figure en haut de la page ; en cas de
+      changement important, StreamHub te le signalera.</p>
+
+    <p class="legal-foot"><a href="./">← Retour à StreamHub</a> · <a href="mentions-legales.html">Mentions légales</a> ·
+      <a href="conditions.html">Conditions d’utilisation</a></p>
+  </main>
+</body>
+</html>

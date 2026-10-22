@@ -52,3 +52,5 @@ après connexion, réglages, dépannage…), tout est dans la **[documentation](
 
 Ouvre un ticket sur GitHub : **[Issues → New issue](https://github.com/arthursavournin/streamhub/issues/new)**.
 Indique ton appareil, ton navigateur et la version de StreamHub (affichée en bas des réglages).
+
+[Mentions légales](https://arthursavournin.github.io/streamhub/mentions-legales.html) · [Confidentialité](https://arthursavournin.github.io/streamhub/confidentialite.html) · [Conditions d'utilisation](https://arthursavournin.github.io/streamhub/conditions.html)

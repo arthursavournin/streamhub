@@ -71,7 +71,7 @@ struct RootView: View {
         .task {
             // Compte (STREAMHUB_ACCOUNT = « action|valeur|valeur », la saisie au clavier du simulateur ne marchant pas
             // avec l'outil de test) : signin|e-mail|mdp, signup|e-mail|mdp, finish, unlock|mdp, change|ancien|nouveau,
-            // reset|clé|nouveau, recovery, signout, delete, like|titre|id. Résultat dans la console (STREAMHUB_TEST).
+            // reset|clé|nouveau, recovery, signout, delete|mdp, like|titre|id. Résultat dans la console (STREAMHUB_TEST).
             if let spec = ProcessInfo.processInfo.environment["STREAMHUB_ACCOUNT"] {
                 let p = spec.split(separator: "|", omittingEmptySubsequences: false).map(String.init) + ["", ""]
                 let account = model.account
@@ -85,7 +85,7 @@ struct RootView: View {
                     case "reset": try await account.resetWithRecovery(p[1], newPassword: p[2])
                     case "recovery": try await account.newRecovery()
                     case "signout": await account.signOut()
-                    case "delete": try await account.deleteAccount()
+                    case "delete": try await account.deleteAccount(password: p[1])
                     case "like": model.store.toggle(.likes, TitleRef(type: .movie, id: Int(p[2]) ?? 1, title: p[1], poster: nil))
                     default: break
                     }

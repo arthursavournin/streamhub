@@ -593,7 +593,12 @@ final class AccountService {
         if let token { _ = try? await call("/auth/v1/logout?scope=local", method: "POST", token: token) }
     }
 
-    func deleteAccount() async throws {
+    // Le mot de passe (ou mot de passe du coffre) est redemandé : un jeton de session volé ne suffit pas à tout effacer
+    // depuis StreamHub (audit de sécurité, F2 ; comme deleteAccount d'account.js)
+    func deleteAccount(password: String) async throws {
+        if let vault = try await fetchVault(), await openWith(vault, password: password) == nil {
+            throw AccountError(message: vault.kdf.mode == "vault" ? "Mot de passe du coffre incorrect." : "Mot de passe incorrect.")
+        }
         _ = try await rest("rpc/delete_my_account", method: "POST", body: .object([:]))
         await signOut()
     }

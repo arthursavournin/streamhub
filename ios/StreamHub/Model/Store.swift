@@ -94,6 +94,7 @@ final class AppStore {
     private enum Keys {
         static let settings = "streamhub:settings"
         static let library = "streamhub:library"
+        static let apiKeys = "apiKeys" // trousseau
     }
 
     init() {
@@ -104,16 +105,33 @@ final class AppStore {
         settings = read(Keys.settings)
         library = read(Keys.library)
         defaults.removeObject(forKey: "streamhub:sync") // ancien code de synchronisation (avant 2.1.0)
+        // Clés API rangées dans le trousseau ; avant la version 2.3.5, dans UserDefaults : déplacées au premier lancement
+        let stored = Keychain.read(Keys.apiKeys).flatMap { try? JSONDecoder().decode([String: JSON].self, from: $0) } ?? [:]
+        let moving = Self.secretSettings.contains { settings[$0] != nil }
+        settings.merge(stored) { _, kept in kept }
+        if moving { saveSettings() }
     }
 
     private func save<T: Encodable>(_ value: T, as key: String) {
         UserDefaults.standard.set(try? JSONEncoder().encode(value), forKey: key)
     }
 
+    // Clés TMDB et Streaming Availability : dans le trousseau (sur cet iPhone seulement, comme la session), pas dans
+    // UserDefaults, copié en clair dans les sauvegardes de l'iPhone (audit de sécurité, F9). Le reste : UserDefaults.
+    private static let secretSettings = ["tmdbKey", "saKey"]
+
+    private func saveSettings() {
+        var plain = settings
+        var secret: [String: JSON] = [:]
+        for key in Self.secretSettings { secret[key] = plain.removeValue(forKey: key) }
+        save(plain, as: Keys.settings)
+        Keychain.write(Keys.apiKeys, secret.isEmpty ? nil : try? JSONEncoder().encode(secret))
+    }
+
     // quiet : écriture venant de la synchronisation elle-même (pas besoin de la renvoyer)
     func updateSettings(quiet: Bool = false, _ change: (inout [String: JSON]) -> Void) {
         change(&settings)
-        save(settings, as: Keys.settings)
+        saveSettings()
         if !quiet { onChange?() }
     }
 

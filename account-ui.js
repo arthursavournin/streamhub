@@ -5,7 +5,7 @@
 import {
   accountState, signUp, signIn, signInWith, resendConfirmation, cancelPending, unlockVault, createVaultWith,
   requestReset, resetWithRecovery, changePassword, newRecovery, recoveryNoted, signOut, deleteAccount, PROVIDERS,
-  enabledProviders, MIN_PASSWORD,
+  enabledProviders, MIN_PASSWORD, linkOffer, acceptLink, declineLink,
 } from './account.js';
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -95,6 +95,8 @@ function recoveryPanel(key) {
 function render() {
   const s = accountState();
   setStatus('', '');
+  const offer = linkOffer();
+  if (offer) return renderLinkOffer(offer);
   if (s.open) return renderOpen(s);
   if (s.signedIn) return renderSignedIn(s);
   if (s.pending) {
@@ -143,6 +145,19 @@ function renderGuest() {
     ${LEGAL}
   </div>`;
   fillProviders();
+}
+
+// Lien d'e-mail qui n'a pas été demandé sur cet appareil : on montre le compte avant de s'y connecter (F8)
+function renderLinkOffer(offer) {
+  const what = offer.type === 'recovery' ? 'choisir un nouveau mot de passe pour le' : 'te connecter au';
+  box.innerHTML = `<div class="auth-card">
+    <div class="auth-icon">${icon('mail')}</div>
+    <h3 class="auth-title">Ce lien est-il pour toi ?</h3>
+    <p class="auth-text">Il permet de ${what} compte <strong>${esc(offer.email)}</strong>. Continue seulement si c’est ton
+      adresse et que tu viens de demander ce lien (inscription ou mot de passe oublié).</p>
+    ${submit('linkYes', 'Oui, c’est mon compte')}
+    <p class="auth-switch">${link('linkNo', 'Non, ignorer ce lien')}</p>
+  </div>`;
 }
 
 // Connecté mais coffre fermé sur cet appareil : mot de passe à entrer, coffre à créer, ou mot de passe à refaire
@@ -204,6 +219,7 @@ function renderOpen(s) {
       <h3 class="auth-title">Supprimer ton compte ?</h3>
       <p class="auth-text">Ton compte, ton coffre et tes données synchronisées seront effacés. Tes données restent sur cet
         appareil (en invité). Impossible d’annuler.</p>
+      ${field('accCurrent', `${vaultWord[0].toUpperCase()}${vaultWord.slice(1)}`, 'password', 'autocomplete="current-password"')}
       ${submit('delete', 'Supprimer définitivement', 'danger')}
       <p class="auth-switch">${link('openMode', 'Annuler')}</p>
     </div>`;
@@ -296,6 +312,15 @@ const ACTIONS = {
     return 'Nouvelle clé de secours : l’ancienne ne marche plus.';
   },
   noted: () => recoveryNoted(),
+  async linkYes() {
+    const result = await acceptLink();
+    if (result?.kind === 'recovery') ui.mode = 'signin';
+    return result?.kind === 'confirmed' ? (accountState().open ? 'Adresse confirmée : compte créé.' : 'Adresse confirmée.') : '';
+  },
+  async linkNo() {
+    await declineLink();
+    return 'Lien ignoré : tu n’es pas connecté à ce compte.';
+  },
   async syncNow() {
     const { pulled } = await hooks.syncNow();
     if (pulled) hooks.onPulled();
@@ -307,7 +332,7 @@ const ACTIONS = {
     return 'Déconnecté. Tes données restent sur cet appareil.';
   },
   async delete() {
-    await deleteAccount();
+    await deleteAccount(value('accCurrent'));
     ui.mode = 'signin';
     return 'Compte supprimé. Tes données restent sur cet appareil.';
   },

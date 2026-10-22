@@ -36,15 +36,35 @@ plus pratique (une icône, sa propre fenêtre).
 
 ### Premier lancement
 
-1. Ouvre StreamHub : les réglages s'ouvrent.
+1. Ouvre StreamHub : crée un compte (e-mail, Google ou GitHub), connecte-toi, ou choisis **Continuer sans compte**.
+   Tu utilises déjà StreamHub sur un autre appareil ? Connecte-toi : tout revient.
 2. Colle ta **clé TMDB** dans **Clés API**. Elle est gratuite : crée un compte sur
    [themoviedb.org](https://www.themoviedb.org), puis **Paramètres → API**.
 3. Coche tes **abonnements** dans **Mes abonnements**, puis **Enregistrer**.
 
-Tu utilises déjà StreamHub sur un autre appareil ? Connecte-toi plutôt dans **Compte** : tout revient.
+---
 
-Pour aller plus loin (clé Streaming Availability pour des liens qui lancent directement la vidéo, script de reprise
-après connexion, réglages, dépannage…), tout est dans la **[documentation](DOCUMENTATION.md)**.
+## Script « reprise après connexion » (facultatif, surtout sur ordinateur)
+
+Quand une plateforme te demande de te connecter ou de choisir ton profil avant d'afficher le titre, elle t'envoie
+ensuite sur son accueil. Ce petit script s'en souvient et ouvre le titre lancé depuis StreamHub. Il ne tourne que sur
+StreamHub et sur les sites des plateformes, et n'envoie rien sur Internet.
+
+| Navigateur | Installation |
+|---|---|
+| **Safari** (Mac, iPhone, iPad) | 1. Installe l'appli gratuite **[Userscripts](https://apps.apple.com/app/userscripts/id1463298887)** (App Store).<br>2. Active-la : Mac : **Safari → Réglages → Extensions** → coche **Userscripts** et autorise-la sur les sites web ; iPhone / iPad : **Réglages → Apps → Safari → Extensions → Userscripts** → activée et autorisée.<br>3. Dans Safari, ouvre le **[script](https://arthursavournin.github.io/streamhub/streamhub-reprise.user.js)**, puis icône **Userscripts** → **Installer**. |
+| **Chrome, Edge, Brave, Opera** | 1. Installe l'extension **Violentmonkey** ou **Tampermonkey** (boutique d'extensions du navigateur).<br>2. Si l'extension le demande, active **« Autoriser les scripts utilisateur »** dans ses détails (`chrome://extensions`).<br>3. Ouvre le **[script](https://arthursavournin.github.io/streamhub/streamhub-reprise.user.js)** → **Installer**. |
+| **Firefox** | 1. Installe le module **Violentmonkey** ou **Tampermonkey**.<br>2. Ouvre le **[script](https://arthursavournin.github.io/streamhub/streamhub-reprise.user.js)** → **Installer**. |
+
+Le script se met ensuite à jour tout seul. Pour vérifier : recharge StreamHub, puis **Réglages → Pays et lecture** :
+la ligne **« ✓ Script « reprise après connexion » installé »** apparaît. Dans l'appli de l'écran d'accueil de
+l'iPhone, il n'est pas utile : les titres s'ouvrent dans l'appli de la plateforme. Détails et extension Chrome sans
+gestionnaire : **[extension/README.md](extension/README.md)**.
+
+---
+
+Pour aller plus loin (clé Streaming Availability pour des liens qui lancent directement la vidéo, réglages, compte,
+dépannage…), tout est dans la **[documentation](DOCUMENTATION.md)**.
 
 ---
 

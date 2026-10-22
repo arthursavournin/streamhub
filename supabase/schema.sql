@@ -100,3 +100,11 @@ as $$
 $$;
 revoke execute on function public.keepalive() from public;
 grant execute on function public.keepalive() to anon, authenticated;
+
+-- ---------- Droits par défaut (22 octobre 2026, audit de sécurité F1, migration streamhub_default_privileges) ----------
+
+-- Les futures tables, séquences et fonctions du schéma public ne donnent plus aucun droit d'office à anon et
+-- authenticated : chaque nouvel objet reçoit ses droits explicitement (GRANT), avec RLS pour les tables.
+alter default privileges for role postgres in schema public revoke all on tables from anon, authenticated;
+alter default privileges for role postgres in schema public revoke all on sequences from anon, authenticated;
+alter default privileges for role postgres in schema public revoke execute on functions from public, anon, authenticated;

@@ -276,8 +276,8 @@ L'offre gratuite est limitée en nombre de requêtes par jour : StreamHub ne fai
 fiche et garde chaque réponse **3 jours** en mémoire. Sans cette clé, StreamHub utilise les liens de JustWatch (via
 le relais), sinon une recherche du titre sur la plateforme.
 
-**Tes clés ne sont jamais publiées** : elles ne sont pas dans le code, restent dans ton navigateur (et, chiffrées,
-dans ton compte), et ne sont envoyées qu'à TMDB et RapidAPI.
+**Tes clés ne sont jamais publiées** : elles ne sont pas dans le code, restent dans ton navigateur ou dans le
+trousseau de l'iPhone pour l'appli (et, chiffrées, dans ton compte), et ne sont envoyées qu'à TMDB et RapidAPI.
 
 ---
 
@@ -361,11 +361,14 @@ n'est perdu.
 - **Mot de passe oublié ?** (sous **Se connecter**) : un e-mail t'envoie un lien ; il ouvre StreamHub, où tu choisis
   un nouveau mot de passe et entres ta **clé de secours**. Mot de passe du coffre oublié (Google, GitHub) : même
   chose, avec **Mot de passe du coffre oublié ?** une fois connecté.
+- **« Ce lien est-il pour toi ? »** : un lien d'e-mail (confirmation, mot de passe oublié) ouvert sur un autre
+  appareil ou navigateur que celui de la demande affiche d'abord l'adresse du compte. Continue seulement si c'est la
+  tienne : un lien piégé ne peut pas te connecter à son insu au compte de quelqu'un d'autre.
 - **Changer de mot de passe** : l'actuel, puis le nouveau. Les autres appareils sont déconnectés (au plus tard une
   heure après) : reconnecte-les avec le nouveau mot de passe, leurs données restent.
 - **Se déconnecter** : les données restent sur cet appareil, elles ne suivent simplement plus.
-- **Supprimer mon compte** : efface ton compte, ton coffre et tes données synchronisées. Ce qui est sur l'appareil
-  reste.
+- **Supprimer mon compte** : StreamHub redemande ton mot de passe (ou ton mot de passe du coffre), puis efface ton
+  compte, ton coffre et tes données synchronisées. Ce qui est sur l'appareil reste.
 
 ### Chiffrement de bout en bout
 
@@ -433,6 +436,9 @@ Chaque plateforme s'ouvre dans son propre onglet (un seul onglet Netflix, un seu
 | **TF1+**, **M6+** | La vidéo ou la page du programme ; pour les épisodes, StreamHub retrouve leur lien grâce à son index ([partie 11](#publication-et-index-tf1-m6-chaînes-de-canal)) |
 | **Autres** | La page du titre, une recherche ou l'accueil de la plateforme |
 
+Un site qui n'est pas celui d'une plateforme connue (lien d'une plateforme moins courante, TMDB…) s'ouvre dans un
+onglet indépendant de StreamHub : il ne peut pas modifier l'onglet StreamHub.
+
 Si la plateforme te demande de te connecter ou de choisir un profil, elle oublie souvent le titre demandé : le
 **script « reprise après connexion »** le rouvre tout seul ([partie 8](#8-le-script--reprise-après-connexion-)).
 Sans lui, une barre **« ▶ Relancer »** permet de le rouvrir en un clic une fois connecté.
@@ -498,8 +504,9 @@ Le détail est dans la **[politique de confidentialité](https://arthursavournin
 - **Compte facultatif** : en invité, tout est stocké dans ton navigateur (localStorage). Avec un compte, une copie
   **chiffrée de bout en bout** est gardée chez Supabase ([partie 6](#chiffrement-de-bout-en-bout)).
 - **Ce qui sort de ton appareil** : les recherches et fiches demandées à TMDB et Streaming Availability (avec tes
-  clés), les demandes de liens au relais (identifiant TMDB et titre du film ou de la série) et, avec un compte, ton
-  adresse e-mail et tes données synchronisées, chiffrées avant l'envoi.
+  clés), les demandes de liens au relais (identifiant TMDB et titre du film ou de la série), quand tu choisis un mot de
+  passe les 5 premiers caractères de son empreinte (Have I Been Pwned, [partie 6](#créer-un-compte-ou-se-connecter))
+  et, avec un compte, ton adresse e-mail et tes données synchronisées, chiffrées avant l'envoi.
 - **Aucune publicité, aucun pistage, aucune statistique.**
 - **Redémarrer ou fermer le navigateur ne fait rien perdre.** On perd les données d'un navigateur si on efface les
   données des sites, en navigation privée, et dans Safari si StreamHub n'est pas ouvert pendant 7 jours d'utilisation
@@ -557,6 +564,14 @@ compte.
 Regarde dans les indésirables, attends quelques minutes (le nombre d'e-mails par heure est limité), puis **Renvoyer
 l'e-mail**. Le lien ne sert qu'une fois et expire au bout d'une heure.
 
+**« Mot de passe trop court » ou « figure dans des fuites de données connues ».**
+Un nouveau mot de passe doit faire 12 caractères au moins et ne jamais avoir fuité ailleurs : une phrase de quelques
+mots, ou un mot de passe tiré au hasard par ton gestionnaire de mots de passe, convient.
+
+**« Ce lien est-il pour toi ? »**
+Le lien de l'e-mail a été ouvert ailleurs que là où il a été demandé. Vérifie l'adresse affichée : si c'est la tienne,
+continue ; sinon, ignore le lien.
+
 **« Connexion commencée dans un autre navigateur ».**
 La connexion Google / GitHub doit se terminer dans le navigateur où elle a commencé : recommence depuis celui-ci.
 
@@ -610,7 +625,7 @@ Puis ouvre **http://localhost:8080**. Le relais accepte les appels venant de `lo
 | `sync.js` | Synchronisation chiffrée entre appareils par le compte : chiffrement, fusion, envoi conditionnel |
 | `account.js` | Comptes Supabase (Auth et base, appels HTTP directs) : inscription, connexion, coffre, clé de secours |
 | `account-ui.js` | Réglages → Compte |
-| `supabase/schema.sql` | Tables `vaults` et `sync_data`, règles d'accès (chacun sa ligne), `delete_my_account`, `keepalive` |
+| `supabase/schema.sql` | Tables `vaults` et `sync_data`, règles d'accès (chacun sa ligne), `delete_my_account`, `keepalive`, droits par défaut fermés pour les futurs objets |
 | `mentions-legales.html`, `confidentialite.html`, `conditions.html`, `legal.css` | Pages légales (LCEN, RGPD, conditions d'utilisation demandées par Google pour la connexion) |
 | `supabase/menage.sql` | Ménage quotidien (pg_cron) : durées de conservation annoncées dans la politique |
 | `supabase/templates/` | E-mails en français (confirmation, mot de passe oublié), à coller dans Supabase : Authentication → Emails → Templates |
@@ -646,6 +661,10 @@ premiers titres disponibles sur tes abonnements.
 GitHub met en pause les tâches planifiées d'un dépôt sans commit depuis 60 jours : le workflow la réactive à chaque
 passage, pour que l'index continue de se mettre à jour.
 
+Les actions du workflow sont épinglées par empreinte de commit (version en commentaire), et seul le travail de
+publication (`deploy`) a le droit d'écrire sur GitHub Pages. La branche `main` est protégée (règle « Protéger main » :
+ni suppression, ni réécriture de l'historique).
+
 ### Version
 
 Le numéro de version est dans `app.js` (`APP_VERSION`) et `sw.js` (`SHELL_CACHE`) : les deux changent ensemble à
@@ -657,10 +676,11 @@ correction, 1.1.0 pour une nouvelle fonction. Le script « reprise après connex
 ### Le relais (Cloudflare Workers)
 
 `relay/worker.js` est publié sur https://streamhub-relay.arthursavournin.workers.dev (offre gratuite Cloudflare :
-100 000 requêtes et 1 000 enregistrements par jour). Il donne les **liens JustWatch** (`/offers`) : JustWatch refuse les
-appels venant d'autres sites, le relais l'interroge à la place du navigateur. Réponses gardées 6 heures. Il ne stocke
-rien (son ancienne route `/sync/<id>`, pour le code de synchronisation d'avant la version 2.1.0, a été supprimée en
-version 2.3.3, avec son espace Workers KV).
+100 000 requêtes par jour). Il donne les **liens JustWatch** (`/offers`) : JustWatch refuse les appels venant
+d'autres sites, le relais l'interroge à la place du navigateur. Seules les réponses trouvées sont gardées 6 heures
+(un titre faux ne peut pas cacher les liens d'un film). Il limite chaque adresse IP à 60 questions à JustWatch par
+minute (liaison `LIMITER`, limite de débit de Cloudflare). Il ne stocke rien (son ancienne route `/sync/<id>`, pour le
+code de synchronisation d'avant la version 2.1.0, a été supprimée en version 2.3.3, avec son espace Workers KV).
 
 Il n'accepte que les appels venant de l'adresse de StreamHub et de `localhost:8080`. Une copie de StreamHub publiée
 ailleurs doit publier son propre relais, avec son compte Cloudflare, puis mettre son adresse dans `store.js`
@@ -677,6 +697,20 @@ tout cela n'est enregistré dans le projet.
   ```bash
   CF_API_TOKEN=… CF_ACCOUNT_ID=… bash scripts/deploy_relay.sh
   ```
+
+### Sécurité
+
+Résultat de l'audit de sécurité d'octobre 2026, à garder en tête en modifiant le code :
+
+- **Liens** : toute adresse venue d'un service passe par `webLink` / `safeLink` (`providers.js`) ; un clic sur un
+  lien d'un autre type (`javascript:`…) est bloqué dans `app.js`. Les sites hors plateformes connues
+  (`isPlatformLink`) s'ouvrent avec `noopener`.
+- **Texte et attributs** : tout ce qui vient d'un service passe par `esc` avant `innerHTML` ; les chemins d'images
+  passent par `img` (`api.js`), qui refuse ce qui n'est pas une image TMDB ou un logo de StreamHub.
+- **Content-Security-Policy** (`<meta>` d'`index.html`) : un nouveau serveur appelé par le site doit y être ajouté.
+- **Clés** : la clé du coffre est une `CryptoKey` non extractible dans IndexedDB ; dans l'appli, session, clé du
+  coffre et clés API sont dans le trousseau.
+- **Base** : chaque nouvelle table reçoit RLS et des droits explicites (rien n'est ouvert par défaut).
 
 ### Hébergement
 

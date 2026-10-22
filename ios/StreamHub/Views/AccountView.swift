@@ -184,10 +184,11 @@ struct AccountScreen: View {
         } else if mode == "delete" {
             Card {
                 title("Supprimer ton compte ?", "Ton compte, ton coffre et tes données synchronisées seront effacés. Tes données restent sur cet iPhone (en invité). Impossible d’annuler.")
+                FieldBox(label: "\(word.prefix(1).uppercased())\(word.dropFirst())", text: $current, secure: true, content: .password)
                 Button("Supprimer définitivement") {
-                    run { try await account.deleteAccount(); mode = "signin"; return "Compte supprimé. Tes données restent sur cet iPhone." }
+                    run { try await account.deleteAccount(password: current); mode = "signin"; return "Compte supprimé. Tes données restent sur cet iPhone." }
                 }
-                .buttonStyle(WideButtonStyle(kind: .danger)).disabled(busy)
+                .buttonStyle(WideButtonStyle(kind: .danger)).disabled(busy || current.isEmpty)
                 switchLine(nil, "Annuler", to: "open")
             }
             .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(Color.appDanger.opacity(0.45)))

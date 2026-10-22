@@ -3,7 +3,7 @@ import { makeApi, img, testTmdbKey, testSaKey } from './api.js';
 import { syncNow, startAutoSync } from './sync.js';
 import { handleAuthRedirect, accountState } from './account.js';
 import { initAccountUi, accountSummary } from './account-ui.js';
-import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, safeLink, seriesResumeLink, providerLogo, CANAL_CHANNELS, CANAL_CINE_SERIES, withVirtualChannels, withSaOffers, originalNetworks } from './providers.js';
+import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, safeLink, isPlatformLink, seriesResumeLink, providerLogo, CANAL_CHANNELS, CANAL_CINE_SERIES, withVirtualChannels, withSaOffers, originalNetworks } from './providers.js';
 import { INDEXED_PLATFORMS, platformEpisodeUrl, canalChannelPath } from './episodes.js';
 import { aliasMatches } from './aliases.js';
 import { loadTitles, suggest, splitNumber, arrangeSagas } from './search.js';
@@ -12,7 +12,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.3.4';
+const APP_VERSION = '2.3.5';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -423,7 +423,7 @@ function buildCard(m, { meta, href, target, typeTag = state.type === 'all', rank
   const rating = m.vote_count ? `★ ${m.vote_average.toFixed(1)}` : '';
   card.innerHTML = `
     <div class="poster">
-      ${m.poster_path ? `<img src="${img(m.poster_path)}" alt="" loading="lazy">` : `<span class="no-poster">${esc(title)}</span>`}
+      ${m.poster_path ? `<img src="${esc(img(m.poster_path))}" alt="" loading="lazy">` : `<span class="no-poster">${esc(title)}</span>`}
       ${typeTag ? `<span class="card-tag">${type === 'tv' ? 'Série' : 'Film'}</span>` : ''}
       ${rank ? `<span class="card-rank" aria-label="Numéro ${rank}">${rank}</span>` : ''}
       <div class="card-providers"></div>
@@ -623,7 +623,7 @@ async function showCardProviders(card) {
     box.classList.toggle('mine', mine.length > 0);
     box.innerHTML = list
       .slice(0, 3)
-      .map((p) => `<img src="${img(p.logo_path, 'w92')}" alt="${esc(p.provider_name)}" title="${esc(p.provider_name)}">`)
+      .map((p) => `<img src="${esc(img(p.logo_path, 'w92'))}" alt="${esc(p.provider_name)}" title="${esc(p.provider_name)}">`)
       .join('');
   } catch {
     /* pas de logos : pas grave */
@@ -830,7 +830,7 @@ function latestEpisodeMeta(m) {
 
 function meHeader() {
   const logos = settings.providers
-    .map((p) => `<img src="${img(providerLogo(p.name, p.logo), 'w92')}" alt="${esc(p.name)}" title="${esc(p.name)}">`)
+    .map((p) => `<img src="${esc(img(providerLogo(p.name, p.logo), 'w92'))}" alt="${esc(p.name)}" title="${esc(p.name)}">`)
     .join('');
   return `<div class="me-head">
     <h1>Mon espace</h1>
@@ -1127,7 +1127,7 @@ function downloadButton({ platform, service, href = '', compact = false }) {
 function watchButton(e, { download = false } = {}) {
   const link = `<a class="watch ${e.mine ? 'mine' : ''}" href="${esc(e.href)}" target="${platformTarget(e.service ?? e.name)}"
       data-service="${esc(e.service ?? '')}" data-kind="${e.kind}" data-platform="${esc(e.name)}">
-      ${e.logo ? `<img src="${img(e.logo, 'w92')}" alt="">` : '<span class="logo-placeholder"></span>'}
+      ${e.logo ? `<img src="${esc(img(e.logo, 'w92'))}" alt="">` : '<span class="logo-placeholder"></span>'}
       <span class="watch-text">
         <strong>${e.kind === 'rent' || e.kind === 'buy' ? esc(shortPlatformName(e.name)) : `Regarder sur ${esc(shortPlatformName(e.name))}`}</strong>
         <small><span class="watch-kind">${KIND_LABEL[e.kind]}</span> · <span class="watch-hint">${esc(e.hint)}</span></small>
@@ -1348,7 +1348,7 @@ function seasonsHtml() {
         .map(
           (s) => `<li class="season${s.fillers && s.fillers === s.count ? ' filler' : ''}" data-season="${s.number}" data-orig-season="${s.origSeason}">
             <button type="button" class="season-head" data-season-toggle="${s.number}" aria-expanded="false">
-              ${s.poster ? `<img src="${img(s.poster, 'w92')}" alt="" loading="lazy">` : '<span class="season-placeholder"></span>'}
+              ${s.poster ? `<img src="${esc(img(s.poster, 'w92'))}" alt="" loading="lazy">` : '<span class="season-placeholder"></span>'}
               <span class="season-text">
                 <strong>${esc(s.name)}</strong>
                 <small>${[plural(s.count, 'épisode', 'épisodes'), year(s.airDate)].filter(Boolean).join(' · ')}</small>
@@ -1373,7 +1373,7 @@ function episodeHtml(ep) {
   const upcoming = ep.air_date && ep.air_date > new Date().toISOString().slice(0, 10);
   const number = ep.display_number ?? ep.episode_number;
   return `<li class="episode${ep.filler ? ' filler' : ''}" data-episode="${number}" data-orig-season="${ep.season_number}" data-orig-episode="${ep.episode_number}" data-air="${esc(ep.air_date ?? '')}">
-    ${ep.still_path ? `<img src="${img(ep.still_path, 'w300')}" alt="" loading="lazy">` : '<span class="episode-placeholder"></span>'}
+    ${ep.still_path ? `<img src="${esc(img(ep.still_path, 'w300'))}" alt="" loading="lazy">` : '<span class="episode-placeholder"></span>'}
     <div class="episode-text">
       <strong>${number}. ${esc(ep.name)}${ep.filler ? '<span class="filler-tag">Filler</span>' : ''}</strong>
       <small>${[ep.filler != null ? `épisode ${ep.episode_number}` : '', upcoming ? `Diffusion le ${frDate(ep.air_date)}` : frDate(ep.air_date), ep.runtime ? `${ep.runtime} min` : ''].filter(Boolean).join(' · ')}</small>
@@ -1707,7 +1707,7 @@ function renderDetail(item, type) {
     <div class="detail-hero" style="${item.backdrop_path ? `background-image:url('${img(item.backdrop_path, 'w1280')}')` : ''}"></div>
     <div class="detail-body">
       <div class="detail-head">
-        ${item.poster_path ? `<img class="detail-poster" src="${img(item.poster_path)}" alt="">` : ''}
+        ${item.poster_path ? `<img class="detail-poster" src="${esc(img(item.poster_path))}" alt="">` : ''}
         <div>
           <span class="type-badge">${type === 'tv' ? 'Série' : 'Film'}</span>
           <h2>${esc(title)}</h2>
@@ -1947,7 +1947,7 @@ function openAppOrWeb(appHref, webHref) {
 function openPlatform(href, service, platform) {
   if (!safeLink(href)) return;
   const url = withResume(CAN_DOWNLOAD || wantsDesktopApps() ? href : desktopWebLink(href) ?? href);
-  if (!openInIosApp(url)) window.open(url, platformTarget(service || platform));
+  if (!openInIosApp(url)) window.open(url, platformTarget(service || platform), isPlatformLink(url) ? '' : 'noopener');
 }
 
 // Liens directs en cours de recherche pour la fiche ouverte : promesse résolue quand ils sont arrivés
@@ -2633,7 +2633,7 @@ function renderProviderChoices() {
     ? list
         .map(
           (p) => `<button type="button" class="provider" data-provider="${p.id}" aria-pressed="${draftProviders.has(p.id)}">
-            <img src="${img(p.logo, 'w92')}" alt="" loading="lazy"><span>${esc(p.name)}</span></button>`,
+            <img src="${esc(img(p.logo, 'w92'))}" alt="" loading="lazy"><span>${esc(p.name)}</span></button>`,
         )
         .join('')
     : '<p class="muted">Aucune plateforme ne correspond.</p>';
@@ -2717,15 +2717,20 @@ el.settingsForm.addEventListener('submit', (e) => {
 
 // ---------- Événements ----------
 
-// Dernier rempart : un lien d'un type inattendu (« javascript: »…) n'est jamais suivi, d'où qu'il vienne
+// Dernier rempart : un lien d'un type inattendu (« javascript: »…) n'est jamais suivi, d'où qu'il vienne. Un lien
+// vers un autre onglet, hors plateformes connues, s'ouvre sans lien avec StreamHub (noopener, voir isPlatformLink)
 document.addEventListener(
   'click',
   (e) => {
     const a = e.target.closest?.('a[href]');
-    if (a && !safeLink(a.href)) {
+    if (!a) return;
+    if (!safeLink(a.href)) {
       e.preventDefault();
       e.stopImmediatePropagation();
+      return;
     }
+    const external = new URL(a.href).origin !== location.origin;
+    if (external && a.target && a.target !== '_self' && !isPlatformLink(a.href) && !/\bnoopener\b/.test(a.rel)) a.rel = `${a.rel} noopener`.trim();
   },
   true,
 );
@@ -2948,6 +2953,7 @@ handleAuthRedirect().then((result) => {
   if (!result) return;
   if (!el.settings.open) openSettings(false, 'account');
   else if (!el.settings.classList.contains('onboarding')) selectPanel('account');
+  if (result.kind === 'link-confirm') accountUi.render(); // « Ce lien est-il pour toi ? » (F8)
   const messages = {
     oauth: accountState().open ? `Connecté avec ${{ google: 'Google', github: 'GitHub' }[result.provider] ?? result.provider}.` : '',
     confirmed: accountState().open ? 'Adresse confirmée : compte créé.' : 'Adresse confirmée.',

@@ -12,7 +12,13 @@ const SA_CACHE_MS = 3 * 24 * 3600 * 1000; // l'offre gratuite est limitée : on 
 const RELAY_CACHE_MS = 24 * 3600 * 1000;
 
 // Les chemins TMDB commencent par « / » ; les autres sont des images de StreamHub (logos/)
-export const img = (path, size = 'w342') => (!path ? '' : path.startsWith('/') ? `https://image.tmdb.org/t/p/${size}${path}` : path);
+// Image TMDB (« /abc.jpg »), logo de StreamHub (« logos/x.png ») ou adresse TMDB complète. Tout autre chemin est
+// ignoré : il ne doit jamais pouvoir sortir de l'attribut ou du style où il est inséré (audit de sécurité, F4)
+export const img = (path, size = 'w342') => {
+  if (typeof path !== 'string') return '';
+  if (/^\/[\w.-]+$/.test(path)) return `https://image.tmdb.org/t/p/${size}${path}`;
+  return /^(logos\/[\w.-]+|https:\/\/image\.tmdb\.org\/[\w./-]+)$/.test(path) ? path : '';
+};
 
 export class ApiError extends Error {
   constructor(message, status) {

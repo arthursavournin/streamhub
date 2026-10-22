@@ -61,6 +61,14 @@ export default {
     const cached = await caches.default.match(cacheKey);
     if (cached) return json(await cached.json(), request);
 
+    // Limite de débit par adresse IP (liaison LIMITER, voir scripts/deploy_relay.sh) : le relais ne sert pas de
+    // passerelle JustWatch illimitée à n'importe qui (audit de sécurité, F3). Seules les vraies questions à JustWatch
+    // comptent, pas les réponses en cache.
+    if (env.LIMITER) {
+      const { success } = await env.LIMITER.limit({ key: request.headers.get('cf-connecting-ip') ?? 'inconnu' });
+      if (!success) return json({ error: 'Trop de demandes : réessaie dans une minute.' }, request, 429);
+    }
+
     const res = await fetch(JUSTWATCH, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -80,9 +88,13 @@ export default {
       .filter((o) => o.provider && o.url && !seen.has(`${o.provider}|${o.type}`) && seen.add(`${o.provider}|${o.type}`));
 
     const body = { found: Boolean(node), offers };
-    ctx.waitUntil(
-      caches.default.put(cacheKey, new Response(JSON.stringify(body), { headers: { 'cache-control': `public, max-age=${CACHE_SECONDS}` } })),
-    );
+    // Seule une réponse trouvée (même identifiant TMDB) est gardée : un titre faux ou absent ne doit pas cacher les
+    // liens du film aux autres pendant 6 heures (audit de sécurité, F3)
+    if (node) {
+      ctx.waitUntil(
+        caches.default.put(cacheKey, new Response(JSON.stringify(body), { headers: { 'cache-control': `public, max-age=${CACHE_SECONDS}` } })),
+      );
+    }
     return json(body, request);
   },
 };

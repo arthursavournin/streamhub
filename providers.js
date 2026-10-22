@@ -218,6 +218,22 @@ const protocolOf = (href) => {
 export const webLink = (href) => (['https:', 'http:'].includes(protocolOf(href)) ? href : null);
 export const safeLink = (href) => webLink(href) ?? (APP_SCHEMES.includes(protocolOf(href)) ? href : null);
 
+// Sites des plateformes (et de leur connexion) : leurs onglets gardent un lien avec StreamHub, pour être réutilisés
+// (platformTarget d'app.js). Tout autre site s'ouvre sans ce lien (rel="noopener") : il ne peut pas rediriger l'onglet
+// StreamHub vers une fausse page (audit de sécurité, F6). Liste proche de PLATFORMS du script de reprise.
+const PLATFORM_SITES = ['netflix.com', 'primevideo.com', 'amazon.fr', 'amazon.com', 'disneyplus.com', 'canalplus.com',
+  'canal-plus.com', 'tf1.fr', 'm6.fr', 'france.tv', 'francetv.fr', 'hbomax.com', 'max.com', 'tv.apple.com',
+  'paramountplus.com', 'mubi.com', 'arte.tv', 'crunchyroll.com', 'animationdigitalnetwork.com', 'animationdigitalnetwork.fr'];
+export function isPlatformLink(href) {
+  let host;
+  try {
+    host = new URL(href).hostname;
+  } catch {
+    return false;
+  }
+  return PLATFORM_SITES.some((d) => host === d || host.endsWith(`.${d}`));
+}
+
 // Lien qui lance la lecture, quand la plateforme n'en fournit pas mais que sa fiche sait le faire.
 // Canal+ : la fiche du titre lance son lecteur toute seule avec « ?autoplay=true » (paramètre lu par le site,
 // composant PrimaryActions : « launch main player with autoplay query param »). Le son démarre coupé.

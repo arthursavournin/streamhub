@@ -195,6 +195,7 @@ function dropKeys(...names) {
 
 const ACCOUNT_KEY = 'streamhub:account';
 const FLOW_KEY = 'streamhub:auth-flow'; // connexion Google / GitHub en cours (vérificateur PKCE)
+const RESET_KEY = 'streamhub:reset-asked'; // « mot de passe oublié » demandé ici : { email, at }
 // Compte changé dans un autre onglet (déconnexion, autre compte) : les clés gardées en mémoire ici sont relues
 window.addEventListener('storage', (e) => e.key === ACCOUNT_KEY && memoryKeys.clear());
 
@@ -510,7 +511,13 @@ export async function createVaultWith(password) {
 }
 
 export async function requestReset(email) {
-  // Lien classique (pas PKCE) : il marche aussi ouvert sur un autre appareil que celui de la demande
+  // Lien classique (pas PKCE) : il marche aussi ouvert sur un autre appareil que celui de la demande. Demande notée
+  // ici : le lien ouvert sur cet appareil n'aura pas besoin d'être confirmé (voir linkOffer)
+  try {
+    localStorage.setItem(RESET_KEY, JSON.stringify({ email: normalizeEmail(email), at: Date.now() }));
+  } catch {
+    /* stockage indisponible : le lien demandera une confirmation */
+  }
   await call(`/auth/v1/recover?redirect_to=${encodeURIComponent(SITE_URL)}`, { method: 'POST', body: { email: normalizeEmail(email) }, headers: authHeaders });
 }
 
@@ -573,12 +580,48 @@ export async function signOut() {
   if (token) await call('/auth/v1/logout?scope=local', { method: 'POST', token, headers: authHeaders }).catch(() => {});
 }
 
-export async function deleteAccount() {
+// Le mot de passe (ou mot de passe du coffre) est redemandé : un jeton de session volé ne suffit pas à tout effacer
+// depuis StreamHub (audit de sécurité, F2)
+export async function deleteAccount(password) {
+  const vault = await fetchVault();
+  if (vault && !(await openWith(vault, password))) {
+    throw new Error(vault.kdf.mode === 'vault' ? 'Mot de passe du coffre incorrect.' : 'Mot de passe incorrect.');
+  }
   await rest('rpc/delete_my_account', { method: 'POST', body: {} });
   await signOut();
 }
 
 // ---------- Retour sur le site (Google / GitHub, liens des e-mails) ----------
+
+// Lien d'e-mail ouvert sans inscription ni « mot de passe oublié » en cours sur cet appareil : la session n'est gardée
+// qu'après confirmation (l'adresse du compte est affichée). Sans ça, un lien piégé (jetons du compte de quelqu'un
+// d'autre) connecterait StreamHub à ce compte sans que tu le voies (audit de sécurité, F8).
+let offer = null; // { data, type, email }
+export const linkOffer = () => (offer ? { email: offer.email, type: offer.type } : null);
+
+async function useLink(data, type, unlockRaw) {
+  keepSession(data, { via: 'link', pending: null, vaultKey: null, needs: null });
+  dropKeys('vault');
+  if (type === 'recovery') {
+    update({ needs: 'reset' });
+    return { kind: 'recovery' };
+  }
+  await afterSignIn({ unlockRaw });
+  return { kind: 'confirmed' };
+}
+
+export async function acceptLink() {
+  const o = offer;
+  offer = null;
+  if (o) return useLink(o.data, o.type, null);
+}
+
+export async function declineLink() {
+  const o = offer;
+  offer = null;
+  // La session reçue est fermée tout de suite chez Supabase
+  if (o) await call('/auth/v1/logout?scope=local', { method: 'POST', token: o.data.access_token, headers: authHeaders }).catch(() => {});
+}
 
 // À appeler au démarrage. Renvoie ce qui s'est passé ({ kind, message }) ou null, et nettoie l'adresse.
 export async function handleAuthRedirect() {
@@ -621,19 +664,27 @@ export async function handleAuthRedirect() {
       expires_in: Number(hash.get('expires_in')) || undefined,
     };
     data.user = await call('/auth/v1/user', { token, headers: authHeaders });
+    const email = normalizeEmail(data.user.email);
     const { pending } = loadAccount();
-    keepSession(data, { via: 'link', pending: null, vaultKey: null, needs: null });
-    if (type === 'recovery') {
-      update({ needs: 'reset' });
-      return { kind: 'recovery' };
+    let reset = null;
+    try {
+      reset = JSON.parse(localStorage.getItem(RESET_KEY) || 'null');
+      localStorage.removeItem(RESET_KEY);
+    } catch {
+      /* stockage indisponible */
+    }
+    // Lien demandé sur cet appareil : inscription en cours, ou « mot de passe oublié » (moins de 24 h)
+    const sameDevice = pending && pending.email === email;
+    const asked = type === 'recovery' ? reset?.email === email && Date.now() - reset.at < 24 * 3600 * 1000 : sameDevice;
+    if (!asked) {
+      offer = { data, type, email };
+      return { kind: 'link-confirm', email };
     }
     // Confirmation sur l'appareil de l'inscription : la clé tirée du mot de passe est encore là
     // (avant 2.3.4 : pending.unlock en base64 ; depuis : CryptoKey dans IndexedDB)
-    const sameDevice = pending && pending.email === normalizeEmail(data.user.email);
     const pendingKey = sameDevice ? (pending.unlock ? fromB64(pending.unlock) : await readKey('pending')) : null;
     dropKeys('pending');
-    await afterSignIn({ unlockRaw: pendingKey });
-    return { kind: 'confirmed' };
+    return useLink(data, type, pendingKey);
   } catch (err) {
     return { kind: 'error', message: err.message };
   }

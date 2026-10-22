@@ -1,47 +1,73 @@
 import SwiftUI
 
+// Réglages, au même dessin que la page du site : liste des sections (Compte en premier), puis chaque section sur sa
+// propre page. Sur le site, c'est la barre latérale ; sur téléphone, la même liste.
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
         NavigationStack {
-            Form {
-                AccountSections()
-                Section("Accueil") {
-                    NavigationLink {
-                        HomeSettingsView()
-                    } label: {
+            ScrollView {
+                VStack(spacing: 10) {
+                    NavigationLink { page("Compte", "Tes réglages et tes listes sur tous tes appareils, chiffrés de bout en bout.") { AccountScreen() } } label: {
+                        SettingsRowLabel(icon: "person", title: "Compte", summary: accountSummary)
+                    }
+                    .padding(.bottom, 8)
+                    NavigationLink { ProvidersView() } label: {
+                        SettingsRowLabel(icon: "tv", title: "Mes abonnements", summary: providersSummary)
+                    }
+                    NavigationLink { page("Clés API", "Les clés qui donnent le catalogue et les liens directs vers les vidéos.") { KeysView() } } label: {
+                        SettingsRowLabel(icon: "key", title: "Clés API", summary: keysSummary)
+                    }
+                    NavigationLink { HomeSettingsView() } label: {
                         let shown = model.store.homeLayout.filter(\.on).count
-                        LabeledContent("Rangées et affiche", value: "\(shown) rangées")
+                        SettingsRowLabel(icon: "house", title: "Accueil", summary: "\(shown) rangées sur \(model.store.homeLayout.count) · \(model.store.homeHero.map { "à l’affiche : \($0.title)" } ?? "affiche automatique")")
+                    }
+                    NavigationLink { page("Pays et lecture", "Pays du catalogue et plateformes disponibles.") { RegionView() } } label: {
+                        SettingsRowLabel(icon: "globe", title: "Pays et lecture", summary: Self.regions.first { $0.0 == model.store.region }?.1 ?? model.store.region)
+                    }
+                    NavigationLink { page("À propos", "Version, mentions légales et confidentialité.") { AboutView() } } label: {
+                        SettingsRowLabel(icon: "info.circle", title: "À propos")
                     }
                 }
-                Section("Mes abonnements") {
-                    NavigationLink {
-                        ProvidersView()
-                    } label: {
-                        LabeledContent("Plateformes", value: model.store.providers.isEmpty ? "Aucune" : "\(model.store.providers.count)")
-                    }
-                }
-                KeysSection()
-                Section("Pays") {
-                    Picker("Catalogue", selection: Binding(get: { model.store.region }, set: { model.store.setSetting("region", .string($0)) })) {
-                        ForEach(Self.regions, id: \.0) { Text($0.1).tag($0.0) }
-                    }
-                }
-                Section {
-                    LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
-                    Link("StreamHub sur le web", destination: AppStore.site)
-                    Link("Mentions légales", destination: AppStore.site.appending(path: "mentions-legales.html"))
-                    Link("Politique de confidentialité", destination: AppStore.site.appending(path: "confidentialite.html"))
-                    Link("Conditions d’utilisation", destination: AppStore.site.appending(path: "conditions.html"))
-                } footer: {
-                    Text("Catalogue et images : TMDB. Liens vers les plateformes : JustWatch et Streaming Availability.")
-                }
+                .buttonStyle(.plain)
+                .padding(16)
             }
-            .scrollContentBackground(.hidden)
             .background(Color.appBackground)
             .navigationTitle("Réglages")
         }
+    }
+
+    // Une section : intro sous le titre (comme .panel-head du site), contenu, fond de l'appli
+    private func page<Content: View>(_ title: String, _ intro: String, @ViewBuilder content: () -> Content) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                PanelIntro(text: intro)
+                content()
+            }
+            .padding(16)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .background(Color.appBackground)
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var accountSummary: String {
+        let account = model.account
+        if account.isOpen { return account.email }
+        if account.signedIn { return "\(account.email) : coffre à ouvrir" }
+        if account.meta.pendingEmail != nil { return "Adresse à confirmer" }
+        return "Invité : données sur cet iPhone"
+    }
+
+    private var providersSummary: String {
+        let list = model.store.providers
+        return list.isEmpty ? "Aucune plateforme cochée" : "\(list.count) plateforme\(list.count > 1 ? "s" : "") : \(list.map(\.name).joined(separator: ", "))"
+    }
+
+    private var keysSummary: String {
+        "\(model.store.tmdbKey.isEmpty ? "TMDB manquante" : "TMDB ✓") · \(model.store.saKey.isEmpty ? "Streaming Availability —" : "Streaming Availability ✓")"
     }
 
     static let regions = [
@@ -50,25 +76,96 @@ struct SettingsView: View {
     ]
 }
 
-// Clés TMDB et Streaming Availability
-private struct KeysSection: View {
+// Clés TMDB et Streaming Availability (enregistrées à chaque frappe, comme avant)
+private struct KeysView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        Section {
-            SecureField("Clé TMDB", text: binding("tmdbKey"))
-                .textInputAutocapitalization(.never).autocorrectionDisabled()
-            SecureField("Clé Streaming Availability (facultative)", text: binding("saKey"))
-                .textInputAutocapitalization(.never).autocorrectionDisabled()
-        } header: {
-            Text("Clés API")
-        } footer: {
-            Text("La clé TMDB (gratuite sur themoviedb.org) donne le catalogue. Streaming Availability donne des liens qui lancent directement la vidéo.")
+        Card {
+            FieldBox(label: "Clé API TMDB", text: binding("tmdbKey"), placeholder: "Clé API (v3) ou jeton d’accès (v4)", secure: true) {
+                Link("Obtenir", destination: URL(string: "https://www.themoviedb.org/settings/api")!).font(.subheadline.weight(.semibold)).tint(Color.mine)
+            }
+            Text("Obligatoire : catalogue, fiches, plateformes par pays.").font(.footnote).foregroundStyle(Color.appMuted)
         }
+        Card {
+            FieldBox(label: "Clé Streaming Availability", text: binding("saKey"), placeholder: "Clé RapidAPI", secure: true) {
+                Link("Obtenir", destination: URL(string: "https://rapidapi.com/movie-of-the-night-movie-of-the-night-default/api/streaming-availability")!)
+                    .font(.subheadline.weight(.semibold)).tint(Color.mine)
+            }
+            Text("Facultative : liens qui lancent directement le film, la série ou l’épisode.").font(.footnote).foregroundStyle(Color.appMuted)
+        }
+        Text("Enregistrées sur cet iPhone (et chiffrées dans ton compte). Elles ne sont jamais publiées.")
+            .font(.footnote).foregroundStyle(Color.appMuted)
     }
 
     private func binding(_ key: String) -> Binding<String> {
         Binding(get: { model.store.settings[key]?.string ?? "" }, set: { model.store.setSetting(key, .string($0)) })
+    }
+}
+
+// Pays du catalogue : une ligne par pays, coche sur celui choisi
+private struct RegionView: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        ActionList {
+            ForEach(SettingsView.regions, id: \.0) { code, name in
+                Button {
+                    model.store.setSetting("region", .string(code))
+                } label: {
+                    HStack {
+                        Text(name).foregroundStyle(.primary)
+                        Spacer()
+                        if model.store.region == code {
+                            Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(Color.mine)
+                        }
+                    }
+                    .padding(.horizontal, 18)
+                    .frame(minHeight: 50)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
+
+// À propos : version, liens légaux (comme la section du site)
+private struct AboutView: View {
+    var body: some View {
+        HStack(spacing: 16) {
+            Image(.welcomeIcon).resizable().frame(width: 56, height: 56).clipShape(.rect(cornerRadius: 14))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("StreamHub").font(.headline)
+                Text("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")")
+                    .font(.subheadline).foregroundStyle(Color.appMuted)
+            }
+            Spacer()
+        }
+        .padding(18)
+        .background(Color.appSurface, in: .rect(cornerRadius: 22))
+        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(Color.appBorder))
+        ActionList {
+            link("StreamHub sur le web", AppStore.site)
+            link("Mentions légales", AppStore.site.appending(path: "mentions-legales.html"))
+            link("Politique de confidentialité", AppStore.site.appending(path: "confidentialite.html"))
+            link("Conditions d’utilisation", AppStore.site.appending(path: "conditions.html"))
+        }
+        Text("Catalogue et images : TMDB (ce produit utilise l’API de TMDB mais n’est ni approuvé ni certifié par TMDB). Liens vers les plateformes : JustWatch et Streaming Availability.")
+            .font(.footnote).foregroundStyle(Color.appMuted)
+    }
+
+    private func link(_ title: String, _ url: URL) -> some View {
+        Link(destination: url) {
+            HStack {
+                Text(title).foregroundStyle(.primary)
+                Spacer()
+                Image(systemName: "arrow.up.right").font(.footnote.weight(.semibold)).foregroundStyle(Color.appMuted)
+            }
+            .padding(.horizontal, 18)
+            .frame(minHeight: 50)
+            .contentShape(.rect)
+        }
     }
 }
 
@@ -130,72 +227,6 @@ struct ProvidersView: View {
             list.removeAll { $0.id == choice.id }
         }
         model.store.setProviders(list)
-    }
-}
-
-// Premier lancement : compte StreamHub, ou clé TMDB (invité)
-struct WelcomeView: View {
-    @Environment(AppModel.self) private var model
-    @State private var key = ""
-    @State private var showAccount = false
-
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 28) {
-                Image(.welcomeIcon)
-                    .resizable()
-                    .frame(width: 96, height: 96)
-                    .clipShape(.rect(cornerRadius: 22))
-                    .padding(.top, 60)
-                VStack(spacing: 8) {
-                    Text("Bienvenue dans StreamHub").font(.title.weight(.bold)).multilineTextAlignment(.center)
-                    Text("Tous tes films et séries, toutes tes plateformes, au même endroit.")
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.secondary)
-                }
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Ton compte StreamHub").font(.headline)
-                    Text("Connecte-toi (ou crée un compte) : tes réglages, clés, abonnements et listes reviennent, chiffrés de bout en bout. Sinon, reste en invité : tout reste sur cet iPhone.")
-                        .font(.subheadline).foregroundStyle(.secondary)
-                    Button {
-                        showAccount = true
-                    } label: {
-                        Text(model.account.signedIn ? "Mon compte" : "Se connecter ou créer un compte").frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.glassProminent)
-                    .controlSize(.large)
-                }
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("En invité").font(.headline)
-                    Text("Colle ta clé TMDB : gratuite, sur themoviedb.org → Paramètres → API.")
-                        .font(.subheadline).foregroundStyle(.secondary)
-                    SecureField("Clé TMDB", text: $key)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .padding(12)
-                        .background(Color.appSurface, in: .rect(cornerRadius: 12))
-                    Button("Continuer") {
-                        model.store.setSetting("tmdbKey", .string(key.trimmingCharacters(in: .whitespaces)))
-                    }
-                    .buttonStyle(.glass)
-                    .controlSize(.large)
-                    .disabled(key.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
-            }
-            .padding(.horizontal, 24)
-        }
-        .background(Color.appBackground)
-        .sheet(isPresented: $showAccount) {
-            NavigationStack {
-                Form { AccountSections() }
-                    .scrollContentBackground(.hidden)
-                    .background(Color.appBackground)
-                    .navigationTitle("Compte")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("OK") { showAccount = false } } }
-            }
-            .preferredColorScheme(.dark)
-        }
     }
 }
 

@@ -203,6 +203,17 @@ final class AccountService {
         Keychain.write("secrets", secrets == AccountSecrets() ? nil : try? JSONEncoder().encode(secrets))
     }
 
+    // Fournisseurs de connexion (comme PROVIDERS d'account.js) ; Apple : demande l'Apple Developer Program payant
+    nonisolated static let providers = ["google": "Google", "github": "GitHub"]
+    // Retour de Google / GitHub dans l'appli (à mettre dans Supabase : Authentication → URL Configuration → Redirect URLs)
+    nonisolated static let callbackScheme = "streamhub"
+    nonisolated static let callbackURL = "streamhub://auth-callback"
+
+    // Premier lancement : « Continuer sans compte » choisi (on ne redemande plus)
+    var guest: Bool = UserDefaults.standard.bool(forKey: "streamhub:guest") {
+        didSet { UserDefaults.standard.set(guest, forKey: "streamhub:guest") }
+    }
+
     var signedIn: Bool { secrets.refresh != nil }
     var isOpen: Bool { signedIn && secrets.vaultKey != nil }
     var email: String { meta.email ?? "" }
@@ -441,6 +452,50 @@ final class AccountService {
         let salt = AccountCrypto.randomSalt()
         let key = await Task.detached { AccountCrypto.vaultPasswordKey(password, salt: salt) }.value
         try await createVault(mode: "vault", unlock: key, salt: salt)
+    }
+
+    // ---------- Google, GitHub ----------
+
+    @ObservationIgnored private var enabled: [String]?
+    // Fournisseurs activés dans Supabase (seuls leurs boutons s'affichent)
+    func enabledProviders() async -> [String] {
+        if let enabled { return enabled }
+        guard let settings = try? await call("/auth/v1/settings") else { return [] }
+        let list = ["google", "github"].filter { settings["external"]?[$0]?.bool == true }
+        enabled = list
+        return list
+    }
+
+    // Adresse de départ (PKCE : le code reçu au retour ne sert qu'avec le vérificateur gardé ici)
+    func oauthStart(_ provider: String) -> (url: URL, verifier: String) {
+        let verifier = AccountCrypto.base64URL(AccountCrypto.random(32))
+        let challenge = AccountCrypto.base64URL(Data(SHA256.hash(data: Data(verifier.utf8))))
+        var components = URLComponents(string: "\(server.url)/auth/v1/authorize")!
+        components.queryItems = [
+            URLQueryItem(name: "provider", value: provider),
+            URLQueryItem(name: "redirect_to", value: Self.callbackURL),
+            URLQueryItem(name: "code_challenge", value: challenge),
+            URLQueryItem(name: "code_challenge_method", value: "s256"),
+        ]
+        return (components.url!, verifier)
+    }
+
+    // Retour de Google / GitHub (streamhub://auth-callback?code=…) : session, puis coffre (mot de passe du coffre)
+    func finishOAuth(_ callback: URL, verifier: String) async throws {
+        let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        if let error = items.first(where: { $0.name == "error_description" })?.value {
+            throw AccountError(message: "Connexion refusée : \(error)")
+        }
+        guard let code = items.first(where: { $0.name == "code" })?.value else {
+            throw AccountError(message: "Connexion interrompue : recommence.")
+        }
+        let data = try await call("/auth/v1/token?grant_type=pkce", method: "POST", body: .object([
+            "auth_code": .string(code), "code_verifier": .string(verifier),
+        ]))
+        meta = AccountMeta()
+        secrets = AccountSecrets()
+        keepSession(data)
+        try await afterSignIn(unlock: nil)
     }
 
     // Le lien de l'e-mail ouvre le site, où l'on choisit le nouveau mot de passe avec la clé de secours

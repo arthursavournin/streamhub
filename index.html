@@ -84,49 +84,79 @@
     <div class="sheet-scroll" id="detailBody"></div>
   </dialog>
 
-  <dialog id="settings" class="sheet settings" tabindex="-1" autofocus>
-    <div class="sheet-close"><button type="button" class="icon-btn close" data-close aria-label="Fermer">✕</button></div>
-    <div class="sheet-scroll" id="settingsBody">
-    <form id="settingsForm" method="dialog">
-      <header class="sheet-head">
-        <h2>Réglages</h2>
+  <!-- Réglages : une page à part entière (fenêtre en plein écran), barre latérale à gauche, Compte en premier.
+       Téléphone : la liste des sections, puis la section choisie (comme les Réglages d'iOS). -->
+  <dialog id="settings" class="settings-page" tabindex="-1" data-view="nav">
+    <form id="settingsForm" method="dialog" class="settings-shell">
+      <header class="settings-top">
+        <button type="button" class="settings-back" data-settings-back aria-label="Retour">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span>StreamHub</span>
+        </button>
+        <h1 class="settings-title"><span>Réglages</span></h1>
+        <button type="submit" class="btn primary settings-save">Enregistrer</button>
       </header>
-      <p class="intro" id="settingsIntro" hidden>
-        Bienvenue ! Connecte-toi ou crée un compte dans « Compte » : tes réglages, clés, abonnements, J’aime et
-        historique te suivent sur tous tes appareils. Tu peux aussi rester en invité : tout reste alors sur cet appareil.
-        Puis colle ta clé TMDB dans « Clés API » et coche les plateformes auxquelles tu es abonné.
-      </p>
+      <div class="settings-layout">
+        <nav class="settings-nav" aria-label="Sections des réglages">
+          <button type="button" class="settings-nav-item" data-panel="account" aria-current="false">
+            <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+            <span class="group-text"><strong>Compte</strong><small data-summary="account"></small></span>
+          </button>
+          <button type="button" class="settings-nav-item" data-panel="providers" aria-current="false">
+            <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            <span class="group-text"><strong>Mes abonnements</strong><small data-summary="providers"></small></span>
+          </button>
+          <button type="button" class="settings-nav-item" data-panel="keys" aria-current="false">
+            <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M14.5 8.5l2 2"/></svg>
+            <span class="group-text"><strong>Clés API</strong><small data-summary="keys"></small></span>
+          </button>
+          <button type="button" class="settings-nav-item" data-panel="home" aria-current="false">
+            <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1Z"/></svg>
+            <span class="group-text"><strong>Accueil</strong><small data-summary="home"></small></span>
+          </button>
+          <button type="button" class="settings-nav-item" data-panel="look" aria-current="false">
+            <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 0 0 0-17Z" fill="currentColor"/></svg>
+            <span class="group-text"><strong>Apparence</strong><small data-summary="look"></small></span>
+          </button>
+          <button type="button" class="settings-nav-item" data-panel="device" aria-current="false">
+            <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.5 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.5-3.5-8.5s1-6 3.5-8.5Z"/></svg>
+            <span class="group-text"><strong>Pays et lecture</strong><small data-summary="device"></small></span>
+          </button>
+          <button type="button" class="settings-nav-item" data-panel="about" aria-current="false">
+            <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.6v.4"/></svg>
+            <span class="group-text"><strong>À propos</strong><small data-summary="about"></small></span>
+          </button>
+        </nav>
+        <div class="settings-content" id="settingsBody">
+        <p class="intro" id="settingsIntro" hidden>
+          Dernière étape : colle ta clé TMDB (gratuite) ci-dessous, puis coche tes plateformes dans « Mes abonnements »
+          et appuie sur « Enregistrer ».
+        </p>
 
-      <details class="settings-group" data-group="providers">
-        <summary>
-          <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-          <span class="group-text"><strong>Mes abonnements</strong><small data-summary="providers"></small></span>
-        </summary>
-        <div class="group-body">
-          <input type="search" id="providerFilter" class="provider-filter" placeholder="Filtrer les plateformes…" autocomplete="off" aria-label="Filtrer les plateformes">
-          <div class="provider-grid" id="providerGrid"></div>
-        </div>
-      </details>
-
-      <details class="settings-group" data-group="account">
-        <summary>
-          <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
-          <span class="group-text"><strong>Compte</strong><small data-summary="account"></small></span>
-        </summary>
-        <div class="group-body">
+        <section class="settings-panel" data-group="account" hidden>
+          <header class="panel-head">
+            <h2>Compte</h2>
+            <p>Tes réglages et tes listes sur tous tes appareils, chiffrés de bout en bout.</p>
+          </header>
           <!-- Rempli par account-ui.js selon l'état : invité, e-mail à confirmer, coffre à ouvrir, connecté -->
           <div id="accountBox"></div>
           <p class="key-status" id="accountStatus" role="status"></p>
 
-        </div>
-      </details>
+        </section>
 
-      <details class="settings-group" data-group="keys">
-        <summary>
-          <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M14.5 8.5l2 2"/></svg>
-          <span class="group-text"><strong>Clés API</strong><small data-summary="keys"></small></span>
-        </summary>
-        <div class="group-body">
+        <section class="settings-panel" data-group="providers" hidden>
+          <header class="panel-head">
+            <h2>Mes abonnements</h2>
+            <p>Coche les plateformes auxquelles tu es abonné : StreamHub n’affiche que ce que tu peux regarder.</p>
+          </header>
+          <input type="search" id="providerFilter" class="provider-filter" placeholder="Filtrer les plateformes…" autocomplete="off" aria-label="Filtrer les plateformes">
+          <div class="provider-grid" id="providerGrid"></div>
+        </section>
+
+        <section class="settings-panel" data-group="keys" hidden>
+          <header class="panel-head">
+            <h2>Clés API</h2>
+            <p>Les clés qui donnent le catalogue et les liens directs vers les vidéos.</p>
+          </header>
           <p class="hint">Enregistrées dans ce navigateur (et chiffrées dans ton compte). Elles ne sont jamais publiées sur GitHub.</p>
           <div class="field">
             <label for="tmdbKey">Clé API TMDB <em>obligatoire : catalogue, fiches, plateformes par pays</em></label>
@@ -152,15 +182,13 @@
             </div>
             <p class="key-status" data-key-status="relay">Laisse vide pour le relais par défaut.</p>
           </div>
-        </div>
-      </details>
+        </section>
 
-      <details class="settings-group" data-group="home">
-        <summary>
-          <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1Z"/></svg>
-          <span class="group-text"><strong>Accueil</strong><small data-summary="home"></small></span>
-        </summary>
-        <div class="group-body">
+        <section class="settings-panel" data-group="home" hidden>
+          <header class="panel-head">
+            <h2>Accueil</h2>
+            <p>Les rangées de l’accueil et le titre à l’affiche.</p>
+          </header>
           <div class="field">
             <span>À l’affiche <em>le titre en grand en haut de l’accueil</em></span>
             <div class="home-hero-choice">
@@ -173,15 +201,13 @@
             <span>Rangées <em>coche celles à afficher, range-les avec les flèches</em></span>
             <ol class="home-rows" id="homeRows"></ol>
           </div>
-        </div>
-      </details>
+        </section>
 
-      <details class="settings-group" data-group="look">
-        <summary>
-          <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 0 0 0-17Z" fill="currentColor"/></svg>
-          <span class="group-text"><strong>Apparence</strong><small data-summary="look"></small></span>
-        </summary>
-        <div class="group-body">
+        <section class="settings-panel" data-group="look" hidden>
+          <header class="panel-head">
+            <h2>Apparence</h2>
+            <p>L’effet verre de cet appareil.</p>
+          </header>
           <fieldset class="choice-list">
             <legend>Effet verre (Liquid Glass) <em>transparence des barres, boutons et croix, sur cet appareil</em></legend>
             <label class="choice"><input type="radio" name="glass" value="auto">
@@ -192,15 +218,13 @@
               <span>Teinté<em>Plus opaque, plus lisible</em></span></label>
           </fieldset>
           <p class="hint">Une page web ne peut pas lire le réglage Liquid Glass d’iOS, d’iPadOS ou de macOS : choisis ici l’effet voulu.</p>
-        </div>
-      </details>
+        </section>
 
-      <details class="settings-group" data-group="device">
-        <summary>
-          <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.5 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.5-3.5-8.5s1-6 3.5-8.5Z"/></svg>
-          <span class="group-text"><strong>Pays et lecture</strong><small data-summary="device"></small></span>
-        </summary>
-        <div class="group-body">
+        <section class="settings-panel" data-group="device" hidden>
+          <header class="panel-head">
+            <h2>Pays et lecture</h2>
+            <p>Pays du catalogue et ouverture des titres.</p>
+          </header>
           <label class="field">
             <span>Pays <em>catalogue et plateformes disponibles</em></span>
             <select name="region">
@@ -224,21 +248,31 @@
               <span>Dans l’appli de l’ordinateur<em id="desktopAppsHint">Quand elle est installée sur ce Mac : Prime Video pour l’instant (les autres plateformes n’ont pas d’appli Mac). Le navigateur peut demander l’autorisation la première fois.</em></span></label>
           </fieldset>
           <p class="hint extension-status" id="extensionStatus"></p>
-        </div>
-      </details>
+        </section>
 
-      <p class="form-error" id="settingsError" role="alert"></p>
-      <p class="legal-links">
-        <a href="mentions-legales.html" target="_blank" rel="noopener">Mentions légales</a> ·
-        <a href="confidentialite.html" target="_blank" rel="noopener">Confidentialité</a> ·
-        <a href="conditions.html" target="_blank" rel="noopener">Conditions d’utilisation</a>
-      </p>
-      <footer class="sheet-foot">
-        <span class="app-version" id="appVersion"></span>
-        <button type="submit" class="btn primary">Enregistrer</button>
-      </footer>
+        <section class="settings-panel" data-group="about" hidden>
+          <header class="panel-head">
+            <h2>À propos</h2>
+            <p>Version, mentions légales et confidentialité.</p>
+          </header>
+          <div class="about-card">
+            <img src="icon.svg?v=3" alt="" width="56" height="56">
+            <div><strong>StreamHub</strong><span id="appVersion"></span></div>
+          </div>
+          <ul class="link-list">
+            <li><a href="mentions-legales.html" target="_blank" rel="noopener">Mentions légales</a></li>
+            <li><a href="confidentialite.html" target="_blank" rel="noopener">Politique de confidentialité</a></li>
+            <li><a href="conditions.html" target="_blank" rel="noopener">Conditions d’utilisation</a></li>
+            <li><a href="https://github.com/arthursavournin/streamhub" target="_blank" rel="noopener">Code source sur GitHub</a></li>
+          </ul>
+          <p class="hint">Catalogue et images : TMDB (ce produit utilise l’API de TMDB mais n’est ni approuvé ni certifié par TMDB).
+            Liens vers les plateformes : JustWatch et Streaming Availability.</p>
+        </section>
+
+        <p class="form-error" id="settingsError" role="alert"></p>
+        </div>
+      </div>
     </form>
-    </div>
   </dialog>
 
   <div class="relaunch" id="relaunch" role="status" popover="manual" hidden></div>

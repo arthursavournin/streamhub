@@ -12,7 +12,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.3.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -2390,13 +2390,75 @@ function renderSettingsSummaries() {
 
 // Ouvre la section des réglages qui contient un champ (erreur à corriger, premier lancement…)
 function revealSetting(node) {
-  const group = node.closest('details');
-  if (group) group.open = true;
+  const panel = node.closest('.settings-panel');
+  if (panel) selectPanel(panel.dataset.group);
   node.focus();
   node.scrollIntoView({ block: 'center', behavior: 'smooth' });
 }
 
-function openSettings(first = false) {
+// Réglages : une section affichée à la fois (barre latérale ; sur téléphone, la liste puis la section)
+const PHONE_SETTINGS = matchMedia('(max-width: 760px)');
+function selectPanel(name, { show = true } = {}) {
+  for (const panel of el.settings.querySelectorAll('.settings-panel')) panel.hidden = panel.dataset.group !== name;
+  for (const item of el.settings.querySelectorAll('[data-panel]')) item.setAttribute('aria-current', String(item.dataset.panel === name));
+  el.settings.dataset.current = name;
+  // Premier lancement : le mot « Dernière étape » ne concerne que les clés et les abonnements
+  $('#settingsIntro').classList.toggle('off', !['keys', 'providers'].includes(name));
+  if (show) el.settings.dataset.view = 'panel';
+  const title = $(`[data-panel="${name}"] strong`, el.settings)?.textContent ?? 'Réglages';
+  $('.settings-title span', el.settings).textContent = PHONE_SETTINGS.matches && el.settings.dataset.view === 'panel' ? title : 'Réglages';
+  $('.settings-back span', el.settings).textContent = PHONE_SETTINGS.matches && el.settings.dataset.view === 'panel' ? 'Réglages' : 'StreamHub';
+  $('#settingsBody').scrollTop = 0;
+}
+
+el.settings.addEventListener('click', (e) => {
+  const item = e.target.closest('[data-panel]');
+  if (item) return selectPanel(item.dataset.panel);
+  if (e.target.closest('[data-settings-back]')) {
+    // Téléphone, dans une section : retour à la liste ; sinon on quitte les réglages (sans enregistrer)
+    if (PHONE_SETTINGS.matches && el.settings.dataset.view === 'panel' && !el.settings.classList.contains('onboarding')) {
+      el.settings.dataset.view = 'nav';
+      selectPanel(el.settings.dataset.current, { show: false });
+    } else {
+      el.settings.close();
+    }
+  }
+});
+
+// Premier lancement : seulement la connexion / création de compte. Ensuite (compte ouvert et clé de secours notée,
+// ou invité) : réglages complets, sur la clé TMDB s'il n'y en a pas encore.
+const GUEST_KEY = 'streamhub:guest';
+const choseGuest = () => {
+  try {
+    return localStorage.getItem(GUEST_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+function startOnboarding() {
+  openSettings(false, 'account');
+  el.settings.classList.add('onboarding');
+  $('.settings-title span', el.settings).textContent = 'Bienvenue sur StreamHub';
+  accountUi.render();
+  accountUi.focus();
+}
+async function finishOnboarding() {
+  if (!el.settings.classList.contains('onboarding')) return;
+  const s = accountState();
+  if (!s.open && !choseGuest()) return; // pas encore connecté (ou coffre à ouvrir)
+  if (s.open && s.recoveryKey) return; // la clé de secours d'abord
+  el.settings.classList.remove('onboarding');
+  if (s.open) await syncNow().catch(() => {}); // les réglages du compte (clé TMDB…) arrivent
+  settings = loadSettings();
+  if (settings.tmdbKey) {
+    applySynced();
+    el.settings.close();
+    return;
+  }
+  openSettings(true);
+}
+
+function openSettings(first = false, panel = null) {
   const f = el.settingsForm;
   $('#extensionStatus').innerHTML = hasResumeExtension()
     ? '✓ Script « reprise après connexion » installé : après la connexion ou le choix du profil, le titre s’ouvre tout seul.'
@@ -2425,19 +2487,19 @@ function openSettings(first = false) {
   el.providerFilter.value = '';
   el.settingsError.textContent = '';
   $('#settingsIntro').hidden = !first;
-  $('#appVersion').textContent = `StreamHub · version ${APP_VERSION}`;
+  $('#appVersion').textContent = `Version ${APP_VERSION}`;
   fillSettings();
   accountUi.render();
-  el.settings.showModal();
+  el.settings.classList.remove('onboarding');
+  if (!el.settings.open) el.settings.showModal();
   rehostBars();
-  // Toutes les sections repliées (demande de l'utilisateur) ; au premier lancement, celles à remplir sont dépliées
-  for (const group of el.settings.querySelectorAll('details.settings-group')) {
-    group.open = first && ['providers', 'account', 'keys'].includes(group.dataset.group);
-  }
-  $('#settingsBody').scrollTop = 0;
-  // La fenêtre elle-même, pas la croix : sur iPhone, la croix prendrait un anneau de focus à chaque ouverture
-  if (first && !accountState().signedIn) accountUi.focus();
-  else (first ? f.tmdbKey : el.settings).focus({ preventScroll: true });
+  // Premier lancement (après la connexion) : la clé TMDB. Sinon la section demandée ; par défaut Compte (sur
+  // téléphone : la liste des sections)
+  const name = first ? 'keys' : panel ?? 'account';
+  el.settings.dataset.view = first || panel || !PHONE_SETTINGS.matches ? 'panel' : 'nav';
+  selectPanel(name, { show: el.settings.dataset.view === 'panel' });
+  // La page elle-même, pas un bouton : sur iPhone, il prendrait un anneau de focus à chaque ouverture
+  (first ? f.tmdbKey : el.settings).focus({ preventScroll: true });
 }
 
 // ---------- Clés API : tester, copier ----------
@@ -2528,8 +2590,21 @@ const accountUi = initAccountUi({
   syncedWhen,
   onPulled: applySynced,
   onChange: renderSettingsSummaries,
+  isOnboarding: () => el.settings.classList.contains('onboarding'),
+  onGuest: () => {
+    try {
+      localStorage.setItem(GUEST_KEY, '1');
+    } catch {
+      /* stockage indisponible : la question reviendra */
+    }
+    finishOnboarding();
+  },
 });
-window.addEventListener('streamhub:account', () => el.settings.open && renderSettingsSummaries());
+window.addEventListener('streamhub:account', () => {
+  if (!el.settings.open) return;
+  renderSettingsSummaries();
+  finishOnboarding();
+});
 
 let providerLoad = 0;
 async function loadProviderChoices() {
@@ -2784,14 +2859,14 @@ document.addEventListener('click', (e) => {
     return;
   }
   if (target.closest('[data-close]')) return target.closest('dialog')?.close();
-  if (target.closest('[data-open-settings]')) return openSettings(!settings.tmdbKey);
+  if (target.closest('[data-open-settings]')) return settings.tmdbKey || accountState().signedIn || choseGuest() ? openSettings(!settings.tmdbKey) : startOnboarding();
   if (target.closest('[data-retry]')) return reload();
 
   // Clic en dehors du contenu d'une fenêtre = fermeture
   if (target.tagName === 'DIALOG') target.close();
 });
 
-$('#settingsBtn').addEventListener('click', () => openSettings(!settings.tmdbKey));
+$('#settingsBtn').addEventListener('click', () => (settings.tmdbKey || accountState().signedIn || choseGuest() ? openSettings(!settings.tmdbKey) : startOnboarding()));
 
 el.platform.addEventListener('change', () => {
   state.filter = el.platform.value;
@@ -2857,15 +2932,17 @@ initSpatialNav({
 library.flushWatchPending();
 checkPending(); // l'appli a pu être fermée pendant le téléchargement
 showView('home');
-if (!settings.tmdbKey) openSettings(true);
+// Premier lancement : connexion / création de compte seulement ; invité déjà choisi : réglages (clé TMDB)
+if (!settings.tmdbKey) {
+  if (!accountState().signedIn && !choseGuest()) startOnboarding();
+  else openSettings(true);
+}
 startAutoSync(applySynced); // réglages et listes des autres appareils
 // Retour de Google / GitHub ou d'un lien d'e-mail (confirmation, mot de passe oublié) : Réglages → Compte
 handleAuthRedirect().then((result) => {
   if (!result) return;
-  if (!el.settings.open) openSettings();
-  const group = $('[data-group="account"]');
-  group.open = true;
-  group.scrollIntoView({ block: 'start' });
+  if (!el.settings.open) openSettings(false, 'account');
+  else if (!el.settings.classList.contains('onboarding')) selectPanel('account');
   const messages = {
     oauth: accountState().open ? `Connecté avec ${{ google: 'Google', github: 'GitHub' }[result.provider] ?? result.provider}.` : '',
     confirmed: accountState().open ? 'Adresse confirmée : compte créé.' : 'Adresse confirmée.',

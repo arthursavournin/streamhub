@@ -230,11 +230,11 @@ appli TV :
 
 ## 3. Premier lancement
 
-1. Ouvre StreamHub : au premier lancement, les réglages s'ouvrent.
-2. **Compte** : connecte-toi (ou crée un compte) dans « Compte » : si tu utilises déjà StreamHub ailleurs, clés,
-   abonnements et listes reviennent, et c'est fini. Tu peux aussi rester **en invité** : tout reste alors sur cet
-   appareil ([partie 6](#6-ton-compte-et-la-synchronisation)).
-3. Sinon, colle ta **clé TMDB** dans « Clés API » ([partie 4](#4-les-clés-api)). C'est la seule clé obligatoire.
+1. Ouvre StreamHub : au premier lancement, seule la page de connexion s'affiche.
+2. **Connecte-toi ou crée un compte** (e-mail et mot de passe, Google ou GitHub) : si tu utilises déjà StreamHub
+   ailleurs, clés, abonnements et listes reviennent, et c'est fini. Tu peux aussi choisir **Continuer sans compte**
+   (invité) : tout reste alors sur cet appareil ([partie 6](#6-ton-compte-et-la-synchronisation)).
+3. Sinon, StreamHub te demande ta **clé TMDB** ([partie 4](#4-les-clés-api)). C'est la seule clé obligatoire.
 4. Coche tes **abonnements** dans « Mes abonnements ».
 5. Appuie sur **Enregistrer**.
 
@@ -284,15 +284,20 @@ dans ton compte), et ne sont envoyées qu'à TMDB et RapidAPI.
 
 ## 5. Les réglages
 
-La roue dentée en haut à droite ouvre les réglages. Les sections sont repliées : touche celle que tu veux.
+La roue dentée en haut à droite ouvre la page des réglages : les sections dans la barre de gauche (Compte en premier),
+le contenu de la section choisie à droite. Sur téléphone, la liste des sections, puis la section touchée. L'appli
+iPhone a les mêmes sections, dans le même ordre et le même dessin. **Enregistrer** (en haut) garde les changements ;
+les actions du compte, elles, s'appliquent tout de suite.
 
 | Section | Contenu |
 |---|---|
+| **Compte** | Créer un compte, se connecter (e-mail, Google, GitHub), mot de passe oublié, changer de mot de passe, clé de secours, se déconnecter, supprimer le compte. En invité : la page de connexion, avec les boutons Google et GitHub. |
 | **Mes abonnements** | Les plateformes auxquelles tu es abonné, avec un champ pour filtrer la liste. Cocher Prime Video coche aussi les chaînes incluses avec Prime. Les options payantes vendues sur une autre plateforme sont des « chaînes » à cocher à part, par exemple **HBO Max Amazon Channel** (HBO Max sur Prime Video) ou les chaînes de Canal+ (France) **HBO Max Canal+ Channel**, **Apple TV Canal+ Channel** et **Paramount Plus Canal+ Channel**, pour regarder ces catalogues sur Canal+. Cocher **Canal+ Ciné Séries** coche aussi les plateformes de l'offre : Canal+, Canal+ Séries, Netflix et les chaînes HBO Max, Apple TV et Paramount+ de Canal+ ; Ciné+ OCS est référencé sous Canal+. Netflix reste un compte à part (activé depuis ton espace Canal+) et s'ouvre dans l'appli Netflix. |
-| **Compte** | Créer un compte, se connecter (e-mail, Google, GitHub), mot de passe oublié, changer de mot de passe, clé de secours, se déconnecter, supprimer le compte. |
 | **Clés API** | Clé TMDB, clé Streaming Availability, adresse du relais, avec un bouton Tester pour chacune. |
+| **Accueil** | Rangées affichées sur l'accueil, leur ordre, et le titre à l'affiche. |
 | **Apparence** | Effet verre : Automatique, Transparent ou Teinté (propre à chaque appareil). |
 | **Pays et lecture** | Pays du catalogue (France, Belgique, Suisse, Luxembourg, Canada, Royaume-Uni, États-Unis, Allemagne, Espagne, Italie) et, sur ordinateur, **Ouvrir les titres**. |
+| **À propos** | Version, mentions légales, politique de confidentialité, conditions d'utilisation, code source. |
 
 ### Ouvrir les titres (ordinateur)
 
@@ -333,8 +338,8 @@ l'appareil, rien n'est envoyé.
 note-la dans ton gestionnaire de mots de passe. Elle seule permet de retrouver tes données si tu oublies ton mot de
 passe. **Nouvelle clé de secours** en crée une autre (l'ancienne ne marche plus).
 
-Dans l'appli iPhone : **Réglages → Compte**, avec le même compte (e-mail et mot de passe ; Google et GitHub pas
-encore). Les liens des e-mails (confirmation, mot de passe oublié) s'ouvrent sur le site : après la confirmation,
+Dans l'appli iPhone : **Réglages → Compte**, avec le même compte (e-mail et mot de passe, Google ou GitHub : la
+fenêtre de connexion d'Apple s'ouvre, puis revient dans l'appli). Les liens des e-mails (confirmation, mot de passe oublié) s'ouvrent sur le site : après la confirmation,
 reviens dans l'appli et touche **J'ai confirmé mon adresse**.
 
 Ensuite, chaque modification part toute seule quelques secondes après, et arrive sur les autres appareils à leur

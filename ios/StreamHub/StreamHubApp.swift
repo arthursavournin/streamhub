@@ -53,8 +53,12 @@ struct RootView: View {
                 }
                 .tabBarMinimizeBehavior(.onScrollDown)
                 .environment(\.layoutDirection, .rightToLeft)
+            } else if (model.account.isOpen && model.account.recoveryKey == nil) || model.account.guest {
+                // Connecté (clé de secours notée) ou invité, mais pas encore de clé TMDB : dernière étape
+                KeySetupView()
             } else {
-                WelcomeView()
+                // Premier lancement : seulement la connexion / création de compte, comme sur le site
+                OnboardingView()
             }
         }
         .background(Color.appBackground)

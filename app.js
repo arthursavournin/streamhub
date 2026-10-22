@@ -12,7 +12,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.3.5';
+const APP_VERSION = '2.3.6';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -83,7 +83,8 @@ const year = (date) => (date ? date.slice(0, 4) : '');
 const titleOf = (item) => item.title ?? item.name ?? '';
 const originalTitleOf = (item) => item.original_title ?? item.original_name ?? '';
 const dateOf = (item) => item.release_date ?? item.first_air_date ?? '';
-// Date de sortie d'un film : « 9 oct. 2026 » (affiches), « 1er octobre 2026 » (fiche) ; année seule si le jour manque
+// Date de sortie d'un film : « 1er octobre 2026 » (fiche) ; année seule si le jour manque. Plus sur les affiches depuis
+// la version 2.3.6 (demande de l'utilisateur) : l'année seulement, comme pour les séries
 function releaseDate(date, long = false) {
   if (!/^\d{4}-\d{2}-\d{2}/.test(date ?? '')) return year(date);
   const d = new Date(`${date.slice(0, 10)}T12:00:00`);
@@ -429,7 +430,7 @@ function buildCard(m, { meta, href, target, typeTag = state.type === 'all', rank
       <div class="card-providers"></div>
     </div>
     <span class="card-title">${esc(title)}</span>
-    <span class="card-meta">${meta ?? esc([type === 'movie' ? releaseDate(date) : year(date), rating].filter(Boolean).join(' · '))}</span>`;
+    <span class="card-meta">${meta ?? esc([year(date), rating].filter(Boolean).join(' · '))}</span>`;
   card.setAttribute('aria-label', `${title}${date ? `, ${year(date)}` : ''}`);
   return card;
 }
@@ -492,7 +493,7 @@ function ago(timestamp) {
 function libraryMeta(entry, name) {
   if (name === 'likes') {
     const on = library.likedOn(entry.type, entry.id).map((p) => `✓ ${shortPlatformName(p.platform)}`);
-    return esc([entry.type === 'movie' ? releaseDate(entry.date) : year(entry.date), entry.type === 'tv' ? 'Série' : 'Film', ...on].filter(Boolean).join(' · '));
+    return esc([year(entry.date), entry.type === 'tv' ? 'Série' : 'Film', ...on].filter(Boolean).join(' · '));
   }
   const parts = [episodeLabel(entry), shortPlatformName(entry.platform), name === 'history' ? ago(entry.at) : ''].filter(Boolean);
   return `${name === 'downloads' ? '⬇ ' : ''}${esc(parts.join(' · '))}`;
@@ -519,13 +520,40 @@ function libraryCard(entry, name, { removable = true } = {}) {
   return wrap;
 }
 
+// Historique : une seule rangée (le plus récent à gauche) et « Supprimer l'historique » (demande de l'utilisateur)
 function renderLibrary() {
   const name = state.view;
   if (!LIBRARY_TEXT[name]) return;
   const entries = library.list(name);
   el.grid.innerHTML = '';
+  el.grid.classList.toggle('history-row', name === 'history');
   el.grid.append(...entries.map((e) => libraryCard(e, name)));
-  setStatus(entries.length ? `<p>${LIBRARY_TEXT[name].intro}</p>` : `<div class="empty"><p>${LIBRARY_TEXT[name].empty}</p></div>`);
+  const clear = name === 'history' && entries.length ? clearHistoryHtml() : '';
+  setStatus(entries.length ? `<p>${LIBRARY_TEXT[name].intro}</p>${clear}` : `<div class="empty"><p>${LIBRARY_TEXT[name].empty}</p></div>`);
+}
+
+// Bouton « Supprimer l'historique », puis la confirmation à sa place
+function clearHistoryHtml(asking = false) {
+  return asking
+    ? `<div class="clear-history" role="group" aria-label="Supprimer l’historique">
+        <span>Supprimer tout l’historique, sur tous tes appareils&nbsp;?</span>
+        <button type="button" class="btn dark" data-clear-history="yes">Supprimer</button>
+        <button type="button" class="btn" data-clear-history="no">Annuler</button>
+      </div>`
+    : '<div class="clear-history"><button type="button" class="btn dark" data-clear-history="ask">Supprimer l’historique</button></div>';
+}
+
+function onClearHistory(btn) {
+  const step = btn.dataset.clearHistory;
+  if (step === 'yes') {
+    library.clearHistory();
+    renderLibrary();
+    updateCounts();
+    toast('Historique supprimé.');
+    return;
+  }
+  $('.clear-history', el.status).outerHTML = clearHistoryHtml(step === 'ask');
+  $(`[data-clear-history="${step === 'ask' ? 'no' : 'ask'}"]`, el.status)?.focus();
 }
 
 // J'aime, Historique, Téléchargements ont changé : on redessine ce qui les affiche
@@ -2786,11 +2814,14 @@ document.addEventListener('click', (e) => {
   const heroAction = target.closest('[data-hero]');
   if (heroAction) return onHeroAction(heroAction);
 
+  const clearHistory = target.closest('[data-clear-history]');
+  if (clearHistory) return onClearHistory(clearHistory);
   const remove = target.closest('[data-remove]');
   if (remove) {
     const entry = library.list(remove.dataset.remove).find((e) => e.key === remove.dataset.key);
     library.remove(remove.dataset.remove, remove.dataset.key);
     renderLibrary();
+    updateCounts();
     if (remove.dataset.remove === 'likes' && entry) remindPlatformLikes(entry);
     return;
   }

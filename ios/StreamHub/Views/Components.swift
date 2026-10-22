@@ -46,7 +46,7 @@ struct PosterLink: View {
     let ref: TitleRef
     var width: CGFloat? = 118
     var rank: Int?
-    var caption: String? // « S1 E31 · 16 oct. » (dernier épisode d'une série récente) ou « 9 oct. 2026 » (film)
+    var caption: String? // « S1 E31 · 16 oct. » (dernier épisode d'une série récente ; plus de date de sortie : fiche)
 
     var body: some View {
         NavigationLink(value: ref) {
@@ -106,7 +106,7 @@ struct SectionTitle: View {
 // Grille d'affiches (Ma liste, recherche)
 struct PosterGrid: View {
     let refs: [TitleRef]
-    var captions: [TitleRef: String] = [:] // date de sortie des films, dernier épisode des séries récentes
+    var captions: [TitleRef: String] = [:] // dernier épisode des séries récentes
 
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 12)], spacing: 16) {

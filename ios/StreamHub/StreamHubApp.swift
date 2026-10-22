@@ -71,7 +71,9 @@ struct RootView: View {
         .task {
             // Compte (STREAMHUB_ACCOUNT = « action|valeur|valeur », la saisie au clavier du simulateur ne marchant pas
             // avec l'outil de test) : signin|e-mail|mdp, signup|e-mail|mdp, finish, unlock|mdp, change|ancien|nouveau,
-            // reset|clé|nouveau, recovery, signout, delete|mdp, like|titre|id. Résultat dans la console (STREAMHUB_TEST).
+            // reset|clé|nouveau, recovery, signout, delete|mdp, like|titre|id, watch|titre|id|movie ou tv|affiche (historique),
+            // unwatch|movie:id, clear (historique), key|clé TMDB, sync.
+            // Résultat dans la console (STREAMHUB_TEST).
             if let spec = ProcessInfo.processInfo.environment["STREAMHUB_ACCOUNT"] {
                 let p = spec.split(separator: "|", omittingEmptySubsequences: false).map(String.init) + ["", ""]
                 let account = model.account
@@ -87,10 +89,17 @@ struct RootView: View {
                     case "signout": await account.signOut()
                     case "delete": try await account.deleteAccount(password: p[1])
                     case "like": model.store.toggle(.likes, TitleRef(type: .movie, id: Int(p[2]) ?? 1, title: p[1], poster: nil))
+                    case "watch":
+                        let ref = TitleRef(type: MediaType(rawValue: p[3]) ?? .movie, id: Int(p[2]) ?? 1, title: p[1], poster: p[4].isEmpty ? nil : p[4])
+                        model.store.recordWatch(LibraryEntry(ref: ref, date: "2025-09-19"))
+                    case "unwatch": model.store.remove(.history, key: p[1])
+                    case "clear": model.store.clearHistory()
+                    case "key": model.store.setSetting("tmdbKey", .string(p[1]))
+                    case "sync": _ = try await model.sync.syncNow()
                     default: break
                     }
                     try? await Task.sleep(for: .seconds(3)) // première synchro
-                    print("STREAMHUB_TEST ok \(p[0]) open=\(account.isOpen) pending=\(account.meta.pendingEmail ?? "-") needs=\(account.meta.needs?.rawValue ?? "-") recovery=\(account.recoveryKey ?? "-") synced=\(account.meta.syncedAt ?? -1) error=\(account.meta.error ?? "-") tmdb=\(model.store.tmdbKey) likes=\(model.store.entries(.likes).map(\.title))")
+                    print("STREAMHUB_TEST ok \(p[0]) open=\(account.isOpen) pending=\(account.meta.pendingEmail ?? "-") needs=\(account.meta.needs?.rawValue ?? "-") recovery=\(account.recoveryKey ?? "-") synced=\(account.meta.syncedAt ?? -1) error=\(account.meta.error ?? "-") tmdb=\(model.store.tmdbKey) likes=\(model.store.entries(.likes).map(\.title)) history=\(model.store.entries(.history).map(\.title)) removed=\(model.store.library["removed"].map { String(decoding: $0.canonicalData, as: UTF8.self) } ?? "-")")
                 } catch {
                     print("STREAMHUB_TEST error \(p[0]) \(error.localizedDescription)")
                 }

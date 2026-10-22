@@ -71,7 +71,8 @@ les autres.
 
 ### La fiche d'un titre
 
-Un clic sur une affiche ouvre sa fiche : résumé, date de sortie (film) ou années de diffusion (série), durée ou nombre de saisons, genres, bande-annonce, et les
+Un clic sur une affiche ouvre sa fiche : résumé, date de sortie (film, seulement dans la fiche : sous les affiches,
+l'année) ou années de diffusion (série), durée ou nombre de saisons, genres, bande-annonce, et les
 boutons **« Regarder sur… »**, rangés en trois groupes :
 
 - **Dans tes abonnements** : les plateformes que tu as cochées dans les réglages.
@@ -133,7 +134,9 @@ Sous le résumé, la fiche a des **onglets** (aussi dans l'appli iPhone) :
 
 - **Ma liste** : les titres mis de côté avec « + Ma liste » (dans la fiche ou sur l'affiche de l'accueil).
 - **J'aime** : les titres aimés avec « ♡ J'aime ». Pour une série, le J'aime porte sur la série entière.
-- **Historique** : les 30 derniers titres regardés depuis StreamHub.
+- **Historique** : les 30 derniers titres regardés depuis StreamHub, en une seule rangée (le plus récent à gauche).
+  La croix en haut à droite d'une affiche retire ce titre ; **Supprimer l'historique** (avec confirmation) vide la
+  liste. Avec un compte, ces retraits partent aussi sur tes autres appareils.
 - **Téléchargements** : un rappel des titres téléchargés dans les applis des plateformes (voir plus bas).
 
 Un film ou un épisode lancé depuis StreamHub entre tout de suite dans l'historique, sans question. Pour une série,
@@ -349,7 +352,8 @@ reviens dans l'appli et touche **J'ai confirmé mon adresse**.
 
 Ensuite, chaque modification part toute seule quelques secondes après, et arrive sur les autres appareils à leur
 ouverture ou quand tu reviens sur StreamHub. Deux appareils modifiés en même temps : les listes sont réunies, rien
-n'est perdu.
+n'est perdu. Un titre retiré d'une liste (ou l'historique supprimé) sur un appareil ne revient pas depuis un autre,
+sauf s'il y est de nouveau ajouté ou regardé après le retrait.
 
 - **Synchronisés** : clés, pays, abonnements, accueil, Ma liste, J'aime, historique, likes sur les plateformes.
 - **Propres à chaque appareil** : téléchargements (ils sont sur l'appareil), questions en attente, effet verre,

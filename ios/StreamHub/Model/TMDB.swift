@@ -35,15 +35,12 @@ nonisolated struct TMDBTitle: Decodable, Identifiable, Hashable, Sendable {
     var displayTitle: String { title ?? name ?? "" }
     var date: String { releaseDate ?? firstAirDate ?? "" }
     var ref: TitleRef { TitleRef(type: type, id: id, title: displayTitle, poster: posterPath) }
-    // Sur l'affiche : dernier épisode d'une série récente, ou date de sortie d'un film
-    var caption: String? {
-        if let label = latestEpisode?.label { return label }
-        let release = type == .movie ? releaseDateLabel(releaseDate) : ""
-        return release.isEmpty ? nil : release
-    }
+    // Sur l'affiche : dernier épisode d'une série récente. Plus la date de sortie d'un film depuis la version 2.3.6
+    // (demande de l'utilisateur) : elle reste dans la fiche
+    var caption: String? { latestEpisode?.label }
 }
 
-// Date de sortie d'un film : « 9 oct. 2026 » (affiches), « 1er octobre 2026 » (fiche) ; année seule si le jour manque
+// Date de sortie d'un film : « 1er octobre 2026 » (fiche, long), « 9 oct. 2026 » ; année seule si le jour manque
 // (comme le site)
 nonisolated func releaseDateLabel(_ date: String?, long: Bool = false) -> String {
     guard let date, !date.isEmpty else { return "" }

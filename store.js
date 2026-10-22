@@ -81,9 +81,10 @@ export function loadLibrary() {
       downloads: lib.downloads ?? [],
       pending: lib.pending ?? [],
       platformLikes: lib.platformLikes ?? {},
+      removed: lib.removed ?? {},
     };
   } catch {
-    return { likes: [], watchlist: [], history: [], downloads: [], pending: [], platformLikes: {} };
+    return { likes: [], watchlist: [], history: [], downloads: [], pending: [], platformLikes: {}, removed: {} };
   }
 }
 

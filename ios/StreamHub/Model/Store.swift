@@ -49,11 +49,6 @@ struct LibraryEntry: Identifiable, Hashable {
     var at: Double { raw["at"]?.double ?? 0 }
 
     var ref: TitleRef { TitleRef(type: type, id: tmdbID, title: title, poster: poster) }
-    // Sur l'affiche : date de sortie d'un film (enregistrée avec l'entrée, comme sur le site)
-    var caption: String? {
-        let release = type == .movie ? releaseDateLabel(raw["date"]?.string) : ""
-        return release.isEmpty ? nil : release
-    }
 
     static func key(_ type: MediaType, _ id: Int) -> String { "\(type.rawValue):\(id)" }
 
@@ -195,8 +190,34 @@ final class AppStore {
         updateLibrary { $0[list.rawValue] = .array(([entry] + others).prefix(max).map { .object($0.raw) }) }
     }
 
+    // Retraits mémorisés (« removed », synchronisé, comme le site) : { history: { "movie:603": at, "*": at } } ("*" : liste
+    // vidée). Sans eux, la fusion de deux appareils (Sync.swift) ferait revenir un titre retiré sur l'un d'eux.
+    nonisolated static let removedMax = 200
+    private var nowMs: Double { (Date().timeIntervalSince1970 * 1000).rounded() }
+
     func remove(_ list: LibraryList, key: String) {
-        updateLibrary { $0[list.rawValue] = .array(entries(list).filter { $0.key != key }.map { .object($0.raw) }) }
+        let rest = entries(list).filter { $0.key != key }
+        updateLibrary { library in
+            library[list.rawValue] = .array(rest.map { .object($0.raw) })
+            var removed = library["removed"]?[list.rawValue]?.object ?? [:]
+            removed[key] = .double(nowMs)
+            let cleared = removed.removeValue(forKey: "*")
+            var kept = Dictionary(uniqueKeysWithValues: removed.sorted { ($0.value.double ?? 0) > ($1.value.double ?? 0) }.prefix(Self.removedMax).map { ($0.key, $0.value) })
+            kept["*"] = cleared
+            var all = library["removed"]?.object ?? [:]
+            all[list.rawValue] = .object(kept)
+            library["removed"] = .object(all)
+        }
+    }
+
+    // « Supprimer l'historique » : tout ce qui a été regardé jusqu'ici, sur tous les appareils
+    func clearHistory() {
+        updateLibrary { library in
+            library[LibraryList.history.rawValue] = .array([])
+            var all = library["removed"]?.object ?? [:]
+            all[LibraryList.history.rawValue] = .object(["*": .double(nowMs)])
+            library["removed"] = .object(all)
+        }
     }
 
     // Ajoute ou retire le titre ; renvoie true s'il est maintenant dans la liste
@@ -217,9 +238,3 @@ final class AppStore {
     }
 }
 
-extension [LibraryEntry] {
-    // Légendes des affiches d'une grille (voir caption)
-    var captions: [TitleRef: String] {
-        Dictionary(compactMap { e in e.caption.map { (e.ref, $0) } }, uniquingKeysWith: { a, _ in a })
-    }
-}

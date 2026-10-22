@@ -1215,6 +1215,26 @@ html:has(dialog[open]) { overflow: hidden; }
 }
 .card-remove:hover { background: #d93a3f; border-color: #d93a3f; }
 
+/* Historique : une seule rangée qui défile, le plus récent à gauche (version 2.3.6) */
+.grid.history-row {
+  display: flex;
+  gap: 12px;
+  margin: 0 calc(-1 * var(--gutter));
+  padding: 0 var(--gutter) 10px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding: 0 var(--gutter);
+  scrollbar-width: none;
+}
+.grid.history-row::-webkit-scrollbar { display: none; }
+.grid.history-row > .card-wrap { flex: none; width: clamp(118px, 13vw, 180px); scroll-snap-align: start; }
+.clear-history { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 16px; }
+.clear-history span { color: var(--text); }
+.clear-history .btn { padding: 7px 16px; }
+/* Bleu foncé, pas rouge (demande de l'utilisateur) */
+#status .clear-history .btn.dark { background: #1d3b72; border-color: transparent; color: #fff; }
+#status .clear-history .btn.dark:hover { background: #25498a; }
+
 /* ---------- Fiche : J'aime, Télécharger ---------- */
 
 .detail-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }

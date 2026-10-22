@@ -8,6 +8,8 @@
 //   « Tu as liké… sur Netflix ? »). Rien n'est enregistré tant que la réponse n'est pas oui.
 // - platformLikes : plateformes où un titre a aussi été liké, { 'movie:603': [{ service, platform }] }.
 //   Gardé à part des likes : retirer un like dans StreamHub ne le retire pas sur la plateforme.
+// - removed : titres retirés des listes synchronisées, { history: { 'movie:603': at, '*': at } } ('*' : liste vidée).
+//   Synchronisé : sans lui, la fusion de deux appareils (sync.js) ferait revenir un titre retiré sur l'un d'eux.
 //
 // Une entrée : { key, type, id, title, poster, date, platform, service, href,
 //                season, episode, episodeName, at }
@@ -27,8 +29,26 @@ export const downloadKey = (type, id, season, episode) =>
 export const list = (name) => lib[name];
 export const has = (name, key) => lib[name].some((e) => e.key === key);
 
+const SYNCED_LISTS = ['likes', 'watchlist', 'history'];
+
+// Retrait mémorisé (removed) pour les listes synchronisées : les 200 plus récents par liste (comme sync.js)
+function forget(name, key) {
+  if (!SYNCED_LISTS.includes(name)) return;
+  const { '*': cleared, ...keys } = { ...lib.removed[name], [key]: Date.now() };
+  const kept = Object.fromEntries(Object.entries(keys).sort((x, y) => y[1] - x[1]).slice(0, 200));
+  lib.removed = { ...lib.removed, [name]: cleared ? { ...kept, '*': cleared } : kept };
+}
+
 export function remove(name, key) {
   lib[name] = lib[name].filter((e) => e.key !== key);
+  forget(name, key);
+  saveLibrary(lib);
+}
+
+// « Supprimer l'historique » : tout ce qui a été regardé jusqu'ici, sur tous les appareils
+export function clearHistory() {
+  lib.history = [];
+  lib.removed = { ...lib.removed, history: { '*': Date.now() } };
   saveLibrary(lib);
 }
 

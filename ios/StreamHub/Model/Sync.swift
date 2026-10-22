@@ -65,8 +65,9 @@ struct SyncError: LocalizedError {
 final class SyncService {
     // Propres à chaque appareil : jamais synchronisés (comme DEVICE_SETTINGS du site)
     static let deviceSettings: Set<String> = ["desktopApps", "primeApp", "glass"]
-    // Téléchargements et questions en attente : sur l'appareil
-    static let syncedLibrary = ["likes", "watchlist", "history", "platformLikes"]
+    // Téléchargements et questions en attente : sur l'appareil ; removed : titres retirés (voir AppStore.remove), pour la
+    // fusion
+    static let syncedLibrary = ["likes", "watchlist", "history", "platformLikes", "removed"]
 
     private let store: AppStore
     let account: AccountService
@@ -90,7 +91,7 @@ final class SyncService {
         for key in Self.deviceSettings { settings[key] = nil }
         var library: [String: JSON] = [:]
         for key in Self.syncedLibrary {
-            library[key] = store.library[key] ?? (key == "platformLikes" ? .object([:]) : .array([]))
+            library[key] = store.library[key] ?? (key == "platformLikes" || key == "removed" ? .object([:]) : .array([]))
         }
         return ["settings": .object(settings), "library": .object(library)]
     }
@@ -136,15 +137,52 @@ final class SyncService {
         return .object(out)
     }
 
+    // Retraits mémorisés des deux côtés : pour chaque titre, le plus récent ; 200 par liste au plus (comme le site)
+    private func mergeRemoved(_ a: JSON?, _ b: JSON?) -> [String: [String: Double]] {
+        var out: [String: [String: Double]] = [:]
+        for side in [a?.object ?? [:], b?.object ?? [:]] {
+            for (list, keys) in side {
+                for (key, at) in keys.object ?? [:] {
+                    out[list, default: [:]][key] = max(out[list]?[key] ?? 0, at.double ?? 0)
+                }
+            }
+        }
+        // Liste vidée : les retraits plus anciens n'ont plus d'utilité
+        return out.mapValues { keys in
+            let cleared = keys["*"]
+            var kept = Dictionary(uniqueKeysWithValues: keys
+                .filter { $0.key != "*" && $0.value > (cleared ?? 0) }
+                .sorted { $0.value > $1.value }
+                .prefix(AppStore.removedMax)
+                .map { ($0.key, $0.value) })
+            kept["*"] = cleared
+            return kept
+        }
+    }
+
+    // Une entrée retirée (ou la liste vidée) après son ajout ne revient pas ; ajoutée de nouveau après, elle reste
+    private func notRemoved(_ list: JSON, _ removed: [String: Double]?, max: Int = .max) -> JSON {
+        let kept = (list.array ?? []).filter { entry in
+            let at = Swift.max(removed?[entry["key"]?.string ?? ""] ?? 0, removed?["*"] ?? 0)
+            return at == 0 || (entry["at"]?.double ?? 0) > at
+        }
+        return .array(Array(kept.prefix(max)))
+    }
+
     private func merge(local: [String: JSON], remote: [String: JSON], settingsChanged: Bool, libraryChanged: Bool) -> [String: JSON] {
         let mine = local["library"]
         let theirs = remote["library"]
+        let removed = mergeRemoved(mine?["removed"], theirs?["removed"])
+        let lists = { (name: String, max: Int) in
+            self.notRemoved(self.unionByKey(mine?[name], theirs?[name]), removed[name], max: max)
+        }
         let library: JSON = libraryChanged
             ? .object([
-                "likes": unionByKey(mine?["likes"], theirs?["likes"]),
-                "watchlist": unionByKey(mine?["watchlist"], theirs?["watchlist"]),
-                "history": unionByKey(mine?["history"], theirs?["history"], max: AppStore.historyMax),
+                "likes": lists("likes", .max),
+                "watchlist": lists("watchlist", .max),
+                "history": lists("history", AppStore.historyMax),
                 "platformLikes": mergePlatformLikes(mine?["platformLikes"], theirs?["platformLikes"]),
+                "removed": .object(removed.mapValues { .object($0.mapValues(JSON.double)) }),
             ])
             : (theirs ?? .object([:]))
         return [

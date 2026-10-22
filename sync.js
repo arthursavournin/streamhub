@@ -12,7 +12,8 @@ import { loadAccount, saveAccount, vaultKey, fetchData, pushData, Conflict } fro
 // desktopApps (avant : primeApp) : les applis sont installées sur un ordinateur, pas un autre ; glass : réglé selon
 // l'appareil
 const DEVICE_SETTINGS = ['desktopApps', 'primeApp', 'glass'];
-const SYNCED_LIBRARY = ['likes', 'watchlist', 'history', 'platformLikes']; // téléchargements et questions : sur l'appareil
+// téléchargements et questions : sur l'appareil ; removed : titres retirés (voir library.js), pour la fusion
+const SYNCED_LIBRARY = ['likes', 'watchlist', 'history', 'platformLikes', 'removed'];
 
 const enc = new TextEncoder();
 
@@ -83,17 +84,44 @@ function mergePlatformLikes(a = {}, b = {}) {
   return out;
 }
 
+// Retraits mémorisés des deux côtés : pour chaque titre, le plus récent. On n'en garde que 200 par liste (un appareil
+// resté hors ligne plus longtemps pourrait faire revenir un vieux titre retiré : sans gravité).
+const REMOVED_MAX = 200;
+function mergeRemoved(a = {}, b = {}) {
+  const out = {};
+  for (const name of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    const merged = { ...a[name] };
+    for (const [key, at] of Object.entries(b[name] ?? {})) merged[key] = Math.max(merged[key] ?? 0, at);
+    // Liste vidée : les retraits plus anciens n'ont plus d'utilité
+    const cleared = merged['*'];
+    const kept = Object.entries(merged).filter(([key, at]) => key !== '*' && at > (cleared ?? 0));
+    out[name] = Object.fromEntries(kept.sort((x, y) => y[1] - x[1]).slice(0, REMOVED_MAX));
+    if (cleared) out[name]['*'] = cleared;
+  }
+  return out;
+}
+
+// Une entrée retirée (ou la liste vidée) après son ajout ne revient pas ; ajoutée de nouveau après, elle reste
+function notRemoved(list, removed = {}) {
+  return list.filter((e) => {
+    const at = Math.max(removed[e.key] ?? 0, removed['*'] ?? 0);
+    return !at || (e.at ?? 0) > at;
+  });
+}
+
 function merge(local, remote, changed) {
+  if (!changed.library) return { settings: changed.settings ? local.settings : remote.settings, library: remote.library };
+  const removed = mergeRemoved(local.library.removed, remote.library?.removed);
+  const lists = (name, max) => notRemoved(unionByKey(local.library[name], remote.library?.[name]), removed[name]).slice(0, max);
   return {
     settings: changed.settings ? local.settings : remote.settings,
-    library: changed.library
-      ? {
-          likes: unionByKey(local.library.likes, remote.library?.likes),
-          watchlist: unionByKey(local.library.watchlist, remote.library?.watchlist),
-          history: unionByKey(local.library.history, remote.library?.history, HISTORY_MAX),
-          platformLikes: mergePlatformLikes(local.library.platformLikes, remote.library?.platformLikes),
-        }
-      : remote.library,
+    library: {
+      likes: lists('likes'),
+      watchlist: lists('watchlist'),
+      history: lists('history', HISTORY_MAX),
+      platformLikes: mergePlatformLikes(local.library.platformLikes, remote.library?.platformLikes),
+      removed,
+    },
   };
 }
 

@@ -194,7 +194,7 @@ private struct LocalRow: View {
                 ScrollView(.horizontal) {
                     LazyHStack(spacing: 10) {
                         ForEach(entries) { entry in
-                            PosterLink(ref: entry.ref, caption: entry.caption)
+                            PosterLink(ref: entry.ref)
                         }
                     }
                     .padding(.horizontal, 16)
@@ -239,14 +239,17 @@ private struct TitlesGridPage: View {
     }
 }
 
-// « Tout voir » de Reprendre ou Ma liste
+// « Tout voir » de Reprendre (l'historique, en une rangée) ou Ma liste
 struct LocalListPage: View {
     @Environment(AppModel.self) private var model
     let list: LibraryList
 
     var body: some View {
         ScrollView {
-            PosterGrid(refs: model.store.entries(list).map(\.ref), captions: model.store.entries(list).captions).padding(.vertical, 8)
+            Group {
+                if list == .history { HistoryRow() } else { PosterGrid(refs: model.store.entries(list).map(\.ref)) }
+            }
+            .padding(.vertical, 8)
         }
         .background(Color.appBackground)
         .navigationTitle(list == .history ? "Reprendre" : list.title)

@@ -678,7 +678,7 @@ correction, 1.1.0 pour une nouvelle fonction. Le script « reprise après connex
 `relay/worker.js` est publié sur https://streamhub-relay.arthursavournin.workers.dev (offre gratuite Cloudflare :
 100 000 requêtes par jour). Il donne les **liens JustWatch** (`/offers`) : JustWatch refuse les appels venant
 d'autres sites, le relais l'interroge à la place du navigateur. Seules les réponses trouvées sont gardées 6 heures
-(un titre faux ne peut pas cacher les liens d'un film). Il limite chaque adresse IP à 60 questions à JustWatch par
+(un titre faux ne peut pas cacher les liens d'un film). Il limite chaque adresse IP à 30 questions à JustWatch par
 minute (liaison `LIMITER`, limite de débit de Cloudflare). Il ne stocke rien (son ancienne route `/sync/<id>`, pour le
 code de synchronisation d'avant la version 2.1.0, a été supprimée en version 2.3.3, avec son espace Workers KV).
 

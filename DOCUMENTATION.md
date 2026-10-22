@@ -586,6 +586,7 @@ Puis ouvre **http://localhost:8080**. Le relais accepte les appels venant de `lo
 | `account.js` | Comptes Supabase (Auth et base, appels HTTP directs) : inscription, connexion, coffre, clé de secours |
 | `account-ui.js` | Réglages → Compte |
 | `supabase/schema.sql` | Tables `vaults` et `sync_data`, règles d'accès (chacun sa ligne), `delete_my_account`, `keepalive` |
+| `supabase/templates/` | E-mails en français (confirmation, mot de passe oublié), à coller dans Supabase : Authentication → Emails → Templates |
 | `episodes.js` | Liens directs vers les épisodes TF1+ et M6+ (index publié dans `data/`) |
 | `aliases.js` | Recherche par surnom ou sigle (liste intégrée + Wikidata) |
 | `search.js` | Correction des fautes de frappe, numéro de film, ordre des sagas |

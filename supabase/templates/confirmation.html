@@ -1,0 +1,65 @@
+<!doctype html>
+<!-- E-mail « Confirme ton adresse » (Supabase : Authentication → Emails → Templates → Confirm signup).
+     Sujet : Confirme ton adresse pour StreamHub
+     Mise en page en tableaux et styles en ligne : seule façon d'être lu pareil par Gmail, Outlook et Mail. -->
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
+  <title>Confirme ton adresse</title>
+</head>
+<body style="margin:0;padding:0;background-color:#070d1a;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Un clic pour activer ton compte StreamHub.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#070d1a;background-image:linear-gradient(180deg,#0f1a30 0%,#070d1a 60%);">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+          <!-- Logo -->
+          <tr>
+            <td align="center" style="padding-bottom:24px;">
+              <img src="https://arthursavournin.github.io/streamhub/icon-192.png?v=3" width="64" height="64" alt="" style="display:block;border:0;border-radius:15px;">
+              <div style="margin-top:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;letter-spacing:-0.3px;color:#eef1f7;">StreamHub</div>
+            </td>
+          </tr>
+          <!-- Carte -->
+          <tr>
+            <td style="background-color:#0e1729;border:1px solid #233352;border-radius:20px;padding:32px 24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+              <h1 style="margin:0 0 16px;font-size:24px;line-height:1.3;font-weight:700;color:#eef1f7;">Bienvenue sur StreamHub&nbsp;!</h1>
+              <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#c9d1e0;">
+                Tu viens de créer ton compte avec l’adresse <strong style="color:#9ccbff;">{{ .Email }}</strong>.
+                Confirme-la pour retrouver tes réglages, J’aime, Ma liste et historique sur tous tes appareils.
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 28px;">
+                <tr>
+                  <td align="center" style="border-radius:12px;background-color:#3a7bf2;background-image:linear-gradient(135deg,#5ea2ff 0%,#2a63e6 100%);">
+                    <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 32px;font-size:16px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:12px;">Confirmer mon adresse</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 8px;font-size:13px;line-height:1.5;color:#98a2b6;">Le bouton ne marche pas&nbsp;? Copie ce lien dans ton navigateur&nbsp;:</p>
+              <p style="margin:0 0 24px;font-size:12px;line-height:1.5;word-break:break-all;"><a href="{{ .ConfirmationURL }}" style="color:#9ccbff;text-decoration:underline;">{{ .ConfirmationURL }}</a></p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="border-top:1px solid #233352;padding-top:20px;font-size:13px;line-height:1.6;color:#98a2b6;">
+                    🔒&nbsp;Tes données sont chiffrées sur ton appareil avant l’envoi&nbsp;: personne d’autre que toi ne peut les lire.
+                    Pense à noter ta <strong style="color:#c9d1e0;">clé de secours</strong>, affichée après la confirmation.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Pied -->
+          <tr>
+            <td align="center" style="padding:24px 16px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#6b7690;">
+              Tu n’as pas créé de compte&nbsp;? Ignore cet e-mail, rien ne sera activé.<br>
+              <a href="https://arthursavournin.github.io/streamhub/" style="color:#6b7690;text-decoration:underline;">StreamHub</a> · tous tes abonnements de streaming au même endroit
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

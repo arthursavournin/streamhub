@@ -1,6 +1,8 @@
 import { loadSettings, saveSettings, relayUrl, HISTORY_MAX } from './store.js';
 import { makeApi, img, testTmdbKey, testSaKey, testRelay } from './api.js';
 import { syncNow, syncState, createCode, joinCode, leave, startAutoSync } from './sync.js';
+import { handleAuthRedirect, accountState } from './account.js';
+import { initAccountUi, accountSummary } from './account-ui.js';
 import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, providerLogo, CANAL_CHANNELS, CANAL_CINE_SERIES, withVirtualChannels, withSaOffers, originalNetworks } from './providers.js';
 import { INDEXED_PLATFORMS, platformEpisodeUrl, canalChannelPath } from './episodes.js';
 import { aliasMatches } from './aliases.js';
@@ -10,7 +12,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '1.11.6';
+const APP_VERSION = '2.0.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -2377,7 +2379,7 @@ function renderSettingsSummaries() {
   const summary = (name, text) => ($(`[data-summary="${name}"]`, f).textContent = text);
   const n = draftProviders.size;
   summary('providers', n ? `${n} plateforme${n > 1 ? 's' : ''} : ${[...draftProviders.values()].map((p) => p.name).join(', ')}` : 'Aucune plateforme cochée');
-  summary('sync', syncState().code ? 'Activée sur cet appareil' : 'Désactivée');
+  summary('account', accountSummary(Boolean(syncState().code)));
   const keys = [f.tmdbKey.value.trim() ? 'TMDB ✓' : 'TMDB manquante', f.saKey.value.trim() ? 'Streaming Availability ✓' : 'Streaming Availability —'];
   summary('keys', keys.join(' · '));
   summary('look', GLASS_NAMES[f.glass.value] ?? GLASS_NAMES.auto);
@@ -2426,15 +2428,19 @@ function openSettings(first = false) {
   $('#settingsIntro').hidden = !first;
   $('#appVersion').textContent = `StreamHub · version ${APP_VERSION}`;
   fillSettings();
+  accountUi.render();
   el.settings.showModal();
   rehostBars();
   // Toutes les sections repliées (demande de l'utilisateur) ; au premier lancement, celles à remplir sont dépliées
   for (const group of el.settings.querySelectorAll('details.settings-group')) {
-    group.open = first && ['providers', 'sync', 'keys'].includes(group.dataset.group);
+    group.open = first && ['providers', 'account', 'keys'].includes(group.dataset.group);
   }
+  // Ancien code de synchro : montré s'il tourne sans compte (pour passer au compte)
+  $('#legacySync').open = Boolean(syncState().code) && !accountState().open;
   $('#settingsBody').scrollTop = 0;
   // La fenêtre elle-même, pas la croix : sur iPhone, la croix prendrait un anneau de focus à chaque ouverture
-  (first ? (syncState().code ? f.tmdbKey : $('#syncCodeInput')) : el.settings).focus({ preventScroll: true });
+  if (first && !accountState().signedIn && !syncState().code) accountUi.focus();
+  else (first ? f.tmdbKey : el.settings).focus({ preventScroll: true });
 }
 
 // ---------- Clés API : tester, copier ----------
@@ -2513,6 +2519,9 @@ function renderSync() {
   $('#syncOff').hidden = Boolean(code);
   $('#syncOn').hidden = !code;
   $('#syncCode').value = code;
+  $('#syncHint').textContent = accountState().open
+    ? 'Ton compte et ce code se synchronisent ensemble : ce qui arrive de l’appli iPhone (code) part vers ton compte. Quand tous tes appareils utilisent le compte, arrête le code.'
+    : 'Entre ce code dans StreamHub sur tes autres appareils. Il donne accès à tes clés : garde-le pour toi (note-le dans ton gestionnaire de mots de passe). Pour passer à un compte, crée-le ci-dessus : ce code deviendra ta clé de secours.';
   const status = $('#syncStatus');
   if (!code) setKeyStatus(status, '', '');
   else if (error) setKeyStatus(status, 'bad', `Dernière synchronisation impossible : ${error}`);
@@ -2579,6 +2588,19 @@ $('#syncLeave').addEventListener('click', () => {
   setKeyStatus($('#syncStatus'), '', 'Synchronisation arrêtée sur cet appareil. Tes données y restent.');
 });
 window.addEventListener('streamhub:sync', () => el.settings.open && renderSync());
+
+// ---------- Compte ----------
+
+const accountUi = initAccountUi({
+  syncNow,
+  syncedWhen,
+  onPulled: applySynced,
+  onChange: () => {
+    renderSync();
+    renderSettingsSummaries();
+  },
+});
+window.addEventListener('streamhub:account', () => el.settings.open && renderSettingsSummaries());
 
 let providerLoad = 0;
 async function loadProviderChoices() {
@@ -2908,6 +2930,22 @@ checkPending(); // l'appli a pu être fermée pendant le téléchargement
 showView('home');
 if (!settings.tmdbKey) openSettings(true);
 startAutoSync(applySynced); // réglages et listes des autres appareils
+// Retour de Google / GitHub ou d'un lien d'e-mail (confirmation, mot de passe oublié) : Réglages → Compte
+handleAuthRedirect().then((result) => {
+  if (!result) return;
+  if (!el.settings.open) openSettings();
+  const group = $('[data-group="account"]');
+  group.open = true;
+  group.scrollIntoView({ block: 'start' });
+  const messages = {
+    oauth: accountState().open ? `Connecté avec ${{ google: 'Google', github: 'GitHub' }[result.provider] ?? result.provider}.` : '',
+    confirmed: accountState().open ? 'Adresse confirmée : compte créé.' : 'Adresse confirmée.',
+    recovery: '',
+  };
+  if (result.kind === 'error') accountUi.message('bad', result.message);
+  else if (messages[result.kind]) accountUi.message('ok', messages[result.kind]);
+  accountUi.focus();
+});
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   // Quand une nouvelle version est installée, elle prend la main : on recharge une fois pour l'utiliser

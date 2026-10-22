@@ -11,8 +11,9 @@ Prime Video, Disney+, Canal+, TF1+, M6+, france.tv, Arte, Apple TV, Max, Paramou
 - Parcours façon Netflix : accueil, films, séries, bibliothèque filtrable, recherche (même par surnom ou sigle).
 - Fiches complètes, saisons et épisodes, avec un bouton pour lancer chaque titre sur ta plateforme.
 - Tes listes : Ma liste, J'aime, Historique, Téléchargements.
-- Synchronisation chiffrée entre tous tes appareils.
-- Gratuit, sans compte, sans publicité, sans pistage : tes données restent dans ton navigateur.
+- Compte facultatif (e-mail, Google ou GitHub) : réglages et listes chiffrés de bout en bout et synchronisés entre
+  tous tes appareils. Ou en invité : tout reste dans ton navigateur.
+- Gratuit, sans publicité, sans pistage.
 
 Fonctionne sur iPhone, iPad, Android, Mac, Windows et Linux, dans Safari, Chrome, Edge et Firefox.
 
@@ -40,8 +41,7 @@ plus pratique (une icône, sa propre fenêtre).
    [themoviedb.org](https://www.themoviedb.org), puis **Paramètres → API**.
 3. Coche tes **abonnements** dans **Mes abonnements**, puis **Enregistrer**.
 
-Tu utilises déjà StreamHub sur un autre appareil ? Colle plutôt ton **code de synchronisation** dans
-**Synchronisation** : tout revient.
+Tu utilises déjà StreamHub sur un autre appareil ? Connecte-toi plutôt dans **Compte** : tout revient.
 
 Pour aller plus loin (clé Streaming Availability pour des liens qui lancent directement la vidéo, script de reprise
 après connexion, réglages, dépannage…), tout est dans la **[documentation](DOCUMENTATION.md)**.

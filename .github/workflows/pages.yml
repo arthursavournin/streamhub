@@ -32,7 +32,7 @@ jobs:
       - name: Copier le site
         run: |
           mkdir -p _site
-          rsync -a --exclude '.git' --exclude '.github' --exclude 'scripts' --exclude 'extension' --exclude 'relay' --exclude 'ios' --exclude 'CLAUDE.md' --exclude '_site' ./ _site/
+          rsync -a --exclude '.git' --exclude '.github' --exclude 'scripts' --exclude 'extension' --exclude 'relay' --exclude 'ios' --exclude 'supabase' --exclude 'CLAUDE.md' --exclude '_site' ./ _site/
           # Le script « reprise après connexion » s'installe depuis le site (Safari + appli Userscripts)
           cp extension/streamhub-reprise.user.js _site/
 
@@ -66,3 +66,11 @@ jobs:
       - run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/pages.yml/enable"
         env:
           GH_TOKEN: ${{ github.token }}
+      # Comptes StreamHub : le plan gratuit de Supabase met le projet en pause après 7 jours sans activité.
+      # Une petite requête (fonction keepalive, qui ne lit rien) toutes les 6 heures le garde éveillé.
+      # Clé publique (la même que dans account.js).
+      - name: Garder Supabase éveillé
+        run: |
+          curl -fsS -X POST "https://bfcmqdvztmkpqwamwejp.supabase.co/rest/v1/rpc/keepalive" \
+            -H "apikey: sb_publishable_RB_4r6Da9y2SLQPjavQXVA_w2Brn3LI" -H "content-type: application/json" -d '{}' \
+            || echo "::warning::Supabase ne répond pas"

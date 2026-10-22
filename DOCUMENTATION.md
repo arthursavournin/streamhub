@@ -14,7 +14,7 @@ Pour une présentation rapide, voir le [README](README.md).
 3. [Premier lancement](#3-premier-lancement)
 4. [Les clés API](#4-les-clés-api)
 5. [Les réglages](#5-les-réglages)
-6. [Synchroniser plusieurs appareils](#6-synchroniser-plusieurs-appareils)
+6. [Ton compte et la synchronisation](#6-ton-compte-et-la-synchronisation)
 7. [Comment StreamHub ouvre les titres](#7-comment-streamhub-ouvre-les-titres)
 8. [Le script « reprise après connexion »](#8-le-script--reprise-après-connexion-)
 9. [Tes données et ta vie privée](#9-tes-données-et-ta-vie-privée)
@@ -160,7 +160,8 @@ Android : sur ordinateur et TV, les plateformes ne permettent pas de télécharg
 
 ### Et aussi
 
-- **Synchronisation chiffrée** des réglages, clés et listes entre tous tes appareils ([partie 6](#6-synchroniser-plusieurs-appareils)).
+- **Compte StreamHub** (facultatif) : réglages, clés et listes chiffrés et synchronisés entre tous tes appareils
+  ([partie 6](#6-ton-compte-et-la-synchronisation)). Sans compte, en invité, tout reste sur l'appareil.
 - **Effet verre**, inspiré de Liquid Glass, pour les barres, boutons et fenêtres, réglable sur chaque appareil.
 - **Navigation au clavier et à la télécommande** : flèches, OK (Entrée) et Retour (Échap).
 - **Hors ligne** : l'interface s'ouvre sans connexion (le catalogue, lui, demande Internet).
@@ -182,8 +183,8 @@ propre fenêtre, sans barre d'adresse.
 3. Laisse **« Ouvrir comme app web »** activé, puis appuie sur **Ajouter**.
 4. Ouvre StreamHub depuis sa nouvelle icône.
 
-L'appli de l'écran d'accueil a son propre stockage, séparé de Safari : au premier lancement, colle ton code de
-synchronisation (ou tes clés). C'est depuis cette icône que les boutons « Regarder sur… » ouvrent directement les
+L'appli de l'écran d'accueil a son propre stockage, séparé de Safari : au premier lancement, connecte-toi à ton
+compte (ou colle tes clés). C'est depuis cette icône que les boutons « Regarder sur… » ouvrent directement les
 applis des plateformes ([partie 7](#sur-iphone-et-ipad)). Sur iPhone et iPad, toutes les applis de navigation
 (Chrome, Firefox, Edge…) utilisent le moteur de Safari : StreamHub s'y comporte comme dans Safari.
 
@@ -230,8 +231,9 @@ appli TV :
 ## 3. Premier lancement
 
 1. Ouvre StreamHub : au premier lancement, les réglages s'ouvrent.
-2. **Tu utilises déjà StreamHub ailleurs ?** Colle ton **code de synchronisation** dans « Synchronisation » →
-   **Utiliser ce code** : clés, abonnements et listes reviennent. C'est fini.
+2. **Compte** : connecte-toi (ou crée un compte) dans « Compte » : si tu utilises déjà StreamHub ailleurs, clés,
+   abonnements et listes reviennent, et c'est fini. Tu peux aussi rester **en invité** : tout reste alors sur cet
+   appareil ([partie 6](#6-ton-compte-et-la-synchronisation)).
 3. Sinon, colle ta **clé TMDB** dans « Clés API » ([partie 4](#4-les-clés-api)). C'est la seule clé obligatoire.
 4. Coche tes **abonnements** dans « Mes abonnements ».
 5. Appuie sur **Enregistrer**.
@@ -240,8 +242,8 @@ Facultatif, mais recommandé : une clé **Streaming Availability** pour des lien
 l'épisode, et, sur ordinateur, le **script « reprise après connexion »** ([partie 8](#8-le-script--reprise-après-connexion-)).
 
 **Partager StreamHub avec tes proches** : envoie-leur simplement l'adresse. Chacun colle **ses propres clés**, coche
-ses abonnements et crée, s'il le veut, **son propre code de synchronisation**. Les données de chacun restent dans son
-navigateur : personne ne voit les clés, abonnements ou listes des autres.
+ses abonnements et crée, s'il le veut, **son propre compte**. Les données de chacun sont chiffrées avec sa propre clé :
+personne ne voit les clés, abonnements ou listes des autres.
 
 ---
 
@@ -276,7 +278,7 @@ fiche et garde chaque réponse **3 jours** en mémoire. Sans cette clé, StreamH
 le relais), sinon une recherche du titre sur la plateforme.
 
 **Tes clés ne sont jamais publiées** : elles ne sont pas dans le code, restent dans ton navigateur (et, chiffrées,
-dans ta synchronisation), et ne sont envoyées qu'à TMDB et RapidAPI.
+dans ton compte), et ne sont envoyées qu'à TMDB et RapidAPI.
 
 ---
 
@@ -287,7 +289,7 @@ La roue dentée en haut à droite ouvre les réglages. Les sections sont replié
 | Section | Contenu |
 |---|---|
 | **Mes abonnements** | Les plateformes auxquelles tu es abonné, avec un champ pour filtrer la liste. Cocher Prime Video coche aussi les chaînes incluses avec Prime. Les options payantes vendues sur une autre plateforme sont des « chaînes » à cocher à part, par exemple **HBO Max Amazon Channel** (HBO Max sur Prime Video) ou les chaînes de Canal+ (France) **HBO Max Canal+ Channel**, **Apple TV Canal+ Channel** et **Paramount Plus Canal+ Channel**, pour regarder ces catalogues sur Canal+. Cocher **Canal+ Ciné Séries** coche aussi les plateformes de l'offre : Canal+, Canal+ Séries, Netflix et les chaînes HBO Max, Apple TV et Paramount+ de Canal+ ; Ciné+ OCS est référencé sous Canal+. Netflix reste un compte à part (activé depuis ton espace Canal+) et s'ouvre dans l'appli Netflix. |
-| **Synchronisation** | Créer ou utiliser un code, synchroniser maintenant, arrêter sur cet appareil. |
+| **Compte** | Créer un compte, se connecter (e-mail, Google, GitHub), mot de passe oublié, changer de mot de passe, clé de secours, se déconnecter, supprimer le compte ; l'ancien code de synchronisation (replié en bas). |
 | **Clés API** | Clé TMDB, clé Streaming Availability, adresse du relais, avec un bouton Tester pour chacune. |
 | **Apparence** | Effet verre : Automatique, Transparent ou Teinté (propre à chaque appareil). |
 | **Pays et lecture** | Pays du catalogue (France, Belgique, Suisse, Luxembourg, Canada, Royaume-Uni, États-Unis, Allemagne, Espagne, Italie) et, sur ordinateur, **Ouvrir les titres**. |
@@ -309,27 +311,67 @@ Une page web ne peut pas lire le réglage Liquid Glass d'iOS ou de macOS. En mod
 
 ---
 
-## 6. Synchroniser plusieurs appareils
+## 6. Ton compte et la synchronisation
 
-Chaque navigateur garde ses propres données : sans synchronisation, StreamHub ouvert dans Chrome ne connaît ni les
-clés ni les listes enregistrées dans Safari, et l'appli de l'écran d'accueil de l'iPhone ne connaît pas celles de
-Safari. Pour tout retrouver partout :
+Chaque navigateur garde ses propres données : sans compte, StreamHub ouvert dans Chrome ne connaît ni les clés ni les
+listes enregistrées dans Safari, et l'appli de l'écran d'accueil de l'iPhone ne connaît pas celles de Safari. Un
+**compte StreamHub** (gratuit, facultatif) les garde partout. Sans compte, tu restes **en invité** : tout reste sur
+l'appareil, rien n'est envoyé.
 
-1. Sur l'appareil où tout est déjà réglé : **Réglages → Synchronisation → Créer mon code de synchronisation**.
-   Note ce code (20 caractères, par exemple `ABCD-EFGH-JKLM-NPQR-STUV`) dans ton gestionnaire de mots de passe.
-2. Sur chaque autre navigateur ou appareil : **Réglages → Synchronisation**, colle le code → **Utiliser ce code**.
+### Créer un compte ou se connecter
+
+**Réglages → Compte**, puis au choix :
+
+- **Avec ton e-mail** : onglet **Créer un compte**, adresse et mot de passe (8 caractères au moins), puis ouvre le lien
+  reçu par e-mail (regarde aussi dans les indésirables). Sur tes autres appareils : **Se connecter** avec la même
+  adresse et le même mot de passe.
+- **Avec Google ou GitHub** (boutons affichés quand ils sont activés) : à la première connexion, StreamHub te demande
+  de choisir un **mot de passe du coffre**. Il chiffre tes données ; il est propre à StreamHub, sans rapport avec ton
+  compte Google ou GitHub. Tu le tapes une fois sur chaque nouvel appareil.
+
+À la création, StreamHub affiche ta **clé de secours** (20 caractères, par exemple `ABCD-EFGH-JKLM-NPQR-STUV`) :
+note-la dans ton gestionnaire de mots de passe. Elle seule permet de retrouver tes données si tu oublies ton mot de
+passe. **Nouvelle clé de secours** en crée une autre (l'ancienne ne marche plus).
 
 Ensuite, chaque modification part toute seule quelques secondes après, et arrive sur les autres appareils à leur
-ouverture ou quand tu reviens sur StreamHub.
+ouverture ou quand tu reviens sur StreamHub. Deux appareils modifiés en même temps : les listes sont réunies, rien
+n'est perdu.
 
-- **Synchronisés** : clés, pays, abonnements, Ma liste, J'aime, historique, likes sur les plateformes.
+- **Synchronisés** : clés, pays, abonnements, accueil, Ma liste, J'aime, historique, likes sur les plateformes.
 - **Propres à chaque appareil** : téléchargements (ils sont sur l'appareil), questions en attente, effet verre,
   réglage « Ouvrir les titres ».
+- **Toujours aussi gardés sur l'appareil** : StreamHub marche hors ligne, et rien n'est effacé à la déconnexion.
 
-Les données sont **chiffrées dans ton navigateur** (AES-256-GCM, clé tirée du code) avant d'être envoyées au relais,
-qui les stocke sous une empreinte du code : personne, pas même l'hébergeur, ne peut les lire sans le code. Garde-le
-comme un mot de passe : il donne accès à tes clés. Code perdu ? Crée-en un nouveau depuis un appareil où les données
-sont encore là.
+### Mot de passe oublié, changer de mot de passe, supprimer le compte
+
+- **Mot de passe oublié ?** (sous **Se connecter**) : un e-mail t'envoie un lien ; il ouvre StreamHub, où tu choisis
+  un nouveau mot de passe et entres ta **clé de secours**. Mot de passe du coffre oublié (Google, GitHub) : même
+  chose, avec **Mot de passe du coffre oublié ?** une fois connecté.
+- **Changer de mot de passe** : l'actuel, puis le nouveau. Les autres appareils restent connectés.
+- **Se déconnecter** : les données restent sur cet appareil, elles ne suivent simplement plus.
+- **Supprimer mon compte** : efface ton compte, ton coffre et tes données synchronisées. Ce qui est sur l'appareil
+  reste.
+
+### Chiffrement de bout en bout
+
+Les comptes sont gérés par **Supabase** (hébergeur de base de données). Tes données y sont **chiffrées dans ton
+navigateur** (AES-256-GCM) avant l'envoi, avec une **clé de coffre** tirée au hasard. Cette clé est elle-même gardée
+deux fois, fermée à clé : par une clé tirée de ton mot de passe (PBKDF2, 600 000 tours) et par une clé tirée de ta
+clé de secours. Ton vrai mot de passe ne quitte jamais l'appareil : Supabase reçoit un autre secret qui en est tiré.
+Supabase ne voit donc que ton adresse e-mail, des données illisibles, leur taille et la date de la dernière
+modification : ni lui ni personne ne peut lire tes clés ou tes listes sans ton mot de passe ou ta clé de secours.
+C'est aussi pourquoi un mot de passe oublié **sans** clé de secours fait perdre les données synchronisées (celles
+encore sur un appareil restent, et repartent dans un nouveau compte).
+
+### L'ancien code de synchronisation
+
+Avant la version 2.0.0, la synchronisation passait par un **code de 20 caractères** (stocké sur le relais StreamHub,
+chiffré de la même façon). Il marche toujours (**Réglages → Compte → Code de synchronisation**, en bas), notamment
+pour l'appli iPhone qui ne connaît pas encore les comptes.
+
+**Passer du code à un compte** : sur un appareil où le code est actif, crée ton compte. Tes données y passent, et ton
+code devient ta **clé de secours**. Le code et le compte se synchronisent ensuite ensemble (ce qui arrive par l'un
+repart par l'autre) ; quand tous tes appareils utilisent le compte, **Arrêter sur cet appareil** sous le code.
 
 ---
 
@@ -428,15 +470,16 @@ Le pas à pas complet pour chaque navigateur est dans **[extension/README.md](ex
 
 ## 9. Tes données et ta vie privée
 
-- **Pas de compte, pas de serveur de données** : tout est stocké dans ton navigateur (localStorage).
+- **Compte facultatif** : en invité, tout est stocké dans ton navigateur (localStorage). Avec un compte, une copie
+  **chiffrée de bout en bout** est gardée chez Supabase ([partie 6](#chiffrement-de-bout-en-bout)).
 - **Ce qui sort de ton appareil** : les recherches et fiches demandées à TMDB et Streaming Availability (avec tes
-  clés), les demandes de liens au relais (identifiant TMDB et titre du film ou de la série) et, si tu l'actives, ta
-  synchronisation, chiffrée avant l'envoi.
+  clés), les demandes de liens au relais (identifiant TMDB et titre du film ou de la série) et, avec un compte, ton
+  adresse e-mail et tes données synchronisées, chiffrées avant l'envoi.
 - **Aucune publicité, aucun pistage, aucune statistique.**
 - **Redémarrer ou fermer le navigateur ne fait rien perdre.** On perd les données d'un navigateur si on efface les
   données des sites, en navigation privée, et dans Safari si StreamHub n'est pas ouvert pendant 7 jours d'utilisation
   de Safari (protection anti-pistage d'Apple ; l'appli de l'écran d'accueil n'est pas concernée). Dans tous les cas,
-  la synchronisation remet tout en place : il suffit de recoller le code.
+  ton compte remet tout en place : il suffit de te reconnecter.
 
 ---
 
@@ -482,8 +525,15 @@ italien…) est gardé tel quel.
 L'offre gratuite est limitée par jour : StreamHub utilise les liens JustWatch en attendant le lendemain.
 
 **Mes listes ont disparu.**
-Les données du navigateur ont été effacées ([partie 9](#9-tes-données-et-ta-vie-privée)) : recolle ton code de
-synchronisation.
+Les données du navigateur ont été effacées ([partie 9](#9-tes-données-et-ta-vie-privée)) : reconnecte-toi à ton
+compte (ou recolle ton code de synchronisation).
+
+**Je ne reçois pas l'e-mail de confirmation ou de mot de passe oublié.**
+Regarde dans les indésirables, attends quelques minutes (le nombre d'e-mails par heure est limité), puis **Renvoyer
+l'e-mail**. Le lien ne sert qu'une fois et expire au bout d'une heure.
+
+**« Connexion commencée dans un autre navigateur ».**
+La connexion Google / GitHub doit se terminer dans le navigateur où elle a commencé : recommence depuis celui-ci.
 
 **Le problème persiste ?**
 Ouvre un ticket sur GitHub : **[Issues → New issue](https://github.com/arthursavournin/streamhub/issues/new)**, en
@@ -496,8 +546,8 @@ indiquant ton appareil, ton navigateur et la version de StreamHub.
 ### Principe
 
 Pas de framework ni d'étape de compilation : du HTML, du CSS et des modules JavaScript servis tels quels. Le site est
-publié sur **GitHub Pages**, et un petit **relais Cloudflare Workers** fournit les liens JustWatch et la
-synchronisation.
+publié sur **GitHub Pages**, un petit **relais Cloudflare Workers** fournit les liens JustWatch (et l'ancienne
+synchronisation par code), et **Supabase** gère les comptes (Auth et deux tables, chiffrées de bout en bout).
 
 ### Lancer StreamHub sur ton ordinateur
 
@@ -532,7 +582,10 @@ Puis ouvre **http://localhost:8080**. Le relais accepte les appels venant de `lo
 | `providers.js` | Plateformes, liens de secours, forme des liens selon l'appareil (iPhone, appli de l'ordinateur, site) |
 | `library.js` | Ma liste, J'aime, historique, téléchargements, questions au retour |
 | `store.js` | Réglages, bibliothèque et cache dans le navigateur |
-| `sync.js` | Synchronisation chiffrée entre appareils (via le relais) |
+| `sync.js` | Synchronisation chiffrée entre appareils : chiffrement, fusion, transport par le compte ou par le code |
+| `account.js` | Comptes Supabase (Auth et base, appels HTTP directs) : inscription, connexion, coffre, clé de secours |
+| `account-ui.js` | Réglages → Compte |
+| `supabase/schema.sql` | Tables `vaults` et `sync_data`, règles d'accès (chacun sa ligne), `delete_my_account`, `keepalive` |
 | `episodes.js` | Liens directs vers les épisodes TF1+ et M6+ (index publié dans `data/`) |
 | `aliases.js` | Recherche par surnom ou sigle (liste intégrée + Wikidata) |
 | `search.js` | Correction des fautes de frappe, numéro de film, ordre des sagas |
@@ -603,8 +656,8 @@ de l'espace Workers KV. Rien de tout cela n'est enregistré dans le projet.
 GitHub Pages est gratuit, en HTTPS, et suffit largement (fichiers statiques, 100 Go de trafic par mois) tant que le
 dépôt est public. Pour ne plus dépendre de l'hébergeur, la meilleure amélioration serait un **nom de domaine**
 (une dizaine d'euros par an) pointé vers GitHub Pages ou Cloudflare Pages : l'adresse ne changerait plus jamais.
-Changer d'adresse fait repartir les navigateurs de zéro (le stockage est propre à chaque adresse), mais la
-synchronisation récupère tout.
+Changer d'adresse fait repartir les navigateurs de zéro (le stockage est propre à chaque adresse), mais le compte
+récupère tout (ajouter la nouvelle adresse aux adresses autorisées de Supabase : Authentication → URL Configuration).
 
 ### Compatibilité
 

@@ -1,13 +1,17 @@
 // Synchronisation entre navigateurs et appareils : réglages (clés API comprises), J'aime, historique,
-// likes sur les plateformes. Tout est chiffré ici, avec le code de synchronisation, avant d'être envoyé
-// au relais StreamHub (relay/worker.js, stockage Cloudflare KV) : le relais ne voit qu'un contenu illisible,
-// rangé sous une empreinte du code. Sans le code, personne ne peut lire ni retrouver les données.
+// likes sur les plateformes. Tout est chiffré ici avant d'être envoyé : Supabase ou le relais ne voient qu'un
+// contenu illisible.
+//   - Compte StreamHub (version 2.0.0, account.js) : chiffré avec la clé du coffre, stocké chez Supabase
+//   - Code de synchronisation (ancienne méthode, gardée pour l'appli iPhone) : chiffré avec le code, stocké sur le
+//     relais StreamHub (relay/worker.js, Cloudflare KV) sous une empreinte du code
+// Les deux peuvent tourner ensemble : ce qui arrive par l'un repart par l'autre.
 //
 // Règle de fusion : ce qui a changé depuis la dernière synchronisation gagne. Si les deux côtés ont
 // changé (deux appareils modifiés hors ligne), les listes sont réunies et les réglages de cet appareil gardés.
 import {
   loadSettings, saveSettings, loadLibrary, saveLibrary, loadSyncMeta, saveSyncMeta, relayUrl, HISTORY_MAX,
 } from './store.js';
+import { loadAccount, saveAccount, vaultKey, fetchData, pushData, Conflict } from './account.js';
 
 // Propres à chaque appareil : jamais synchronisés
 // desktopApps (avant : primeApp) : les applis sont installées sur un ordinateur, pas un autre ; glass : réglé selon
@@ -119,7 +123,7 @@ function merge(local, remote, changed) {
   };
 }
 
-// ---------- Échanges avec le relais ----------
+// ---------- Échanges avec le relais (code) ----------
 
 async function endpoint(code) {
   const { id, key } = await secrets(code);
@@ -134,47 +138,118 @@ async function fetchRemote(url) {
   return res.json();
 }
 
-async function push(url, key, payload) {
+async function put(url, stored) {
   const res = await fetch(url, {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(await encrypt(payload, key)),
+    body: JSON.stringify(stored),
   }).catch(() => null);
   if (!res?.ok) throw new Error(res ? `Relais : erreur ${res.status}.` : 'Relais injoignable (hors ligne ?).');
   return (await res.json()).updatedAt;
 }
 
-// Une synchronisation : récupère les changements des autres appareils, envoie ceux d'ici.
-// Renvoie { pulled } : true si des données sont arrivées (l'appli doit se redessiner).
-async function run() {
-  const meta = loadSyncMeta();
-  if (!meta.code) return { pulled: false };
-  const { url, key } = await endpoint(meta.code);
-  const local = localPayload();
-  const now = await hashes(local);
-  const changed = { settings: now.settings !== meta.hashes?.settings, library: now.library !== meta.hashes?.library };
-  const localChanged = changed.settings || changed.library;
+// ---------- Deux façons de synchroniser ----------
+// meta : { syncedAt (repère de la dernière version reçue ou envoyée), hashes, lastSyncAt, error }
+// fetch() → { stamp, iv, data } | null ; push(chiffré, stamp lu) → nouveau stamp (Conflict si un autre appareil
+// a écrit entre-temps)
 
-  const remote = await fetchRemote(url);
-  let pulled = false;
-  let toPush = null;
-  if (remote && remote.updatedAt !== meta.syncedAt) {
-    const theirs = await decrypt(remote, key);
-    const next = localChanged ? merge(local, theirs, changed) : theirs;
-    applyPayload(next);
-    pulled = true;
-    meta.syncedAt = remote.updatedAt;
-    if (localChanged) toPush = next;
-  } else if (!remote || localChanged) {
-    toPush = local;
+async function codeTransport() {
+  const meta = loadSyncMeta();
+  if (!meta.code) return null;
+  const { url, key } = await endpoint(meta.code);
+  return {
+    key,
+    meta: () => loadSyncMeta(),
+    save: (m) => saveSyncMeta(m),
+    fetch: async () => {
+      const remote = await fetchRemote(url);
+      return remote && { ...remote, stamp: remote.updatedAt };
+    },
+    push: (stored) => put(url, stored), // le relais garde la dernière écriture
+  };
+}
+
+async function accountTransport() {
+  const key = await vaultKey();
+  if (!key) return null;
+  if (loadAccount().joining) {
+    // Coffre ouvert sur cet appareil (compte existant) : comme joinCode, les réglages du compte s'appliquent et les
+    // listes d'ici s'y ajoutent
+    const local = localPayload();
+    const now = await hashes(local);
+    const hasLibrary = SYNCED_LIBRARY.some((k) => Object.keys(local.library[k] ?? {}).length);
+    saveAccount({ ...loadAccount(), joining: false, syncedAt: null, hashes: { settings: now.settings, library: hasLibrary ? null : now.library } });
   }
-  if (toPush) meta.syncedAt = await push(url, key, toPush);
-  meta.hashes = await hashes(localPayload());
-  meta.lastSyncAt = Date.now();
-  meta.error = null;
-  saveSyncMeta(meta);
+  return {
+    key,
+    meta: () => loadAccount(),
+    save: (m) => saveAccount(m),
+    fetch: async () => {
+      const remote = await fetchData();
+      return remote && { ...remote, stamp: remote.version };
+    },
+    push: (stored, stamp) => pushData(stored, stamp),
+  };
+}
+
+// Une synchronisation : récupère les changements des autres appareils, envoie ceux d'ici.
+// Renvoie true si des données sont arrivées (l'appli doit se redessiner).
+async function runWith(t) {
+  let pulled = false;
+  for (let attempt = 0; ; attempt++) {
+    const meta = t.meta();
+    const local = localPayload();
+    const now = await hashes(local);
+    const changed = { settings: now.settings !== meta.hashes?.settings, library: now.library !== meta.hashes?.library };
+    const localChanged = changed.settings || changed.library;
+
+    const remote = await t.fetch();
+    let toPush = null;
+    if (remote && remote.stamp !== meta.syncedAt) {
+      const theirs = await decrypt(remote, t.key);
+      const next = localChanged ? merge(local, theirs, changed) : theirs;
+      applyPayload(next);
+      pulled = true;
+      meta.syncedAt = remote.stamp;
+      if (localChanged) toPush = next;
+    } else if (!remote || localChanged) {
+      toPush = local;
+    }
+    try {
+      if (toPush) meta.syncedAt = await t.push(await encrypt(toPush, t.key), remote?.stamp ?? null);
+    } catch (err) {
+      // Un autre appareil a écrit entre la lecture et l'écriture : on relit et on fusionne (ce qui vient d'être
+      // appliqué compte comme un changement d'ici, puisque meta.hashes n'a pas bougé)
+      if (err instanceof Conflict && attempt < 4) {
+        t.save({ ...t.meta(), syncedAt: meta.syncedAt });
+        continue;
+      }
+      throw err;
+    }
+    t.save({ ...t.meta(), syncedAt: meta.syncedAt, hashes: await hashes(localPayload()), lastSyncAt: Date.now(), error: null });
+    return pulled;
+  }
+}
+
+async function run() {
+  let pulled = false;
+  let failure = null;
+  // Le code d'abord : ce qu'il apporte (appli iPhone) part ensuite vers le compte
+  for (const make of [codeTransport, accountTransport]) {
+    const t = await make();
+    if (!t) continue;
+    try {
+      pulled = (await runWith(t)) || pulled;
+    } catch (err) {
+      if (t.meta().session || t.meta().code) t.save({ ...t.meta(), error: err.message || String(err) });
+      failure ??= err;
+    }
+  }
+  if (failure) throw failure;
   return { pulled };
 }
+
+const active = () => Boolean(loadSyncMeta().code || loadAccount().vaultKey);
 
 let running = null;
 let again = false;
@@ -184,13 +259,8 @@ export function syncNow() {
     again = true;
     return running;
   }
-  running = run()
-    .catch((err) => {
-      const meta = loadSyncMeta();
-      if (meta.code) saveSyncMeta({ ...meta, error: err.message || String(err) });
-      throw err;
-    })
-    .finally(() => {
+  // Erreur gardée dans l'état de chaque façon de synchroniser (run) et affichée dans les réglages
+  running = run().finally(() => {
       running = null;
       notify();
       if (again) {
@@ -255,11 +325,12 @@ function schedule(delay) {
 
 export function startAutoSync(callback) {
   onPulled = callback;
-  window.addEventListener('streamhub:changed', () => loadSyncMeta().code && schedule(2000));
+  window.addEventListener('streamhub:changed', () => active() && schedule(2000));
+  window.addEventListener('streamhub:vault-open', () => schedule(0)); // compte ouvert : première synchro
   document.addEventListener('visibilitychange', () => {
-    if (!loadSyncMeta().code) return;
+    if (!active()) return;
     if (document.visibilityState === 'hidden' && timer) schedule(0); // on part : on envoie tout de suite
     else if (document.visibilityState === 'visible' && Date.now() - lastRun > 30000) schedule(0);
   });
-  if (loadSyncMeta().code) schedule(0);
+  if (active()) schedule(0);
 }

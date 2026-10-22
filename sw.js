@@ -1,8 +1,8 @@
 // Service worker : rend l'appli installable et garde l'interface en cache (hors ligne).
-// Les appels aux API passent toujours par le réseau.
-const SHELL_CACHE = 'streamhub-shell-v1.11.6';
+// Les appels aux API passent toujours par le réseau (comptes Supabase compris : jamais mis en cache).
+const SHELL_CACHE = 'streamhub-shell-v2.0.0';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'api.js', 'store.js', 'providers.js', 'nav.js', 'library.js', 'episodes.js', 'aliases.js', 'search.js', 'suggestions.js',
-  'sync.js', 'logos/hbo-max-amazon-channel.png', 'logos/hbo-max-canal-channel.png', 'logos/apple-tv-canal-channel.png',
+  'sync.js', 'account.js', 'account-ui.js', 'logos/hbo-max-amazon-channel.png', 'logos/hbo-max-canal-channel.png', 'logos/apple-tv-canal-channel.png',
   'logos/paramount-plus-canal-channel.png', 'icon.svg?v=3', 'icon-192.png?v=3', 'apple-touch-icon.png?v=3', 'manifest.webmanifest?v=3'];
 
 self.addEventListener('install', (event) => {
@@ -22,6 +22,8 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
+  // Retour de Google / GitHub ou d'un lien d'e-mail (?code=…) : toujours le réseau, jamais une copie en cache
+  if (url.origin === self.location.origin && url.searchParams.has('code')) return;
 
   // Interface : réseau d'abord (pour recevoir les mises à jour), cache si hors ligne.
   // cache: 'no-cache' : le navigateur revérifie chaque fichier auprès du serveur. Sans ça, il peut garder

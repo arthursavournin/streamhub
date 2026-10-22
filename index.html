@@ -92,9 +92,9 @@
         <h2>Réglages</h2>
       </header>
       <p class="intro" id="settingsIntro" hidden>
-        Bienvenue ! Tu utilises déjà StreamHub sur un autre navigateur ou appareil ? Entre ton code de
-        synchronisation dans « Synchronisation » : tout revient (clés, abonnements, J’aime, historique).
-        Sinon, colle ta clé TMDB dans « Clés API » puis coche les plateformes auxquelles tu es abonné.
+        Bienvenue ! Connecte-toi ou crée un compte dans « Compte » : tes réglages, clés, abonnements, J’aime et
+        historique te suivent sur tous tes appareils. Tu peux aussi rester en invité : tout reste alors sur cet appareil.
+        Puis colle ta clé TMDB dans « Clés API » et coche les plateformes auxquelles tu es abonné.
       </p>
 
       <details class="settings-group" data-group="providers">
@@ -108,36 +108,41 @@
         </div>
       </details>
 
-      <details class="settings-group" data-group="sync">
+      <details class="settings-group" data-group="account">
         <summary>
-          <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 0 1-14.3 4.9M4 12a8 8 0 0 1 14.3-4.9"/><path d="M18.5 3v4.2h-4.2M5.5 21v-4.2h4.2"/></svg>
-          <span class="group-text"><strong>Synchronisation</strong><small data-summary="sync"></small></span>
+          <svg class="group-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          <span class="group-text"><strong>Compte</strong><small data-summary="account"></small></span>
         </summary>
         <div class="group-body">
-          <p class="hint">Les mêmes réglages, clés, J’aime et historique sur tous tes navigateurs et appareils
-            (Safari, Chrome, iPhone…). Tout est chiffré avec ton code avant de quitter l’appareil : sans lui, personne ne peut lire tes données.</p>
-          <div id="syncOff">
-            <div class="key-row">
-              <input id="syncCodeInput" autocomplete="off" autocapitalize="characters" spellcheck="false"
-                placeholder="Code reçu d’un autre appareil" aria-label="Code de synchronisation">
-              <button type="button" class="btn" id="syncJoin">Utiliser ce code</button>
+          <!-- Rempli par account-ui.js selon l'état : invité, e-mail à confirmer, coffre à ouvrir, connecté -->
+          <div id="accountBox"></div>
+          <p class="key-status" id="accountStatus" role="status"></p>
+
+          <details class="legacy-sync" id="legacySync">
+            <summary><span>Code de synchronisation <em>ancienne méthode, encore utilisée par l’appli iPhone</em></span></summary>
+            <div id="syncOff">
+              <div class="key-row">
+                <input id="syncCodeInput" autocomplete="off" autocapitalize="characters" spellcheck="false"
+                  placeholder="Code reçu d’un autre appareil" aria-label="Code de synchronisation">
+                <button type="button" class="btn" id="syncJoin">Utiliser ce code</button>
+              </div>
+              <p class="sync-or">ou</p>
+              <button type="button" class="btn" id="syncCreate">Créer un code de synchronisation</button>
             </div>
-            <p class="sync-or">ou</p>
-            <button type="button" class="btn primary" id="syncCreate">Créer mon code de synchronisation</button>
-          </div>
-          <div id="syncOn" hidden>
-            <div class="key-row">
-              <input id="syncCode" readonly aria-label="Ton code de synchronisation">
-              <button type="button" class="btn" data-copy="#syncCode">Copier</button>
+            <div id="syncOn" hidden>
+              <div class="key-row">
+                <input id="syncCode" readonly aria-label="Ton code de synchronisation">
+                <button type="button" class="btn" data-copy="#syncCode">Copier</button>
+              </div>
+              <p class="hint" id="syncHint">Entre ce code dans StreamHub sur tes autres appareils. Il donne accès à tes clés : garde-le pour toi
+                (note-le dans ton gestionnaire de mots de passe).</p>
+              <div class="key-actions">
+                <button type="button" class="btn" id="syncNow">Synchroniser maintenant</button>
+                <button type="button" class="btn ghost" id="syncLeave">Arrêter sur cet appareil</button>
+              </div>
             </div>
-            <p class="hint">Entre ce code dans StreamHub sur tes autres appareils. Il donne accès à tes clés : garde-le pour toi
-              (note-le dans ton gestionnaire de mots de passe).</p>
-            <div class="key-actions">
-              <button type="button" class="btn" id="syncNow">Synchroniser maintenant</button>
-              <button type="button" class="btn ghost" id="syncLeave">Arrêter sur cet appareil</button>
-            </div>
-          </div>
-          <p class="key-status" id="syncStatus" role="status"></p>
+            <p class="key-status" id="syncStatus" role="status"></p>
+          </details>
         </div>
       </details>
 
@@ -147,7 +152,7 @@
           <span class="group-text"><strong>Clés API</strong><small data-summary="keys"></small></span>
         </summary>
         <div class="group-body">
-          <p class="hint">Enregistrées dans ce navigateur (et chiffrées dans ta synchronisation). Elles ne sont jamais publiées sur GitHub.</p>
+          <p class="hint">Enregistrées dans ce navigateur (et chiffrées dans ton compte). Elles ne sont jamais publiées sur GitHub.</p>
           <div class="field">
             <label for="tmdbKey">Clé API TMDB <em>obligatoire : catalogue, fiches, plateformes par pays</em></label>
             <div class="key-row">

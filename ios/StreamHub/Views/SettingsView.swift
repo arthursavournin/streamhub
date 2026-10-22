@@ -180,22 +180,32 @@ struct ProvidersView: View {
         let selected = Set(model.store.providers.map(\.id))
         let shown = filter.isEmpty ? choices : choices.filter { $0.name.localizedCaseInsensitiveContains(filter) }
         List {
-            if let error {
-                Text(error).foregroundStyle(.red)
-            }
-            ForEach(shown) { choice in
-                Button {
-                    toggle(choice, on: !selected.contains(choice.id))
-                } label: {
-                    HStack(spacing: 12) {
-                        PlatformLogo(path: choice.logo, size: 36)
-                        Text(choice.name).foregroundStyle(.primary)
-                        Spacer()
-                        if selected.contains(choice.id) {
-                            Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(Color.accentColor)
-                        }
-                    }
+            Section {
+                if let error {
+                    Text(error).foregroundStyle(Color.appDanger).listRowBackground(Color.appSurface)
                 }
+                ForEach(shown) { choice in
+                    Button {
+                        toggle(choice, on: !selected.contains(choice.id))
+                    } label: {
+                        HStack(spacing: 12) {
+                            PlatformLogo(path: choice.logo, size: 36)
+                            Text(choice.name).foregroundStyle(.primary)
+                            Spacer()
+                            if selected.contains(choice.id) {
+                                Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(Color.mine)
+                            }
+                        }
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .listRowBackground(selected.contains(choice.id) ? Color.appAccent.opacity(0.16) : Color.appSurface)
+                    .listRowSeparatorTint(Color.appBorder)
+                }
+            } header: {
+                PanelIntro(text: "Coche les plateformes auxquelles tu es abonné : StreamHub n’affiche que ce que tu peux regarder.")
+                    .textCase(nil)
+                    .padding(.bottom, 6)
             }
         }
         .scrollContentBackground(.hidden)
@@ -203,6 +213,7 @@ struct ProvidersView: View {
         .overlay { if choices.isEmpty, error == nil { ProgressView() } }
         .searchable(text: $filter, prompt: "Rechercher une plateforme")
         .navigationTitle("Mes abonnements")
+        .navigationBarTitleDisplayMode(.inline)
         .task {
             do {
                 choices = try await model.tmdb.providers()
@@ -239,27 +250,38 @@ struct HomeSettingsView: View {
         List {
             Section {
                 LabeledContent("À l’affiche", value: model.store.homeHero.map { "« \($0.title) »" } ?? "Automatique")
+                    .listRowBackground(Color.appSurface)
                 if model.store.homeHero != nil {
                     Button("Revenir au n° 1 du Top 50") { model.store.setHome(rows: rows, hero: nil) }
+                        .tint(Color.mine)
+                        .listRowBackground(Color.appSurface)
                 }
+            } header: {
+                PanelIntro(text: "Les rangées de l’accueil et le titre à l’affiche.").textCase(nil).padding(.bottom, 6)
             } footer: {
                 Text("Pour choisir un titre, ouvre sa fiche et appuie sur « À l’affiche ». Automatique : le n° 1 du Top 50 du moment.")
             }
+            .listRowSeparatorTint(Color.appBorder)
             Section {
                 ForEach($rows) { $row in
                     Toggle(HomeRow.named(row.key)?.title ?? row.key, isOn: $row.on)
+                        .tint(Color.appAccent)
+                        .foregroundStyle(row.on ? Color.primary : Color.appMuted)
+                        .listRowBackground(Color.appSurface)
                 }
                 .onMove { rows.move(fromOffsets: $0, toOffset: $1) }
             } header: {
                 Text("Rangées")
             } footer: {
-                Text("Coche les rangées à afficher et fais-les glisser pour changer leur ordre.")
+                Text("Active les rangées à afficher et fais-les glisser pour changer leur ordre.")
             }
+            .listRowSeparatorTint(Color.appBorder)
         }
         .environment(\.editMode, .constant(.active))
         .scrollContentBackground(.hidden)
         .background(Color.appBackground)
         .navigationTitle("Accueil")
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear { rows = model.store.homeLayout }
         .onChange(of: rows) { _, value in model.store.setHome(rows: value, hero: model.store.homeHero) }
     }

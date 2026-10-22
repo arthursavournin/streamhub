@@ -78,7 +78,7 @@ struct AccountScreen: View {
                 title(signup ? "Créer un compte" : "Se connecter", signup ? "Tes réglages et tes listes, sur tous tes appareils." : "Retrouve tes réglages et tes listes.")
                 FieldBox(label: "Adresse e-mail", text: $email, placeholder: "toi@exemple.fr", content: .username, keyboard: .emailAddress)
                 if signup {
-                    FieldBox(label: "Mot de passe", text: $password, placeholder: "8 caractères au moins", secure: true, content: .newPassword)
+                    FieldBox(label: "Mot de passe", text: $password, placeholder: "\(AccountService.minPassword) caractères au moins", secure: true, content: .newPassword)
                     FieldBox(label: "Confirme le mot de passe", text: $password2, secure: true, content: .newPassword)
                 } else {
                     FieldBox(label: "Mot de passe", text: $password, secure: true, content: .password) {
@@ -140,14 +140,14 @@ struct AccountScreen: View {
             if mode == "recover" {
                 title("Nouveau \(word)", "Ta clé de secours rouvre tes données ; le nouveau \(word) les referme.")
                 FieldBox(label: "Clé de secours", text: $recovery, placeholder: "ABCD-EFGH-JKLM-NPQR-STUV", monospaced: true)
-                FieldBox(label: "Nouveau \(word)", text: $password, placeholder: "8 caractères au moins", secure: true, content: .newPassword)
+                FieldBox(label: "Nouveau \(word)", text: $password, placeholder: "\(AccountService.minPassword) caractères au moins", secure: true, content: .newPassword)
                 FieldBox(label: "Confirme le mot de passe", text: $password2, secure: true, content: .newPassword)
                 Button("Enregistrer") { run { try await account.resetWithRecovery(recovery, newPassword: try newPassword()); return "Nouveau mot de passe enregistré." } }
                     .buttonStyle(WideButtonStyle()).disabled(busy || recovery.isEmpty || password.isEmpty)
                 switchLine(nil, "← Retour", to: "unlock")
             } else if account.meta.needs == .create {
                 title("Choisis un mot de passe du coffre", "Il chiffre tes données sur l’iPhone, avant l’envoi. Tu le taperas une fois sur chaque nouvel appareil. Il ne sert qu’à StreamHub.")
-                FieldBox(label: "Mot de passe du coffre", text: $password, placeholder: "8 caractères au moins", secure: true, content: .newPassword)
+                FieldBox(label: "Mot de passe du coffre", text: $password, placeholder: "\(AccountService.minPassword) caractères au moins", secure: true, content: .newPassword)
                 FieldBox(label: "Confirme le mot de passe", text: $password2, secure: true, content: .newPassword)
                 Button("Créer mon coffre") { run { try await account.createVaultWith(try newPassword()); return nil } }
                     .buttonStyle(WideButtonStyle()).disabled(busy || password.isEmpty)
@@ -173,7 +173,7 @@ struct AccountScreen: View {
             Card {
                 title("Changer de \(word)", "Tes autres appareils seront déconnectés : reconnecte-les avec le nouveau mot de passe (leurs données restent).")
                 FieldBox(label: "\(word.prefix(1).uppercased())\(word.dropFirst()) actuel", text: $current, secure: true, content: .password)
-                FieldBox(label: "Nouveau \(word)", text: $password, placeholder: "8 caractères au moins", secure: true, content: .newPassword)
+                FieldBox(label: "Nouveau \(word)", text: $password, placeholder: "\(AccountService.minPassword) caractères au moins", secure: true, content: .newPassword)
                 FieldBox(label: "Confirme le mot de passe", text: $password2, secure: true, content: .newPassword)
                 Button("Enregistrer") {
                     run { try await account.changePassword(current: current, new: try newPassword()); mode = "open"; return "Mot de passe changé." }

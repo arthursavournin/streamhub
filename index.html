@@ -2,6 +2,10 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
+  <!-- Sécurité (version 2.3.4) : la page ne charge ses scripts que depuis StreamHub et ne contacte que ces serveurs
+       (TMDB, Streaming Availability, comptes Supabase, relais, Wikidata, mots de passe divulgués ; Supabase local pour
+       les tests). Un serveur ajouté dans le code doit aussi l'être ici. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://image.tmdb.org; connect-src 'self' https://api.themoviedb.org https://streaming-availability.p.rapidapi.com https://bfcmqdvztmkpqwamwejp.supabase.co https://streamhub-relay.arthursavournin.workers.dev https://www.wikidata.org https://api.pwnedpasswords.com http://127.0.0.1:54321 http://localhost:54321; object-src 'none'; base-uri 'none'; form-action 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#070d1a">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -173,14 +177,6 @@
               <button type="button" class="btn" data-test-key="sa">Tester</button>
             </div>
             <p class="key-status" data-key-status="sa"><a href="https://rapidapi.com/movie-of-the-night-movie-of-the-night-default/api/streaming-availability" target="_blank" rel="noopener">Obtenir une clé (offre gratuite)</a></p>
-          </div>
-          <div class="field">
-            <label for="relay">Relais StreamHub <em>liens JustWatch (France TV, chaînes Prime…), sans clé</em></label>
-            <div class="key-row">
-              <input id="relay" name="relay" type="url" autocomplete="off" spellcheck="false" placeholder="https://streamhub-relay.arthursavournin.workers.dev">
-              <button type="button" class="btn" data-test-key="relay">Tester</button>
-            </div>
-            <p class="key-status" data-key-status="relay">Laisse vide pour le relais par défaut.</p>
           </div>
         </section>
 

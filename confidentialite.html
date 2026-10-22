@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#070d1a">
   <title>Politique de confidentialité · StreamHub</title>
@@ -96,6 +97,9 @@
         Availability (avec ta clé, si tu en as mis une), Wikidata (recherche par surnom) et, quand tu choisis d’y aller,
         les sites des plateformes de streaming. Ils reçoivent ton adresse IP et ce que tu demandes, et appliquent leurs
         propres règles de confidentialité. Tes clés API ne sont envoyées qu’au service concerné.</li>
+      <li><strong>Vérification des mots de passe</strong> : quand tu choisis un mot de passe, ton appareil vérifie qu’il
+        ne figure pas dans des fuites de données connues (service Have I Been Pwned). Seuls les 5 premiers caractères
+        d’une empreinte du mot de passe sont envoyés, jamais le mot de passe lui-même ni ton adresse e-mail.</li>
       <li><strong>Script « reprise après connexion »</strong> (facultatif) : il garde le lien du titre dans ton
         navigateur, sur le site de la plateforme, le temps de te connecter. Il n’envoie rien à StreamHub.</li>
     </ul>

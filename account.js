@@ -67,8 +67,36 @@ function checkRecovery(input) {
   return key;
 }
 
-export function checkPassword(password) {
-  if (String(password).length < 8) throw new Error('Mot de passe trop court : 8 caractères au moins.');
+// Nouveau mot de passe (inscription, changement, oubli, mot de passe du coffre). Supabase ne reçoit qu'un secret qui en
+// est tiré : ses propres règles (longueur, mots de passe divulgués) ne voient jamais le vrai. La vérification se fait
+// donc ici, avant l'envoi (audit de sécurité, version 2.3.4 ; avant : 8 caractères, sans vérification des fuites).
+export const MIN_PASSWORD = 12;
+export async function checkPassword(password) {
+  password = String(password);
+  if (password.length < MIN_PASSWORD) throw new Error(`Mot de passe trop court : ${MIN_PASSWORD} caractères au moins.`);
+  if (await leaked(password)) {
+    throw new Error('Ce mot de passe figure dans des fuites de données connues : choisis-en un autre.');
+  }
+}
+
+// Mots de passe divulgués (Have I Been Pwned, recherche par plage) : seuls les 5 premiers caractères de l'empreinte
+// SHA-1 partent, jamais le mot de passe ; la réponse est complétée de fausses entrées (Add-Padding) pour ne rien
+// laisser deviner. Service injoignable : on laisse passer (la longueur minimale reste vérifiée).
+async function leaked(password) {
+  try {
+    const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-1', enc.encode(password)))]
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+      .toUpperCase();
+    const res = await fetch(`https://api.pwnedpasswords.com/range/${hash.slice(0, 5)}`, { headers: { 'Add-Padding': 'true' }, cache: 'no-store' });
+    if (!res.ok) return false;
+    return (await res.text()).split('\n').some((line) => {
+      const [suffix, count] = line.trim().split(':');
+      return suffix === hash.slice(5) && Number(count) > 0;
+    });
+  } catch {
+    return false;
+  }
 }
 
 // ---------- Dérivation des clés ----------
@@ -83,7 +111,8 @@ async function stretch(secret, salt, iterations) {
 const expand = (master, info) =>
   crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(32), info: enc.encode(info) }, master, 256);
 
-const wrapKey = (raw) => crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+// Clé AES non extractible (ou déjà importée : CryptoKey gardée dans IndexedDB)
+const wrapKey = (raw) => (raw instanceof CryptoKey ? raw : crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']));
 
 // Compte e-mail : sel = l'adresse (il faut pouvoir le calculer avant d'être connecté)
 async function passwordSecrets(email, password) {
@@ -116,12 +145,58 @@ async function unlock(stored, unlockRaw) {
 
 const randomSalt = () => toB64(crypto.getRandomValues(new Uint8Array(16)));
 
+// ---------- Clés gardées sur l'appareil ----------
+// Clé du coffre et clé tirée du mot de passe pendant une inscription : CryptoKey non extractibles dans IndexedDB.
+// StreamHub peut s'en servir, mais personne ne peut les copier, même un code injecté dans la page (audit de sécurité,
+// version 2.3.4 ; avant : en base64 dans localStorage). IndexedDB indisponible : gardées en mémoire, le temps de la page.
+
+const KEYS_DB = 'streamhub-keys';
+const memoryKeys = new Map();
+
+function keysStore(mode, action) {
+  return new Promise((resolve, reject) => {
+    const open = indexedDB.open(KEYS_DB, 1);
+    open.onupgradeneeded = () => open.result.createObjectStore('keys');
+    open.onerror = () => reject(open.error);
+    open.onsuccess = () => {
+      const db = open.result;
+      const tx = db.transaction('keys', mode);
+      const request = action(tx.objectStore('keys'));
+      tx.oncomplete = () => (db.close(), resolve(request.result));
+      tx.onerror = tx.onabort = () => (db.close(), reject(tx.error));
+    };
+  });
+}
+
+async function keepKey(name, key) {
+  memoryKeys.set(name, key);
+  await keysStore('readwrite', (store) => store.put(key, name)).catch(() => {});
+}
+
+async function readKey(name) {
+  if (memoryKeys.has(name)) return memoryKeys.get(name);
+  const key = await keysStore('readonly', (store) => store.get(name)).catch(() => undefined);
+  if (key) memoryKeys.set(name, key);
+  return key ?? null;
+}
+
+function dropKeys(...names) {
+  for (const name of names) {
+    memoryKeys.delete(name);
+    keysStore('readwrite', (store) => store.delete(name)).catch(() => {});
+  }
+}
+
 // ---------- État sur cet appareil ----------
-// { email, userId, provider, via, session: { access, refresh, expiresAt }, vaultKey (base64), syncedAt (version),
-//   hashes, lastSyncAt, error, recoveryKey (à montrer une fois), pending: { email, unlock } (inscription à confirmer) }
+// { email, userId, provider, via, session: { access, refresh, expiresAt }, vaultKey (true : clé dans IndexedDB ;
+//   base64 avant la version 2.3.4, convertie au premier usage), syncedAt (version), hashes, lastSyncAt, error,
+//   recoveryKey (à montrer une fois), pending: { email } (inscription à confirmer, clé tirée du mot de passe dans
+//   IndexedDB ; avant 2.3.4 : pending.unlock en base64) }
 
 const ACCOUNT_KEY = 'streamhub:account';
 const FLOW_KEY = 'streamhub:auth-flow'; // connexion Google / GitHub en cours (vérificateur PKCE)
+// Compte changé dans un autre onglet (déconnexion, autre compte) : les clés gardées en mémoire ici sont relues
+window.addEventListener('storage', (e) => e.key === ACCOUNT_KEY && memoryKeys.clear());
 
 export function loadAccount() {
   try {
@@ -264,6 +339,7 @@ async function accessToken() {
 function forget() {
   const { email } = loadAccount();
   saveAccount({});
+  dropKeys('vault', 'pending');
   return email;
 }
 
@@ -279,12 +355,21 @@ const fetchVault = async () => (await rest('vaults?select=kdf,password_lock,reco
 
 // ---------- Coffre ----------
 
-let vaultCrypto = null; // { raw, key } : la clé du coffre importée (une seule fois)
+// Clé du coffre (CryptoKey non extractible) ou null si le coffre est fermé sur cet appareil
 export async function vaultKey() {
-  const raw = loadAccount().vaultKey;
-  if (!raw) return null;
-  if (vaultCrypto?.raw !== raw) vaultCrypto = { raw, key: await wrapKey(fromB64(raw)) };
-  return vaultCrypto.key;
+  const stored = loadAccount().vaultKey;
+  if (!stored) return null;
+  // Ancienne forme (base64 dans localStorage, avant 2.3.4) : rangée dans IndexedDB, puis effacée de localStorage
+  if (typeof stored === 'string') {
+    const key = await wrapKey(fromB64(stored));
+    await keepKey('vault', key);
+    update({ vaultKey: true });
+    return key;
+  }
+  const key = await readKey('vault');
+  // Données du site effacées (ou IndexedDB indisponible au rechargement) : il faut rouvrir le coffre
+  if (!key) update({ vaultKey: null, needs: 'unlock' });
+  return key;
 }
 
 // Ouvre le coffre avec le secret qui convient à son mode (mot de passe du compte ou du coffre)
@@ -296,8 +381,10 @@ async function openWith(vault, password) {
 }
 
 // joining : coffre d'un compte qui a peut-être déjà des données (sync.js applique alors ses réglages)
-function opened(raw, extra = {}) {
-  update({ vaultKey: toB64(raw), needs: null, error: null, joining: true, ...extra });
+async function opened(raw, extra = {}) {
+  await keepKey('vault', await wrapKey(raw));
+  dropKeys('pending');
+  update({ vaultKey: true, needs: null, error: null, joining: true, ...extra });
   window.dispatchEvent(new CustomEvent('streamhub:vault-open'));
 }
 
@@ -316,7 +403,7 @@ async function createVault(mode, unlockRaw, salt) {
       recovery_lock: { salt: recoverySalt, ...(await lock(raw, await recoveryUnlock(recoveryKey, recoverySalt))) },
     },
   });
-  opened(raw, { recoveryKey, syncedAt: null, hashes: null, vaultMode: mode, joining: false });
+  await opened(raw, { recoveryKey, syncedAt: null, hashes: null, vaultMode: mode, joining: false });
 }
 
 // Après la connexion : ouvrir le coffre si on a de quoi, sinon dire ce qui manque
@@ -341,7 +428,7 @@ async function afterSignIn({ unlockRaw = null } = {}) {
 // Inscription par e-mail. Avec la confirmation d'adresse (réglage Supabase), pas de session tout de suite :
 // la clé tirée du mot de passe attend ici le retour du lien, pour créer le coffre sans redemander le mot de passe.
 export async function signUp(email, password) {
-  checkPassword(password);
+  await checkPassword(password);
   email = normalizeEmail(email);
   const secrets = await passwordSecrets(email, password);
   const data = await call(`/auth/v1/signup?redirect_to=${encodeURIComponent(SITE_URL)}`, {
@@ -357,7 +444,8 @@ export async function signUp(email, password) {
   // Adresse déjà inscrite et confirmée : Supabase répond comme si de rien n'était (pour ne pas révéler les comptes),
   // sans identité ; le lien n'est pas envoyé
   if (data && Array.isArray(data.identities) && !data.identities.length) throw new AuthError(MESSAGES.user_already_exists, 'user_already_exists', 400);
-  saveAccount({ email, pending: { email, unlock: toB64(secrets.unlock) } });
+  await keepKey('pending', await wrapKey(secrets.unlock));
+  saveAccount({ email, pending: { email } });
   return 'confirm';
 }
 
@@ -368,7 +456,9 @@ export async function resendConfirmation() {
 }
 
 export function cancelPending() {
-  if (!loadAccount().session) saveAccount({});
+  if (loadAccount().session) return;
+  saveAccount({});
+  dropKeys('pending');
 }
 
 export async function signIn(email, password) {
@@ -398,7 +488,7 @@ export async function unlockVault(password) {
   if (!vault) return update({ needs: 'create' });
   const raw = await openWith(vault, password);
   if (!raw) throw new Error(vault.kdf.mode === 'vault' ? 'Mot de passe du coffre incorrect.' : 'Mot de passe incorrect.');
-  opened(raw);
+  await opened(raw);
 }
 
 // Premier coffre d'un compte Google / GitHub (mot de passe du coffre choisi), ou d'un compte e-mail confirmé
@@ -414,7 +504,7 @@ export async function createVaultWith(password) {
       });
     return afterSignIn({ unlockRaw: secrets.unlock });
   }
-  checkPassword(password);
+  await checkPassword(password);
   const salt = randomSalt();
   return createVault('vault', await vaultPasswordKey(password, salt), salt);
 }
@@ -427,19 +517,19 @@ export async function requestReset(email) {
 // Mot de passe oublié (après le lien de l'e-mail) ou mot de passe du coffre oublié : la clé de secours rouvre le
 // coffre, que le nouveau mot de passe referme
 export async function resetWithRecovery(recoveryInput, newPassword) {
-  checkPassword(newPassword);
   const recoveryKey = checkRecovery(recoveryInput);
+  await checkPassword(newPassword);
   const vault = await fetchVault();
   if (!vault) throw new Error('Aucun coffre pour ce compte.');
   const raw = await unlock(vault.recovery_lock, await recoveryUnlock(recoveryKey, vault.recovery_lock.salt));
   if (!raw) throw new Error('Clé de secours incorrecte.');
   await setPassword(vault, raw, newPassword);
-  opened(raw);
+  await opened(raw);
 }
 
 // Changer de mot de passe : l'ancien est vérifié en rouvrant le coffre
 export async function changePassword(current, next) {
-  checkPassword(next);
+  await checkPassword(next);
   const vault = await fetchVault();
   const raw = vault && (await openWith(vault, current));
   if (!raw) throw new Error('Mot de passe actuel incorrect.');
@@ -461,13 +551,15 @@ async function setPassword(vault, raw, password) {
 
 const patchVault = (body) => rest(`vaults?user_id=eq.${loadAccount().userId}`, { method: 'PATCH', headers: { prefer: 'return=minimal' }, body });
 
-// Nouvelle clé de secours (l'ancienne ne marche plus)
-export async function newRecovery() {
-  const raw = loadAccount().vaultKey;
-  if (!raw) throw new Error('Coffre fermé.');
+// Nouvelle clé de secours (l'ancienne ne marche plus). La clé du coffre gardée sur l'appareil ne peut pas être
+// recopiée (non extractible) : le mot de passe rouvre le coffre (et confirme que c'est bien toi)
+export async function newRecovery(password) {
+  const vault = await fetchVault();
+  const raw = vault && (await openWith(vault, password));
+  if (!raw) throw new Error(vault?.kdf.mode === 'vault' ? 'Mot de passe du coffre incorrect.' : 'Mot de passe incorrect.');
   const recoveryKey = newRecoveryKey();
   const salt = randomSalt();
-  await patchVault({ recovery_lock: { salt, ...(await lock(fromB64(raw), await recoveryUnlock(recoveryKey, salt))) } });
+  await patchVault({ recovery_lock: { salt, ...(await lock(raw, await recoveryUnlock(recoveryKey, salt))) } });
   update({ recoveryKey });
   return formatRecovery(recoveryKey);
 }
@@ -478,7 +570,6 @@ export const recoveryNoted = () => update({ recoveryKey: null });
 export async function signOut() {
   const token = loadAccount().session?.access;
   forget();
-  vaultCrypto = null;
   if (token) await call('/auth/v1/logout?scope=local', { method: 'POST', token, headers: authHeaders }).catch(() => {});
 }
 
@@ -537,8 +628,11 @@ export async function handleAuthRedirect() {
       return { kind: 'recovery' };
     }
     // Confirmation sur l'appareil de l'inscription : la clé tirée du mot de passe est encore là
+    // (avant 2.3.4 : pending.unlock en base64 ; depuis : CryptoKey dans IndexedDB)
     const sameDevice = pending && pending.email === normalizeEmail(data.user.email);
-    await afterSignIn({ unlockRaw: sameDevice ? fromB64(pending.unlock) : null });
+    const pendingKey = sameDevice ? (pending.unlock ? fromB64(pending.unlock) : await readKey('pending')) : null;
+    dropKeys('pending');
+    await afterSignIn({ unlockRaw: pendingKey });
     return { kind: 'confirmed' };
   } catch (err) {
     return { kind: 'error', message: err.message };

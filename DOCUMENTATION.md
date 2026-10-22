@@ -256,7 +256,6 @@ clés. Elles se gèrent dans **Réglages → Clés API**, avec un bouton **Teste
 |---|---|---|
 | **TMDB** | Oui (gratuite) | Catalogue des films et séries, fiches, plateformes disponibles par pays |
 | **Streaming Availability** | Non (offre gratuite) | Liens directs qui lancent la vidéo, la série ou l'épisode |
-| **Relais StreamHub** | Non (adresse préremplie) | Liens JustWatch (France TV, chaînes Prime…) |
 
 ### Obtenir la clé TMDB (gratuite)
 
@@ -293,7 +292,7 @@ les actions du compte, elles, s'appliquent tout de suite.
 |---|---|
 | **Compte** | Créer un compte, se connecter (e-mail, Google, GitHub), mot de passe oublié, changer de mot de passe, clé de secours, se déconnecter, supprimer le compte. En invité : la page de connexion, avec les boutons Google et GitHub. |
 | **Mes abonnements** | Les plateformes auxquelles tu es abonné, avec un champ pour filtrer la liste. Cocher Prime Video coche aussi les chaînes incluses avec Prime. Les options payantes vendues sur une autre plateforme sont des « chaînes » à cocher à part, par exemple **HBO Max Amazon Channel** (HBO Max sur Prime Video) ou les chaînes de Canal+ (France) **HBO Max Canal+ Channel**, **Apple TV Canal+ Channel** et **Paramount Plus Canal+ Channel**, pour regarder ces catalogues sur Canal+. Cocher **Canal+ Ciné Séries** coche aussi les plateformes de l'offre : Canal+, Canal+ Séries, Netflix et les chaînes HBO Max, Apple TV et Paramount+ de Canal+ ; Ciné+ OCS est référencé sous Canal+. Netflix reste un compte à part (activé depuis ton espace Canal+) et s'ouvre dans l'appli Netflix. |
-| **Clés API** | Clé TMDB, clé Streaming Availability, adresse du relais, avec un bouton Tester pour chacune. |
+| **Clés API** | Clé TMDB, clé Streaming Availability, avec un bouton Tester pour chacune. (Le relais StreamHub, pour les liens JustWatch, n'a pas de réglage : son adresse est fixe depuis la version 2.3.4.) |
 | **Accueil** | Rangées affichées sur l'accueil, leur ordre, et le titre à l'affiche. |
 | **Apparence** | Effet verre : Automatique, Transparent ou Teinté (propre à chaque appareil). |
 | **Pays et lecture** | Pays du catalogue (France, Belgique, Suisse, Luxembourg, Canada, Royaume-Uni, États-Unis, Allemagne, Espagne, Italie) et, sur ordinateur, **Ouvrir les titres**. |
@@ -327,7 +326,7 @@ l'appareil, rien n'est envoyé.
 
 **Réglages → Compte**, puis au choix :
 
-- **Avec ton e-mail** : onglet **Créer un compte**, adresse et mot de passe (8 caractères au moins), puis ouvre le lien
+- **Avec ton e-mail** : onglet **Créer un compte**, adresse et mot de passe (12 caractères au moins), puis ouvre le lien
   reçu par e-mail (regarde aussi dans les indésirables). Sur tes autres appareils : **Se connecter** avec la même
   adresse et le même mot de passe.
 - **Avec Google ou GitHub** (boutons affichés quand ils sont activés) : à la première connexion, StreamHub te demande
@@ -336,7 +335,13 @@ l'appareil, rien n'est envoyé.
 
 À la création, StreamHub affiche ta **clé de secours** (20 caractères, par exemple `ABCD-EFGH-JKLM-NPQR-STUV`) :
 note-la dans ton gestionnaire de mots de passe. Elle seule permet de retrouver tes données si tu oublies ton mot de
-passe. **Nouvelle clé de secours** en crée une autre (l'ancienne ne marche plus).
+passe. **Nouvelle clé de secours** en crée une autre (l'ancienne ne marche plus) : StreamHub redemande alors ton mot
+de passe (ou ton mot de passe du coffre).
+
+Un nouveau mot de passe (inscription, changement, oubli, mot de passe du coffre) doit faire **12 caractères au
+moins** et ne pas figurer dans des fuites de données connues. Cette vérification se fait sur ton appareil, avant
+l'envoi, auprès du service Have I Been Pwned : seuls les 5 premiers caractères d'une empreinte du mot de passe partent,
+jamais le mot de passe. Un mot de passe choisi avant la version 2.3.4 marche toujours.
 
 Dans l'appli iPhone : **Réglages → Compte**, avec le même compte (e-mail et mot de passe, Google ou GitHub : la
 fenêtre de connexion d'Apple s'ouvre, puis revient dans l'appli). Les liens des e-mails (confirmation, mot de passe oublié) s'ouvrent sur le site : après la confirmation,
@@ -372,6 +377,11 @@ Supabase ne voit donc que ton adresse e-mail, des données illisibles, leur tail
 modification : ni lui ni personne ne peut lire tes clés ou tes listes sans ton mot de passe ou ta clé de secours.
 C'est aussi pourquoi un mot de passe oublié **sans** clé de secours fait perdre les données synchronisées (celles
 encore sur un appareil restent, et repartent dans un nouveau compte).
+
+Sur chaque appareil, la clé du coffre est gardée par le navigateur sous une forme **non extractible** (IndexedDB) :
+StreamHub peut s'en servir, mais personne ne peut la copier, même un code qui se serait glissé dans la page (version
+2.3.4 ; dans l'appli iPhone : trousseau d'Apple). La page ne peut en outre contacter que les serveurs dont StreamHub a
+besoin (règles de sécurité, « Content-Security-Policy », dans `index.html`).
 
 ### Avant les comptes : le code de synchronisation
 
@@ -653,8 +663,8 @@ rien (son ancienne route `/sync/<id>`, pour le code de synchronisation d'avant l
 version 2.3.3, avec son espace Workers KV).
 
 Il n'accepte que les appels venant de l'adresse de StreamHub et de `localhost:8080`. Une copie de StreamHub publiée
-ailleurs doit publier son propre relais, avec son compte Cloudflare, puis en mettre
-l'adresse dans Réglages → Clés API → Relais StreamHub.
+ailleurs doit publier son propre relais, avec son compte Cloudflare, puis mettre son adresse dans `store.js`
+(`DEFAULT_RELAY`), dans la Content-Security-Policy d'`index.html` et dans l'appli (`Store.swift`, `defaultRelay`).
 
 Pour le publier, il faut un jeton Cloudflare (droit « Edit Cloudflare Workers ») et l'identifiant du compte. Rien de
 tout cela n'est enregistré dans le projet.

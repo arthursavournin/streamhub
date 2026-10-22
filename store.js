@@ -3,7 +3,8 @@
 // pour que sync.js l'envoie aux autres appareils (compte StreamHub).
 const SETTINGS_KEY = 'streamhub:settings';
 
-// Relais StreamHub (relay/worker.js) : liens JustWatch. Modifiable dans les réglages.
+// Relais StreamHub (relay/worker.js) : liens JustWatch. Plus réglable depuis la version 2.3.4 : la page n'a le droit
+// de contacter que ce relais (Content-Security-Policy d'index.html). Une copie de StreamHub change cette adresse ici.
 export const DEFAULT_RELAY = 'https://streamhub-relay.arthursavournin.workers.dev';
 
 const defaults = {
@@ -12,7 +13,6 @@ const defaults = {
   region: 'FR',
   language: 'fr-FR',
   type: 'all', // 'all' | 'movie' | 'tv'
-  relay: '', // vide = DEFAULT_RELAY
   providers: [], // [{ id, name, logo }] — plateformes TMDB auxquelles l'utilisateur est abonné
 };
 
@@ -36,7 +36,8 @@ export function saveSettings(settings, { quiet = false } = {}) {
   changed('settings', quiet);
 }
 
-export const relayUrl = (settings) => (settings.relay || DEFAULT_RELAY).replace(/\/+$/, '');
+// (settings.relay, réglé avant la version 2.3.4 et encore présent dans certains comptes, est ignoré)
+export const relayUrl = () => DEFAULT_RELAY;
 
 export function cacheGet(key, maxAgeMs) {
   try {

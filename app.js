@@ -1,5 +1,5 @@
-import { loadSettings, saveSettings, relayUrl, HISTORY_MAX } from './store.js';
-import { makeApi, img, testTmdbKey, testSaKey, testRelay } from './api.js';
+import { loadSettings, saveSettings, HISTORY_MAX } from './store.js';
+import { makeApi, img, testTmdbKey, testSaKey } from './api.js';
 import { syncNow, startAutoSync } from './sync.js';
 import { handleAuthRedirect, accountState } from './account.js';
 import { initAccountUi, accountSummary } from './account-ui.js';
@@ -12,7 +12,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.3.3';
+const APP_VERSION = '2.3.4';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -2338,7 +2338,6 @@ function fillSettings() {
   const f = el.settingsForm;
   f.tmdbKey.value = settings.tmdbKey;
   f.saKey.value = settings.saKey;
-  f.relay.value = settings.relay || '';
   f.region.value = settings.region;
   f.openIn.value = settings.desktopApps ?? settings.primeApp ? 'app' : 'web';
   f.glass.value = settings.glass || 'auto';
@@ -2511,7 +2510,6 @@ for (const status of el.settings.querySelectorAll('[data-key-status]')) status.d
 const KEY_TESTS = {
   tmdb: (f) => testTmdbKey(f.tmdbKey.value.trim()),
   sa: (f) => testSaKey(f.saKey.value.trim(), f.region.value),
-  relay: (f) => testRelay(relayUrl({ relay: f.relay.value.trim() })),
 };
 
 function setKeyStatus(status, kind, message) {
@@ -2699,19 +2697,11 @@ el.settingsForm.addEventListener('submit', (e) => {
     revealSetting(f.tmdbKey);
     return;
   }
-  const relay = f.relay.value.trim().replace(/\/+$/, '');
-  if (relay && !/^https:\/\/[^\s/]+/.test(relay)) {
-    e.preventDefault();
-    el.settingsError.classList.remove('info');
-    el.settingsError.textContent = 'L’adresse du relais doit commencer par https://';
-    revealSetting(f.relay);
-    return;
-  }
   settings = {
     ...settings,
     tmdbKey,
     saKey: f.saKey.value.trim(),
-    relay,
+    relay: undefined, // plus réglable depuis la version 2.3.4 (voir relayUrl)
     region: f.region.value,
     desktopApps: f.openIn.value === 'app',
     glass: f.glass.value,

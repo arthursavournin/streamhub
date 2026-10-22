@@ -5,7 +5,7 @@
 import {
   accountState, signUp, signIn, signInWith, resendConfirmation, cancelPending, unlockVault, createVaultWith,
   requestReset, resetWithRecovery, changePassword, newRecovery, recoveryNoted, signOut, deleteAccount, PROVIDERS,
-  enabledProviders,
+  enabledProviders, MIN_PASSWORD,
 } from './account.js';
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -13,7 +13,8 @@ const PROVIDER_NAMES = { email: 'e-mail', ...PROVIDERS };
 
 let box;
 let status;
-// Ce qui est affiché : signin, signup, forgot (invité) ; unlock, recover (coffre fermé) ; open, password, delete
+// Ce qui est affiché : signin, signup, forgot (invité) ; unlock, recover (coffre fermé) ; open, password, recovery,
+// delete
 let ui = { mode: 'signin' };
 let hooks = {};
 let rememberedEmail = '';
@@ -44,7 +45,7 @@ const field = (id, label, type = 'password', extra = '', aside = '') => `<div cl
   </div>`;
 const emailField = () => field('accEmail', 'Adresse e-mail', 'email', `autocomplete="username" spellcheck="false" placeholder="toi@exemple.fr" value="${esc(rememberedEmail)}"`);
 const newPasswordFields = (label = 'Mot de passe') =>
-  field('accPassword', label, 'password', 'autocomplete="new-password" placeholder="8 caractères au moins"') +
+  field('accPassword', label, 'password', `autocomplete="new-password" placeholder="${MIN_PASSWORD} caractères au moins"`) +
   field('accPassword2', 'Confirme le mot de passe', 'password', 'autocomplete="new-password"');
 const submit = (action, text, kind = 'primary') => `<button type="button" class="btn ${kind} auth-submit" data-acc="${action}">${text}</button>`;
 const link = (action, text) => `<button type="button" class="link-btn" data-acc="${action}">${text}</button>`;
@@ -189,6 +190,15 @@ function renderOpen(s) {
       <p class="auth-text small">Tes autres appareils seront déconnectés : reconnecte-les avec le nouveau mot de passe (leurs données restent).</p>
       <p class="auth-switch">${link('openMode', 'Annuler')}</p>
     </div>`;
+  } else if (ui.mode === 'recovery') {
+    // La clé du coffre de l'appareil ne peut pas être recopiée : le mot de passe rouvre le coffre (version 2.3.4)
+    main = `<div class="auth-card">
+      <h3 class="auth-title">Nouvelle clé de secours</h3>
+      <p class="auth-text">L’ancienne clé ne marchera plus. Entre ton ${vaultWord} pour continuer.</p>
+      ${field('accCurrent', `${vaultWord[0].toUpperCase()}${vaultWord.slice(1)}`, 'password', 'autocomplete="current-password"')}
+      ${submit('newRecovery', 'Créer la clé')}
+      <p class="auth-switch">${link('openMode', 'Annuler')}</p>
+    </div>`;
   } else if (ui.mode === 'delete') {
     main = `<div class="auth-card danger-card">
       <h3 class="auth-title">Supprimer ton compte ?</h3>
@@ -201,7 +211,7 @@ function renderOpen(s) {
     main = `<ul class="action-list">
         ${row('syncNow', 'sync', 'Synchroniser maintenant')}
         ${row('passwordMode', 'key', `Changer de ${vaultWord}`, { chevron: true })}
-        ${row('newRecovery', 'shield', 'Nouvelle clé de secours')}
+        ${row('recoveryMode', 'shield', 'Nouvelle clé de secours', { chevron: true })}
         ${row('signout', 'out', 'Se déconnecter')}
       </ul>
       <ul class="action-list">${row('deleteMode', 'trash', 'Supprimer mon compte', { danger: true, chevron: true })}</ul>`;
@@ -239,6 +249,7 @@ const ACTIONS = {
   recoverMode: () => (ui.mode = 'recover'),
   unlockMode: () => (ui.mode = 'unlock'),
   passwordMode: () => (ui.mode = 'password'),
+  recoveryMode: () => (ui.mode = 'recovery'),
   deleteMode: () => (ui.mode = 'delete'),
   openMode: () => (ui.mode = 'open'),
   guest: () => hooks.onGuest?.(),
@@ -280,7 +291,8 @@ const ACTIONS = {
     return 'Mot de passe changé.';
   },
   async newRecovery() {
-    await newRecovery();
+    await newRecovery(value('accCurrent'));
+    ui.mode = 'open';
     return 'Nouvelle clé de secours : l’ancienne ne marche plus.';
   },
   noted: () => recoveryNoted(),
@@ -304,7 +316,7 @@ const ACTIONS = {
 async function run(name) {
   const buttons = box.querySelectorAll('button');
   buttons.forEach((b) => (b.disabled = true));
-  setStatus('', ['signup', 'signin', 'unlock', 'create', 'reset', 'changePassword'].includes(name) ? 'Chiffrement…' : '');
+  setStatus('', ['signup', 'signin', 'unlock', 'create', 'reset', 'changePassword', 'newRecovery'].includes(name) ? 'Chiffrement…' : '');
   try {
     const message = await ACTIONS[name]();
     render();

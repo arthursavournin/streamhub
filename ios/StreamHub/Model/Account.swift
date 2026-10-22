@@ -323,8 +323,34 @@ final class AccountService {
         onVaultOpen?()
     }
 
-    private func checkPassword(_ password: String) throws {
-        if password.count < 8 { throw AccountError(message: "Mot de passe trop court : 8 caractères au moins.") }
+    // Nouveau mot de passe : vérifié ici, comme sur le site (checkPassword d'account.js, version 2.3.4) : Supabase ne
+    // reçoit qu'un secret qui en est tiré, ses propres règles ne voient jamais le vrai mot de passe
+    nonisolated static let minPassword = 12
+
+    private func checkPassword(_ password: String) async throws {
+        if password.count < Self.minPassword {
+            throw AccountError(message: "Mot de passe trop court : \(Self.minPassword) caractères au moins.")
+        }
+        if await Self.leaked(password) {
+            throw AccountError(message: "Ce mot de passe figure dans des fuites de données connues : choisis-en un autre.")
+        }
+    }
+
+    // Mots de passe divulgués (Have I Been Pwned, recherche par plage) : seuls les 5 premiers caractères de l'empreinte
+    // SHA-1 partent, jamais le mot de passe. Service injoignable : on laisse passer.
+    nonisolated private static func leaked(_ password: String) async -> Bool {
+        let hash = Insecure.SHA1.hash(data: Data(password.utf8)).map { String(format: "%02X", $0) }.joined()
+        guard let url = URL(string: "https://api.pwnedpasswords.com/range/\(hash.prefix(5))") else { return false }
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
+        request.setValue("true", forHTTPHeaderField: "Add-Padding")
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              (response as? HTTPURLResponse)?.statusCode == 200 else { return false }
+        let suffix = hash.dropFirst(5)
+        return String(decoding: data, as: UTF8.self).split(whereSeparator: \.isNewline).contains { line in
+            let parts = line.split(separator: ":")
+            return parts.count == 2 && parts[0].trimmingCharacters(in: .whitespaces) == suffix
+                && (Int(parts[1].trimmingCharacters(in: .whitespaces)) ?? 0) > 0
+        }
     }
 
     // Crée le coffre, avec une nouvelle clé de secours (à montrer une seule fois)
@@ -380,7 +406,7 @@ final class AccountService {
     // du mot de passe attendent ici (trousseau) : au retour, « J'ai confirmé » termine sans redemander le mot de passe.
     // Renvoie true si le compte est ouvert tout de suite.
     func signUp(email rawEmail: String, password: String) async throws -> Bool {
-        try checkPassword(password)
+        try await checkPassword(password)
         let email = AccountCrypto.normalizeEmail(rawEmail)
         let derived = await Task.detached { AccountCrypto.passwordSecrets(email: email, password: password) }.value
         let site = AppStore.site.absoluteString.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? ""
@@ -448,7 +474,7 @@ final class AccountService {
 
     // Compte Google / GitHub dont le coffre n'existe pas encore : mot de passe du coffre choisi
     func createVaultWith(_ password: String) async throws {
-        try checkPassword(password)
+        try await checkPassword(password)
         let salt = AccountCrypto.randomSalt()
         let key = await Task.detached { AccountCrypto.vaultPasswordKey(password, salt: salt) }.value
         try await createVault(mode: "vault", unlock: key, salt: salt)
@@ -507,7 +533,7 @@ final class AccountService {
     // Mot de passe (du coffre) oublié, une fois connecté : la clé de secours rouvre le coffre, que le nouveau mot de
     // passe referme
     func resetWithRecovery(_ input: String, newPassword: String) async throws {
-        try checkPassword(newPassword)
+        try await checkPassword(newPassword)
         let recoveryKey = SyncCrypto.normalize(input)
         guard SyncCrypto.isValid(recoveryKey) else {
             throw AccountError(message: "Clé de secours invalide : 20 lettres et chiffres (ex. ABCD-EFGH-JKLM-NPQR-STUV).")
@@ -521,7 +547,7 @@ final class AccountService {
     }
 
     func changePassword(current: String, new: String) async throws {
-        try checkPassword(new)
+        try await checkPassword(new)
         guard let vault = try await fetchVault(), let raw = await openWith(vault, password: current) else {
             throw AccountError(message: "Mot de passe actuel incorrect.")
         }

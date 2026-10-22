@@ -255,7 +255,7 @@ export function makeApi(settings) {
       const cached = cacheGet(cacheKey, RELAY_CACHE_MS);
       if (cached) return safe(cached);
       const params = new URLSearchParams({ tmdb: tmdbId, type, title, country: region });
-      const res = await fetch(`${relayUrl(settings)}/offers?${params}`);
+      const res = await fetch(`${relayUrl()}/offers?${params}`);
       if (!res.ok) throw new ApiError(`Relais : erreur ${res.status}.`, res.status);
       const { offers = [] } = await res.json();
       cacheSet(cacheKey, offers);
@@ -341,11 +341,4 @@ export async function testSaKey(key, region) {
   if (res.status === 401 || res.status === 403) throw new ApiError('Clé refusée, ou pas abonnée à Streaming Availability sur RapidAPI.', res.status);
   if (res.status === 429) throw new ApiError('Clé valide, mais quota épuisé pour le moment.', 429);
   throw new ApiError(`Streaming Availability : erreur ${res.status}.`, res.status);
-}
-
-export async function testRelay(url) {
-  const res = await fetch(`${url}/`, { cache: 'no-store' }).catch(() => null);
-  const data = res?.ok ? await res.json().catch(() => null) : null;
-  if (data?.service === 'StreamHub relay') return 'Relais joignable.';
-  throw new ApiError('Relais injoignable à cette adresse (ou il refuse ce site).', res?.status ?? 0);
 }

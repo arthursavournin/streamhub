@@ -611,7 +611,6 @@ html:has(dialog[open]) { overflow: hidden; }
   border-radius: 10px;
 }
 .provider-filter:focus-visible { outline-offset: 0; border-color: var(--accent); }
-#syncOff[hidden], #syncOn[hidden] { display: none; }
 
 /* Choix de l'effet verre */
 .home-hero-choice { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
@@ -677,10 +676,6 @@ html:has(dialog[open]) { overflow: hidden; }
 .danger-text { color: #ff6b6b; }
 .recovery-panel { margin-top: 14px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--accent); background: rgba(var(--accent-rgb), 0.1); }
 .recovery-panel > p:first-child { margin: 0; }
-.legacy-sync { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--border); }
-.legacy-sync > summary { padding: 6px 0; gap: 10px; border-radius: 8px; color: var(--muted); font-size: 0.92em; }
-.legacy-sync > summary:hover { background: none; }
-.legacy-sync > summary em { display: block; font-style: normal; font-size: 0.9em; opacity: 0.8; }
 @media (max-width: 520px) {
   .key-row { flex-wrap: wrap; }
   .key-row input { flex-basis: 100%; }

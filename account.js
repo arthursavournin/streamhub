@@ -3,13 +3,11 @@
 // Chiffrement de bout en bout : une clé de coffre aléatoire (AES-GCM 256) chiffre les données synchronisées
 // (sync.js). Supabase la garde deux fois, fermée à clé (table vaults) :
 //   - password_lock : par une clé tirée du mot de passe (compte e-mail) ou du mot de passe du coffre (Google, GitHub)
-//   - recovery_lock : par une clé tirée de la clé de secours (20 caractères, même format que le code de synchro)
+//   - recovery_lock : par une clé tirée de la clé de secours (20 caractères tirés au hasard)
 // Le vrai mot de passe ne quitte jamais l'appareil : il en sort deux secrets indépendants (PBKDF2 puis HKDF),
 // un « mot de passe de connexion » envoyé à Supabase Auth et une clé qui ouvre le coffre, gardée ici.
 //
 // Appels HTTP directs (pas de bibliothèque : le site n'a pas d'étape de construction).
-import { loadSyncMeta } from './store.js';
-
 const SUPABASE_URL = 'https://bfcmqdvztmkpqwamwejp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_RB_4r6Da9y2SLQPjavQXVA_w2Brn3LI'; // clé publique (faite pour être dans le code)
 // Ce que l'adresse du site devient après la connexion Google / GitHub et les liens des e-mails (liste autorisée
@@ -42,8 +40,8 @@ export function enabledProviders() {
 }
 
 const KDF_ITERATIONS = 600000; // mot de passe (recommandation OWASP pour PBKDF2-SHA256)
-const RECOVERY_ITERATIONS = 200000; // clé de secours : 100 bits au hasard, comme le code de synchro
-const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // celui des codes de synchro (sync.js)
+const RECOVERY_ITERATIONS = 200000; // clé de secours : 100 bits au hasard, impossible à deviner
+const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sans 0/O ni 1/I, faciles à confondre
 const RECOVERY_LENGTH = 20;
 const enc = new TextEncoder();
 
@@ -185,10 +183,13 @@ const MESSAGES = {
   same_password: 'Le nouveau mot de passe est identique à l’ancien.',
   refresh_token_not_found: 'Session expirée : reconnecte-toi.',
   refresh_token_already_used: 'Session expirée : reconnecte-toi.',
-  session_not_found: 'Session expirée : reconnecte-toi.',
+  session_not_found: 'Session fermée (mot de passe changé sur un autre appareil ?) : reconnecte-toi.',
+  user_not_found: 'Compte introuvable (supprimé ?) : tu es déconnecté.',
   flow_state_not_found: 'Connexion expirée : recommence.',
   bad_code_verifier: 'Connexion expirée : recommence.',
 };
+
+const SESSION_GONE = ['session_not_found', 'user_not_found', 'bad_jwt'];
 
 async function call(path, { method = 'GET', body, token, headers = {} } = {}) {
   const { url, key } = server();
@@ -213,6 +214,9 @@ async function call(path, { method = 'GET', body, token, headers = {} } = {}) {
   }
   if (!res.ok) {
     const code = data?.error_code ?? data?.code ?? data?.error ?? '';
+    // Session fermée par le serveur (mot de passe changé sur un autre appareil, compte supprimé) : déconnecté ici,
+    // les données restent sur l'appareil
+    if (token && SESSION_GONE.includes(code)) forget();
     throw new AuthError(MESSAGES[code] ?? `Compte : erreur ${res.status}.`, code, res.status);
   }
   return data;
@@ -297,11 +301,10 @@ function opened(raw, extra = {}) {
   window.dispatchEvent(new CustomEvent('streamhub:vault-open'));
 }
 
-// Crée le coffre. Clé de secours : le code de synchro de cet appareil s'il y en a un (passage du code au
-// compte), sinon une nouvelle, à montrer une seule fois.
+// Crée le coffre, avec une nouvelle clé de secours (à montrer une seule fois)
 async function createVault(mode, unlockRaw, salt) {
   const raw = crypto.getRandomValues(new Uint8Array(32));
-  const recoveryKey = loadSyncMeta().code || newRecoveryKey();
+  const recoveryKey = newRecoveryKey();
   const recoverySalt = randomSalt();
   await rest('vaults', {
     method: 'POST',

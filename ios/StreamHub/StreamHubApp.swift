@@ -62,11 +62,34 @@ struct RootView: View {
             if let question = model.progressQuestion { ProgressSheet(entry: question.entry) }
         }
         #if DEBUG
-        // Tests dans le simulateur : code de synchronisation passé au lancement (STREAMHUB_SYNC_CODE) ; « Où en es-tu ? »
+        // Tests dans le simulateur (Supabase local : STREAMHUB_SUPABASE_URL / _KEY, voir Account.swift) ; « Où en es-tu ? »
         // affiché tout de suite pour une série (STREAMHUB_PROGRESS = identifiant TMDB, S1 E5)
         .task {
-            if let code = ProcessInfo.processInfo.environment["STREAMHUB_SYNC_CODE"], model.store.syncMeta.code == nil {
-                try? await model.sync.join(code)
+            // Compte (STREAMHUB_ACCOUNT = « action|valeur|valeur », la saisie au clavier du simulateur ne marchant pas
+            // avec l'outil de test) : signin|e-mail|mdp, signup|e-mail|mdp, finish, unlock|mdp, change|ancien|nouveau,
+            // reset|clé|nouveau, recovery, signout, delete, like|titre|id. Résultat dans la console (STREAMHUB_TEST).
+            if let spec = ProcessInfo.processInfo.environment["STREAMHUB_ACCOUNT"] {
+                let p = spec.split(separator: "|", omittingEmptySubsequences: false).map(String.init) + ["", ""]
+                let account = model.account
+                do {
+                    switch p[0] {
+                    case "signin": try await account.signIn(email: p[1], password: p[2])
+                    case "signup": _ = try await account.signUp(email: p[1], password: p[2])
+                    case "finish": try await account.finishSignUp()
+                    case "unlock": try await account.unlockVault(p[1])
+                    case "change": try await account.changePassword(current: p[1], new: p[2])
+                    case "reset": try await account.resetWithRecovery(p[1], newPassword: p[2])
+                    case "recovery": try await account.newRecovery()
+                    case "signout": await account.signOut()
+                    case "delete": try await account.deleteAccount()
+                    case "like": model.store.toggle(.likes, TitleRef(type: .movie, id: Int(p[2]) ?? 1, title: p[1], poster: nil))
+                    default: break
+                    }
+                    try? await Task.sleep(for: .seconds(3)) // première synchro
+                    print("STREAMHUB_TEST ok \(p[0]) open=\(account.isOpen) pending=\(account.meta.pendingEmail ?? "-") needs=\(account.meta.needs?.rawValue ?? "-") recovery=\(account.recoveryKey ?? "-") synced=\(account.meta.syncedAt ?? -1) error=\(account.meta.error ?? "-") tmdb=\(model.store.tmdbKey) likes=\(model.store.entries(.likes).map(\.title))")
+                } catch {
+                    print("STREAMHUB_TEST error \(p[0]) \(error.localizedDescription)")
+                }
             }
             if let id = ProcessInfo.processInfo.environment["STREAMHUB_PROGRESS"].flatMap(Int.init) {
                 var entry = LibraryEntry(ref: TitleRef(type: .tv, id: id, title: "Naruto", poster: nil))

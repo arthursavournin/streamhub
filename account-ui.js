@@ -284,10 +284,10 @@ export function initAccountUi(options) {
 }
 
 // Résumé de la section (réglages repliés)
-export function accountSummary(codeActive) {
+export function accountSummary() {
   const s = accountState();
   if (s.open) return `Connecté : ${s.email}`;
   if (s.signedIn) return `${s.email} : coffre à ouvrir`;
   if (s.pending) return 'Adresse à confirmer';
-  return codeActive ? 'Invité · synchro par code' : 'Invité : données sur cet appareil seulement';
+  return 'Invité : données sur cet appareil seulement';
 }

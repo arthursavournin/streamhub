@@ -72,18 +72,10 @@ struct LibraryEntry: Identifiable, Hashable {
     }
 }
 
-// État de la synchronisation sur cet appareil (comme loadSyncMeta du site)
-struct SyncMeta: Codable, Equatable {
-    var code: String?
-    var syncedAt: Double?
-    var hashes: Hashes?
-    var lastSyncAt: Double?
-    var error: String?
-
-    struct Hashes: Codable, Equatable {
-        var settings: String?
-        var library: String?
-    }
+// Empreintes des données au moment de la dernière synchronisation (pour savoir ce qui a changé depuis)
+struct SyncHashes: Codable, Equatable {
+    var settings: String?
+    var library: String?
 }
 
 // Réglages et bibliothèque de l'appareil, enregistrés dans UserDefaults. Chaque modification est signalée
@@ -96,14 +88,12 @@ final class AppStore {
 
     private(set) var settings: [String: JSON]
     private(set) var library: [String: JSON]
-    var syncMeta: SyncMeta { didSet { save(syncMeta, as: Keys.sync) } }
 
     @ObservationIgnored var onChange: (() -> Void)?
 
     private enum Keys {
         static let settings = "streamhub:settings"
         static let library = "streamhub:library"
-        static let sync = "streamhub:sync"
     }
 
     init() {
@@ -113,7 +103,7 @@ final class AppStore {
         }
         settings = read(Keys.settings)
         library = read(Keys.library)
-        syncMeta = defaults.data(forKey: Keys.sync).flatMap { try? JSONDecoder().decode(SyncMeta.self, from: $0) } ?? SyncMeta()
+        defaults.removeObject(forKey: "streamhub:sync") // ancien code de synchronisation (avant 2.1.0)
     }
 
     private func save<T: Encodable>(_ value: T, as key: String) {

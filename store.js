@@ -1,9 +1,9 @@
 // Réglages et cache persistés dans le navigateur (localStorage peut être indisponible : on ne plante jamais).
 // Chaque modification des réglages ou de la bibliothèque est signalée (évènement « streamhub:changed »)
-// pour que sync.js l'envoie aux autres appareils.
+// pour que sync.js l'envoie aux autres appareils (compte StreamHub).
 const SETTINGS_KEY = 'streamhub:settings';
 
-// Relais StreamHub (relay/worker.js) : liens JustWatch et synchronisation. Modifiable dans les réglages.
+// Relais StreamHub (relay/worker.js) : liens JustWatch. Modifiable dans les réglages.
 export const DEFAULT_RELAY = 'https://streamhub-relay.arthursavournin.workers.dev';
 
 const defaults = {
@@ -37,26 +37,6 @@ export function saveSettings(settings, { quiet = false } = {}) {
 }
 
 export const relayUrl = (settings) => (settings.relay || DEFAULT_RELAY).replace(/\/+$/, '');
-
-// État de la synchronisation sur cet appareil : { code, syncedAt, hashes, lastSyncAt, error }
-const SYNC_KEY = 'streamhub:sync';
-
-export function loadSyncMeta() {
-  try {
-    return JSON.parse(localStorage.getItem(SYNC_KEY) || '{}');
-  } catch {
-    return {};
-  }
-}
-
-export function saveSyncMeta(meta) {
-  try {
-    if (meta.code) localStorage.setItem(SYNC_KEY, JSON.stringify(meta));
-    else localStorage.removeItem(SYNC_KEY);
-  } catch {
-    /* stockage indisponible */
-  }
-}
 
 export function cacheGet(key, maxAgeMs) {
   try {

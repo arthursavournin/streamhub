@@ -13,6 +13,7 @@ struct PendingProgress: Identifiable {
 @Observable
 final class AppModel {
     let store = AppStore()
+    let account = AccountService()
     let sync: SyncService
     var pendingProgress: PendingProgress?
     var progressQuestion: PendingProgress?
@@ -22,7 +23,7 @@ final class AppModel {
     static let progressDelay: TimeInterval = 3 * 60
 
     init() {
-        sync = SyncService(store: store)
+        sync = SyncService(store: store, account: account)
     }
 
     var tmdb: TMDBClient { TMDBClient(key: store.tmdbKey, region: store.region, language: store.language) }

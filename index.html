@@ -118,31 +118,6 @@
           <div id="accountBox"></div>
           <p class="key-status" id="accountStatus" role="status"></p>
 
-          <details class="legacy-sync" id="legacySync">
-            <summary><span>Code de synchronisation <em>ancienne méthode, encore utilisée par l’appli iPhone</em></span></summary>
-            <div id="syncOff">
-              <div class="key-row">
-                <input id="syncCodeInput" autocomplete="off" autocapitalize="characters" spellcheck="false"
-                  placeholder="Code reçu d’un autre appareil" aria-label="Code de synchronisation">
-                <button type="button" class="btn" id="syncJoin">Utiliser ce code</button>
-              </div>
-              <p class="sync-or">ou</p>
-              <button type="button" class="btn" id="syncCreate">Créer un code de synchronisation</button>
-            </div>
-            <div id="syncOn" hidden>
-              <div class="key-row">
-                <input id="syncCode" readonly aria-label="Ton code de synchronisation">
-                <button type="button" class="btn" data-copy="#syncCode">Copier</button>
-              </div>
-              <p class="hint" id="syncHint">Entre ce code dans StreamHub sur tes autres appareils. Il donne accès à tes clés : garde-le pour toi
-                (note-le dans ton gestionnaire de mots de passe).</p>
-              <div class="key-actions">
-                <button type="button" class="btn" id="syncNow">Synchroniser maintenant</button>
-                <button type="button" class="btn ghost" id="syncLeave">Arrêter sur cet appareil</button>
-              </div>
-            </div>
-            <p class="key-status" id="syncStatus" role="status"></p>
-          </details>
         </div>
       </details>
 
@@ -170,7 +145,7 @@
             <p class="key-status" data-key-status="sa"><a href="https://rapidapi.com/movie-of-the-night-movie-of-the-night-default/api/streaming-availability" target="_blank" rel="noopener">Obtenir une clé (offre gratuite)</a></p>
           </div>
           <div class="field">
-            <label for="relay">Relais StreamHub <em>liens JustWatch (France TV, chaînes Prime…) et synchronisation, sans clé</em></label>
+            <label for="relay">Relais StreamHub <em>liens JustWatch (France TV, chaînes Prime…), sans clé</em></label>
             <div class="key-row">
               <input id="relay" name="relay" type="url" autocomplete="off" spellcheck="false" placeholder="https://streamhub-relay.arthursavournin.workers.dev">
               <button type="button" class="btn" data-test-key="relay">Tester</button>

@@ -256,7 +256,7 @@ clés. Elles se gèrent dans **Réglages → Clés API**, avec un bouton **Teste
 |---|---|---|
 | **TMDB** | Oui (gratuite) | Catalogue des films et séries, fiches, plateformes disponibles par pays |
 | **Streaming Availability** | Non (offre gratuite) | Liens directs qui lancent la vidéo, la série ou l'épisode |
-| **Relais StreamHub** | Non (adresse préremplie) | Liens JustWatch (France TV, chaînes Prime…) et synchronisation |
+| **Relais StreamHub** | Non (adresse préremplie) | Liens JustWatch (France TV, chaînes Prime…) |
 
 ### Obtenir la clé TMDB (gratuite)
 
@@ -289,7 +289,7 @@ La roue dentée en haut à droite ouvre les réglages. Les sections sont replié
 | Section | Contenu |
 |---|---|
 | **Mes abonnements** | Les plateformes auxquelles tu es abonné, avec un champ pour filtrer la liste. Cocher Prime Video coche aussi les chaînes incluses avec Prime. Les options payantes vendues sur une autre plateforme sont des « chaînes » à cocher à part, par exemple **HBO Max Amazon Channel** (HBO Max sur Prime Video) ou les chaînes de Canal+ (France) **HBO Max Canal+ Channel**, **Apple TV Canal+ Channel** et **Paramount Plus Canal+ Channel**, pour regarder ces catalogues sur Canal+. Cocher **Canal+ Ciné Séries** coche aussi les plateformes de l'offre : Canal+, Canal+ Séries, Netflix et les chaînes HBO Max, Apple TV et Paramount+ de Canal+ ; Ciné+ OCS est référencé sous Canal+. Netflix reste un compte à part (activé depuis ton espace Canal+) et s'ouvre dans l'appli Netflix. |
-| **Compte** | Créer un compte, se connecter (e-mail, Google, GitHub), mot de passe oublié, changer de mot de passe, clé de secours, se déconnecter, supprimer le compte ; l'ancien code de synchronisation (replié en bas). |
+| **Compte** | Créer un compte, se connecter (e-mail, Google, GitHub), mot de passe oublié, changer de mot de passe, clé de secours, se déconnecter, supprimer le compte. |
 | **Clés API** | Clé TMDB, clé Streaming Availability, adresse du relais, avec un bouton Tester pour chacune. |
 | **Apparence** | Effet verre : Automatique, Transparent ou Teinté (propre à chaque appareil). |
 | **Pays et lecture** | Pays du catalogue (France, Belgique, Suisse, Luxembourg, Canada, Royaume-Uni, États-Unis, Allemagne, Espagne, Italie) et, sur ordinateur, **Ouvrir les titres**. |
@@ -333,6 +333,10 @@ l'appareil, rien n'est envoyé.
 note-la dans ton gestionnaire de mots de passe. Elle seule permet de retrouver tes données si tu oublies ton mot de
 passe. **Nouvelle clé de secours** en crée une autre (l'ancienne ne marche plus).
 
+Dans l'appli iPhone : **Réglages → Compte**, avec le même compte (e-mail et mot de passe ; Google et GitHub pas
+encore). Les liens des e-mails (confirmation, mot de passe oublié) s'ouvrent sur le site : après la confirmation,
+reviens dans l'appli et touche **J'ai confirmé mon adresse**.
+
 Ensuite, chaque modification part toute seule quelques secondes après, et arrive sur les autres appareils à leur
 ouverture ou quand tu reviens sur StreamHub. Deux appareils modifiés en même temps : les listes sont réunies, rien
 n'est perdu.
@@ -347,7 +351,8 @@ n'est perdu.
 - **Mot de passe oublié ?** (sous **Se connecter**) : un e-mail t'envoie un lien ; il ouvre StreamHub, où tu choisis
   un nouveau mot de passe et entres ta **clé de secours**. Mot de passe du coffre oublié (Google, GitHub) : même
   chose, avec **Mot de passe du coffre oublié ?** une fois connecté.
-- **Changer de mot de passe** : l'actuel, puis le nouveau. Les autres appareils restent connectés.
+- **Changer de mot de passe** : l'actuel, puis le nouveau. Les autres appareils sont déconnectés (au plus tard une
+  heure après) : reconnecte-les avec le nouveau mot de passe, leurs données restent.
 - **Se déconnecter** : les données restent sur cet appareil, elles ne suivent simplement plus.
 - **Supprimer mon compte** : efface ton compte, ton coffre et tes données synchronisées. Ce qui est sur l'appareil
   reste.
@@ -363,15 +368,11 @@ modification : ni lui ni personne ne peut lire tes clés ou tes listes sans ton 
 C'est aussi pourquoi un mot de passe oublié **sans** clé de secours fait perdre les données synchronisées (celles
 encore sur un appareil restent, et repartent dans un nouveau compte).
 
-### L'ancien code de synchronisation
+### Avant les comptes : le code de synchronisation
 
-Avant la version 2.0.0, la synchronisation passait par un **code de 20 caractères** (stocké sur le relais StreamHub,
-chiffré de la même façon). Il marche toujours (**Réglages → Compte → Code de synchronisation**, en bas), notamment
-pour l'appli iPhone qui ne connaît pas encore les comptes.
-
-**Passer du code à un compte** : sur un appareil où le code est actif, crée ton compte. Tes données y passent, et ton
-code devient ta **clé de secours**. Le code et le compte se synchronisent ensuite ensemble (ce qui arrive par l'un
-repart par l'autre) ; quand tous tes appareils utilisent le compte, **Arrêter sur cet appareil** sous le code.
+Jusqu'à la version 2.0.0, la synchronisation passait par un **code de 20 caractères**. Il n'existe plus depuis la
+version 2.1.0 : c'est le compte, ou rien (invité). Rien n'est perdu : chaque appareil a gardé ses données. Crée ton
+compte sur l'un d'eux, puis connecte-toi sur les autres : leurs listes sont réunies dans le compte.
 
 ---
 
@@ -526,7 +527,7 @@ L'offre gratuite est limitée par jour : StreamHub utilise les liens JustWatch e
 
 **Mes listes ont disparu.**
 Les données du navigateur ont été effacées ([partie 9](#9-tes-données-et-ta-vie-privée)) : reconnecte-toi à ton
-compte (ou recolle ton code de synchronisation).
+compte.
 
 **Je ne reçois pas l'e-mail de confirmation ou de mot de passe oublié.**
 Regarde dans les indésirables, attends quelques minutes (le nombre d'e-mails par heure est limité), puis **Renvoyer
@@ -546,8 +547,8 @@ indiquant ton appareil, ton navigateur et la version de StreamHub.
 ### Principe
 
 Pas de framework ni d'étape de compilation : du HTML, du CSS et des modules JavaScript servis tels quels. Le site est
-publié sur **GitHub Pages**, un petit **relais Cloudflare Workers** fournit les liens JustWatch (et l'ancienne
-synchronisation par code), et **Supabase** gère les comptes (Auth et deux tables, chiffrées de bout en bout).
+publié sur **GitHub Pages**, un petit **relais Cloudflare Workers** fournit les liens JustWatch, et **Supabase** gère
+les comptes (Auth et deux tables, chiffrées de bout en bout).
 
 ### Lancer StreamHub sur ton ordinateur
 
@@ -582,7 +583,7 @@ Puis ouvre **http://localhost:8080**. Le relais accepte les appels venant de `lo
 | `providers.js` | Plateformes, liens de secours, forme des liens selon l'appareil (iPhone, appli de l'ordinateur, site) |
 | `library.js` | Ma liste, J'aime, historique, téléchargements, questions au retour |
 | `store.js` | Réglages, bibliothèque et cache dans le navigateur |
-| `sync.js` | Synchronisation chiffrée entre appareils : chiffrement, fusion, transport par le compte ou par le code |
+| `sync.js` | Synchronisation chiffrée entre appareils par le compte : chiffrement, fusion, envoi conditionnel |
 | `account.js` | Comptes Supabase (Auth et base, appels HTTP directs) : inscription, connexion, coffre, clé de secours |
 | `account-ui.js` | Réglages → Compte |
 | `supabase/schema.sql` | Tables `vaults` et `sync_data`, règles d'accès (chacun sa ligne), `delete_my_account`, `keepalive` |
@@ -593,7 +594,7 @@ Puis ouvre **http://localhost:8080**. Le relais accepte les appels venant de `lo
 | `suggestions.js` | Onglet Suggestions de la fiche : saga, même univers (films et séries), même genre |
 | `nav.js` | Navigation aux flèches (clavier, télécommande) |
 | `sw.js`, `manifest.webmanifest`, icônes | Installation en appli (PWA), cache hors ligne et mises à jour |
-| `relay/worker.js` | Relais Cloudflare Workers (liens JustWatch, synchronisation) |
+| `relay/worker.js` | Relais Cloudflare Workers (liens JustWatch) |
 | `extension/` | Script « reprise après connexion » et extension Chrome |
 | `scripts/` | Index des épisodes TF1+ / M6+, publication du relais |
 
@@ -630,11 +631,9 @@ correction, 1.1.0 pour une nouvelle fonction. Le script « reprise après connex
 ### Le relais (Cloudflare Workers)
 
 `relay/worker.js` est publié sur https://streamhub-relay.arthursavournin.workers.dev (offre gratuite Cloudflare :
-100 000 requêtes et 1 000 enregistrements par jour). Il a deux rôles :
-
-- **Liens JustWatch** (`/offers`) : JustWatch refuse les appels venant d'autres sites, le relais l'interroge à la
-  place du navigateur. Réponses gardées 6 heures.
-- **Synchronisation** (`/sync/<id>`) : stocke les données chiffrées de chaque code dans Workers KV.
+100 000 requêtes et 1 000 enregistrements par jour). Il donne les **liens JustWatch** (`/offers`) : JustWatch refuse les
+appels venant d'autres sites, le relais l'interroge à la place du navigateur. Réponses gardées 6 heures. (Son ancienne
+route `/sync/<id>`, pour le code de synchronisation d'avant la version 2.1.0, ne sert plus.)
 
 Il n'accepte que les appels venant de l'adresse de StreamHub et de `localhost:8080`. Une copie de StreamHub publiée
 ailleurs doit publier son propre relais, avec son compte Cloudflare et son propre espace Workers KV, puis en mettre

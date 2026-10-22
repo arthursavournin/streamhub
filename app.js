@@ -1,6 +1,6 @@
 import { loadSettings, saveSettings, relayUrl, HISTORY_MAX } from './store.js';
 import { makeApi, img, testTmdbKey, testSaKey, testRelay } from './api.js';
-import { syncNow, syncState, createCode, joinCode, leave, startAutoSync } from './sync.js';
+import { syncNow, startAutoSync } from './sync.js';
 import { handleAuthRedirect, accountState } from './account.js';
 import { initAccountUi, accountSummary } from './account-ui.js';
 import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, providerLogo, CANAL_CHANNELS, CANAL_CINE_SERIES, withVirtualChannels, withSaOffers, originalNetworks } from './providers.js';
@@ -12,7 +12,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -2347,7 +2347,6 @@ function fillSettings() {
   draftProviders = new Map(settings.providers.map((p) => [p.id, p]));
   draftHome = { rows: homeLayout(), hero: settings.home?.hero ?? null };
   renderHomeSettings();
-  renderSync();
   loadProviderChoices();
   renderSettingsSummaries();
 }
@@ -2379,7 +2378,7 @@ function renderSettingsSummaries() {
   const summary = (name, text) => ($(`[data-summary="${name}"]`, f).textContent = text);
   const n = draftProviders.size;
   summary('providers', n ? `${n} plateforme${n > 1 ? 's' : ''} : ${[...draftProviders.values()].map((p) => p.name).join(', ')}` : 'Aucune plateforme cochée');
-  summary('account', accountSummary(Boolean(syncState().code)));
+  summary('account', accountSummary());
   const keys = [f.tmdbKey.value.trim() ? 'TMDB ✓' : 'TMDB manquante', f.saKey.value.trim() ? 'Streaming Availability ✓' : 'Streaming Availability —'];
   summary('keys', keys.join(' · '));
   summary('look', GLASS_NAMES[f.glass.value] ?? GLASS_NAMES.auto);
@@ -2435,11 +2434,9 @@ function openSettings(first = false) {
   for (const group of el.settings.querySelectorAll('details.settings-group')) {
     group.open = first && ['providers', 'account', 'keys'].includes(group.dataset.group);
   }
-  // Ancien code de synchro : montré s'il tourne sans compte (pour passer au compte)
-  $('#legacySync').open = Boolean(syncState().code) && !accountState().open;
   $('#settingsBody').scrollTop = 0;
   // La fenêtre elle-même, pas la croix : sur iPhone, la croix prendrait un anneau de focus à chaque ouverture
-  if (first && !accountState().signedIn && !syncState().code) accountUi.focus();
+  if (first && !accountState().signedIn) accountUi.focus();
   else (first ? f.tmdbKey : el.settings).focus({ preventScroll: true });
 }
 
@@ -2505,29 +2502,13 @@ el.settingsForm.addEventListener('click', async (e) => {
   }
 });
 
-// ---------- Synchronisation ----------
+// ---------- Synchronisation (compte) ----------
 
 function syncedWhen(t) {
   const minutes = Math.round((Date.now() - t) / 60000);
   if (minutes < 1) return 'à l’instant';
   if (minutes < 60) return `il y a ${minutes} min`;
   return `le ${new Date(t).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}`;
-}
-
-function renderSync() {
-  const { code, lastSyncAt, error } = syncState();
-  $('#syncOff').hidden = Boolean(code);
-  $('#syncOn').hidden = !code;
-  $('#syncCode').value = code;
-  $('#syncHint').textContent = accountState().open
-    ? 'Ton compte et ce code se synchronisent ensemble : ce qui arrive de l’appli iPhone (code) part vers ton compte. Quand tous tes appareils utilisent le compte, arrête le code.'
-    : 'Entre ce code dans StreamHub sur tes autres appareils. Il donne accès à tes clés : garde-le pour toi (note-le dans ton gestionnaire de mots de passe). Pour passer à un compte, crée-le ci-dessus : ce code deviendra ta clé de secours.';
-  const status = $('#syncStatus');
-  if (!code) setKeyStatus(status, '', '');
-  else if (error) setKeyStatus(status, 'bad', `Dernière synchronisation impossible : ${error}`);
-  else if (lastSyncAt) setKeyStatus(status, 'ok', `Synchronisé ${syncedWhen(lastSyncAt)}.`);
-  else setKeyStatus(status, '', 'Synchronisation…');
-  if (el.settings.open) renderSettingsSummaries();
 }
 
 // Des données sont arrivées d'un autre appareil : on repart des réglages et de la bibliothèque à jour
@@ -2540,65 +2521,13 @@ function applySynced() {
   if (!el.detail.open) showView(state.view);
 }
 
-async function syncAction(action) {
-  const buttons = el.settings.querySelectorAll('#syncOff button, #syncOn button');
-  buttons.forEach((b) => (b.disabled = true));
-  setKeyStatus($('#syncStatus'), '', 'Synchronisation…');
-  try {
-    const message = await action();
-    renderSync();
-    if (message) setKeyStatus($('#syncStatus'), 'ok', message);
-  } catch (err) {
-    renderSync();
-    setKeyStatus($('#syncStatus'), 'bad', err.message);
-  } finally {
-    buttons.forEach((b) => (b.disabled = false));
-  }
-}
-
-$('#syncCreate').addEventListener('click', () =>
-  syncAction(async () => {
-    await createCode();
-    return 'Code créé et données envoyées. Entre ce code sur tes autres navigateurs et appareils.';
-  }),
-);
-$('#syncJoin').addEventListener('click', () =>
-  syncAction(async () => {
-    await joinCode($('#syncCodeInput').value);
-    $('#syncCodeInput').value = '';
-    applySynced();
-    return 'Données récupérées : réglages, clés, abonnements, J’aime et historique.';
-  }),
-);
-$('#syncCodeInput').addEventListener('keydown', (e) => {
-  if (e.key !== 'Enter') return;
-  e.preventDefault(); // pas d'envoi du formulaire des réglages
-  $('#syncJoin').click();
-});
-$('#syncNow').addEventListener('click', () =>
-  syncAction(async () => {
-    const { pulled } = await syncNow();
-    if (pulled) applySynced();
-    return '';
-  }),
-);
-$('#syncLeave').addEventListener('click', () => {
-  leave(); // les données restent sur cet appareil, elles ne suivent simplement plus
-  renderSync();
-  setKeyStatus($('#syncStatus'), '', 'Synchronisation arrêtée sur cet appareil. Tes données y restent.');
-});
-window.addEventListener('streamhub:sync', () => el.settings.open && renderSync());
-
 // ---------- Compte ----------
 
 const accountUi = initAccountUi({
   syncNow,
   syncedWhen,
   onPulled: applySynced,
-  onChange: () => {
-    renderSync();
-    renderSettingsSummaries();
-  },
+  onChange: renderSettingsSummaries,
 });
 window.addEventListener('streamhub:account', () => el.settings.open && renderSettingsSummaries());
 

@@ -6,7 +6,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                SyncSection()
+                AccountSections()
                 Section("Accueil") {
                     NavigationLink {
                         HomeSettingsView()
@@ -45,75 +45,6 @@ struct SettingsView: View {
         ("FR", "France"), ("BE", "Belgique"), ("CH", "Suisse"), ("LU", "Luxembourg"), ("CA", "Canada"),
         ("GB", "Royaume-Uni"), ("US", "États-Unis"), ("DE", "Allemagne"), ("ES", "Espagne"), ("IT", "Italie"),
     ]
-}
-
-// Synchronisation avec le site et les autres appareils
-private struct SyncSection: View {
-    @Environment(AppModel.self) private var model
-    @State private var input = ""
-    @State private var busy = false
-    @State private var message: String?
-
-    var body: some View {
-        Section {
-            if let code = model.sync.code {
-                LabeledContent("Code") {
-                    Text(code).font(.callout.monospaced()).textSelection(.enabled)
-                }
-                if let last = model.store.syncMeta.lastSyncAt {
-                    LabeledContent("Dernière synchro", value: Date(timeIntervalSince1970: last / 1000).formatted(.relative(presentation: .named)))
-                }
-                if let error = model.store.syncMeta.error {
-                    Text(error).foregroundStyle(.red).font(.footnote)
-                }
-                Button {
-                    run { try await model.sync.syncNow() }
-                } label: {
-                    HStack {
-                        Text("Synchroniser maintenant")
-                        if busy || model.sync.isRunning { Spacer(); ProgressView() }
-                    }
-                }
-                .disabled(busy)
-                ShareLink("Partager le code", item: code)
-                Button("Arrêter la synchronisation", role: .destructive) { model.sync.leave() }
-            } else {
-                TextField("Code (ABCD-EFGH-…)", text: $input)
-                    .textInputAutocapitalization(.characters)
-                    .autocorrectionDisabled()
-                    .font(.body.monospaced())
-                Button("Utiliser ce code") {
-                    run { try await model.sync.join(input) }
-                }
-                .disabled(busy || input.isEmpty)
-                Button("Créer un nouveau code") {
-                    run { try await model.sync.createCode() }
-                }
-                .disabled(busy)
-            }
-            if let message {
-                Text(message).font(.footnote).foregroundStyle(.secondary)
-            }
-        } header: {
-            Text("Synchronisation")
-        } footer: {
-            Text("Le même code que sur le site : réglages, clés, Ma liste, J’aime et historique suivent partout. Tout est chiffré avant d’être envoyé.")
-        }
-    }
-
-    private func run(_ action: @escaping () async throws -> Void) {
-        busy = true
-        message = nil
-        Task {
-            do {
-                try await action()
-                input = ""
-            } catch {
-                message = error.localizedDescription
-            }
-            busy = false
-        }
-    }
 }
 
 // Clés TMDB et Streaming Availability
@@ -199,13 +130,11 @@ struct ProvidersView: View {
     }
 }
 
-// Premier lancement : code de synchronisation du site, ou clé TMDB
+// Premier lancement : compte StreamHub, ou clé TMDB (invité)
 struct WelcomeView: View {
     @Environment(AppModel.self) private var model
-    @State private var code = ""
     @State private var key = ""
-    @State private var busy = false
-    @State private var message: String?
+    @State private var showAccount = false
 
     var body: some View {
         ScrollView {
@@ -222,29 +151,19 @@ struct WelcomeView: View {
                         .foregroundStyle(.secondary)
                 }
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Tu utilises déjà StreamHub sur le web ?").font(.headline)
-                    Text("Colle ton code de synchronisation (Réglages → Synchronisation sur le site) : tout revient.")
+                    Text("Ton compte StreamHub").font(.headline)
+                    Text("Connecte-toi (ou crée un compte) : tes réglages, clés, abonnements et listes reviennent, chiffrés de bout en bout. Sinon, reste en invité : tout reste sur cet iPhone.")
                         .font(.subheadline).foregroundStyle(.secondary)
-                    TextField("ABCD-EFGH-JKLM-NPQR-STUV", text: $code)
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled()
-                        .font(.body.monospaced())
-                        .padding(12)
-                        .background(Color.appSurface, in: .rect(cornerRadius: 12))
                     Button {
-                        Task { await join() }
+                        showAccount = true
                     } label: {
-                        HStack {
-                            if busy { ProgressView() }
-                            Text("Utiliser ce code").frame(maxWidth: .infinity)
-                        }
+                        Text(model.account.signedIn ? "Mon compte" : "Se connecter ou créer un compte").frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.glassProminent)
                     .controlSize(.large)
-                    .disabled(busy || code.isEmpty)
                 }
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Sinon").font(.headline)
+                    Text("En invité").font(.headline)
                     Text("Colle ta clé TMDB : gratuite, sur themoviedb.org → Paramètres → API.")
                         .font(.subheadline).foregroundStyle(.secondary)
                     SecureField("Clé TMDB", text: $key)
@@ -259,25 +178,21 @@ struct WelcomeView: View {
                     .controlSize(.large)
                     .disabled(key.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
-                if let message {
-                    Text(message).foregroundStyle(.red).font(.footnote).multilineTextAlignment(.center)
-                }
             }
             .padding(.horizontal, 24)
         }
         .background(Color.appBackground)
-    }
-
-    private func join() async {
-        busy = true
-        message = nil
-        do {
-            try await model.sync.join(code)
-            if !model.isConfigured { message = "Synchronisé, mais aucune clé TMDB dans ces données : colle-la ci-dessous." }
-        } catch {
-            message = error.localizedDescription
+        .sheet(isPresented: $showAccount) {
+            NavigationStack {
+                Form { AccountSections() }
+                    .scrollContentBackground(.hidden)
+                    .background(Color.appBackground)
+                    .navigationTitle("Compte")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("OK") { showAccount = false } } }
+            }
+            .preferredColorScheme(.dark)
         }
-        busy = false
     }
 }
 

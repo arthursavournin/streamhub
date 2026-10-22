@@ -12,7 +12,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.3.1';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -2363,7 +2363,7 @@ function renderHomeSettings() {
     .map((r, i) => {
       const def = HOME_ROWS.find((d) => d.key === r.key);
       return `<li class="home-row ${r.on ? '' : 'off'}">
-        <label><input type="checkbox" data-home-row="${r.key}" ${r.on ? 'checked' : ''}> ${esc(def.title)}</label>
+        <label><input type="checkbox" data-home-row="${r.key}" ${r.on ? 'checked' : ''}><span>${esc(def.title)}</span></label>
         <button type="button" class="icon-btn" data-home-move="${i}" data-dir="-1" ${i === 0 ? 'disabled' : ''} aria-label="Monter ${esc(def.title)}">↑</button>
         <button type="button" class="icon-btn" data-home-move="${i}" data-dir="1" ${i === last ? 'disabled' : ''} aria-label="Descendre ${esc(def.title)}">↓</button>
       </li>`;

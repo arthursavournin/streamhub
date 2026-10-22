@@ -394,6 +394,9 @@ lien le plus précis possible :
 Les deux premières sources sont interrogées en même temps à l'ouverture d'une fiche. Si tu cliques sur « Regarder
 sur… » avant leur réponse, StreamHub attend le bon lien (4 secondes au plus) au lieu d'ouvrir la recherche.
 
+Par sécurité, seuls des liens web (`https://`, `http://`) reçus de ces services sont gardés : une adresse d'un autre
+type (`javascript:`…) est ignorée et n'est jamais ouverte (version 2.3.3, site et appli iPhone).
+
 ### Reprendre une série
 
 Pour une série, « Regarder sur… » lance l'**épisode suivant**, là où tu t'es arrêté, ou l'épisode 1 si tu ne l'as
@@ -456,8 +459,10 @@ Il fait aussi trois choses de plus :
 - sur Disney+, quand tu lances une série, il appuie sur « Reprendre » (ou « Lecture ») sur la page de la série :
   la série reprend à l'épisode suivant.
 
-Il n'agit que dans un parcours lancé depuis StreamHub (moins de 15 minutes), n'envoie rien sur Internet et ne garde,
-dans ton navigateur, que l'adresse du titre lancé. Une fois installé, la ligne « Script… installé » apparaît dans
+Il ne tourne que sur StreamHub et sur les sites des plateformes et de leur connexion (depuis la version 3.2 ; avant,
+sur tous les sites). Il n'agit que dans un parcours lancé depuis StreamHub (moins de 15 minutes, lien vers la
+plateforme du site ouvert), n'envoie rien sur Internet et ne garde, dans ton navigateur, que l'adresse du titre
+lancé. Une fois installé, la ligne « Script… installé » apparaît dans
 Réglages → Pays et lecture, et la barre « Relancer » ne s'affiche plus.
 
 | Navigateur | Installation |

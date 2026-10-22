@@ -53,7 +53,7 @@ nonisolated enum Links {
     }
 
     static func tmdbLink(_ offers: Offers?, type: MediaType, id: Int, region: String) -> String {
-        offers?.link ?? "https://www.themoviedb.org/\(type.rawValue)/\(id)/watch?locale=\(region)"
+        Platforms.webLink(offers?.link) ?? "https://www.themoviedb.org/\(type.rawValue)/\(id)/watch?locale=\(region)"
     }
 
     // Les boutons « Regarder sur… », d'après les offres TMDB (liens de secours en attendant les liens directs)
@@ -152,8 +152,8 @@ struct LinkResolver {
             (options?[country]?.array ?? []).map { o in
                 SAOption(
                     service: o["service"]?["id"]?.string, name: o["service"]?["name"]?.string,
-                    type: o["type"]?.string ?? "", link: o["link"]?.string,
-                    videoLink: o["videoLink"]?.string ?? Platforms.autoplayLink(o["link"]?.string),
+                    type: o["type"]?.string ?? "", link: Platforms.webLink(o["link"]?.string), // liens web seulement
+                    videoLink: Platforms.webLink(o["videoLink"]?.string) ?? Platforms.autoplayLink(Platforms.webLink(o["link"]?.string)),
                     addon: o["addon"]?["name"]?.string
                 )
             }
@@ -209,7 +209,10 @@ struct LinkResolver {
         guard let url = components.url, let (data, response) = try? await URLSession.shared.data(from: url),
               (response as? HTTPURLResponse)?.statusCode == 200,
               let answer = try? JSONDecoder().decode(Answer.self, from: data) else { return [] }
-        let offers = answer.offers ?? []
+        // Liens web seulement (voir Platforms.webLink)
+        let offers = (answer.offers ?? []).compactMap { o in
+            Platforms.webLink(o.url).map { RelayOffer(provider: o.provider, type: o.type, url: $0, deeplink: Platforms.webLink(o.deeplink)) }
+        }
         Self.relayCache[cacheKey] = offers
         return offers
     }

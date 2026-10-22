@@ -204,6 +204,20 @@ export function fallbackLink(providerName, title, tmdbWatchLink) {
   return { href: tmdbWatchLink, hint: 'Liens sur TMDB' };
 }
 
+// Adresses venues des services (Streaming Availability, JustWatch, TMDB) ou des données enregistrées : seulement des
+// liens web, plus les adresses d'applis que StreamHub fabrique lui-même (aiv://, sixplay://). Une adresse
+// « javascript: » (ou d'un autre type) n'est jamais affichée ni ouverte (audit de sécurité, version 2.3.3).
+const APP_SCHEMES = ['aiv:', 'sixplay:'];
+const protocolOf = (href) => {
+  try {
+    return new URL(href).protocol;
+  } catch {
+    return '';
+  }
+};
+export const webLink = (href) => (['https:', 'http:'].includes(protocolOf(href)) ? href : null);
+export const safeLink = (href) => webLink(href) ?? (APP_SCHEMES.includes(protocolOf(href)) ? href : null);
+
 // Lien qui lance la lecture, quand la plateforme n'en fournit pas mais que sa fiche sait le faire.
 // Canal+ : la fiche du titre lance son lecteur toute seule avec « ?autoplay=true » (paramètre lu par le site,
 // composant PrimaryActions : « launch main player with autoplay query param »). Le son démarre coupé.

@@ -6,8 +6,9 @@ Ce script s'en souvient : une fois connecté et le profil choisi, il ouvre le ti
 
 Fonctionne avec **toutes les plateformes** proposées par StreamHub (Netflix, Disney+, Prime Video, Apple TV+,
 Paramount+, Canal+, HBO Max, TF1+, M6+, ADN, Crunchyroll…), y compris celles qui se connectent sur un autre site
-(Apple, Canal+…). Le script s'exécute sur tous les sites, mais n'agit que dans un parcours ouvert depuis
-StreamHub (lien `#streamhub=` de moins de 15 minutes) ; partout ailleurs il s'arrête aussitôt.
+(Apple, Canal+…). Le script ne tourne que sur StreamHub et sur les sites de ces plateformes (liste dans son
+en-tête, lignes `@match`), jamais ailleurs, et n'agit que dans un parcours ouvert depuis StreamHub (lien
+`#streamhub=` de moins de 15 minutes, vers la plateforme du site ouvert).
 
 Un seul fichier, `streamhub-reprise.user.js`, pour tous les navigateurs :
 
@@ -56,9 +57,10 @@ Pour une plateforme sans réglage particulier, le script ne reprend le titre qu'
 connexion, de profil ou de code PIN, puis l'avoir vu disparaître (pendant 1,5 s). Netflix, Disney+ et Prime
 Video ont des réglages plus précis (page d'accueil et écrans de profil reconnus).
 
-Les navigateurs indiquent que le script peut « lire et modifier les données de tous les sites » : c'est
-nécessaire pour couvrir toutes les plateformes et leurs sites de connexion. Il n'envoie rien sur Internet : il
-mémorise seulement, dans le navigateur, l'adresse du titre lancé depuis StreamHub.
+Depuis la version 3.2, le script ne demande l'accès qu'aux sites des plateformes et de leur connexion (avant :
+tous les sites). Un lien `#streamhub=` n'est retenu que s'il mène à une plateforme de cette liste et qu'il est
+ouvert sur cette même plateforme : une autre page ne peut pas s'en servir pour te rediriger ailleurs. Il n'envoie
+rien sur Internet : il mémorise seulement, dans le navigateur, l'adresse du titre lancé depuis StreamHub.
 
 L'appli **Prime Video pour Mac** n'est pas un navigateur : le script n'y agit pas. Quand StreamHub ouvre
 l'appli (option des réglages), c'est elle qui gère le choix du profil.

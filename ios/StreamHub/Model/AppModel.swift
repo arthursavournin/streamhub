@@ -184,13 +184,13 @@ final class AppModel {
         if ref.type == .tv { pendingProgress = PendingProgress(entry: entry, at: Date()) }
 
         if let app = Platforms.appLink(watch.href).flatMap(URL.init(string:)), await UIApplication.shared.open(app) { return }
-        guard let url = URL(string: watch.href) else { return }
+        guard let url = Platforms.webLink(watch.href).flatMap(URL.init(string:)) else { return } // liens web seulement
         if await UIApplication.shared.open(url, options: [.universalLinksOnly: true]) { return }
         await UIApplication.shared.open(url)
     }
 
     func openWeb(_ href: String) {
-        guard let url = URL(string: href) else { return }
+        guard let url = Platforms.webLink(href).flatMap(URL.init(string:)) else { return }
         UIApplication.shared.open(url)
     }
 

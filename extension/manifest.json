@@ -1,15 +1,46 @@
 {
   "manifest_version": 3,
   "name": "StreamHub – reprise après connexion",
-  "description": "Quand une plateforme demande de se connecter ou de choisir un profil, ouvre ensuite le titre lancé depuis StreamHub. N'agit que dans les onglets ouverts depuis StreamHub.",
-  "version": "3.1",
+  "description": "Quand une plateforme demande de se connecter ou de choisir un profil, ouvre ensuite le titre lancé depuis StreamHub. Ne tourne que sur StreamHub et les sites des plateformes.",
+  "version": "3.2",
   "icons": {
     "128": "icon-128.png"
   },
   "content_scripts": [
     {
       "matches": [
-        "<all_urls>"
+        "*://arthursavournin.github.io/streamhub*",
+        "http://localhost/*",
+        "http://127.0.0.1/*",
+        "*://*.netflix.com/*",
+        "*://*.primevideo.com/*",
+        "*://*.amazon.fr/*",
+        "*://*.amazon.com/*",
+        "*://*.amazon.de/*",
+        "*://*.amazon.co.uk/*",
+        "*://*.amazon.es/*",
+        "*://*.amazon.it/*",
+        "*://*.amazon.ca/*",
+        "*://*.amazon.com.be/*",
+        "*://*.amazon.nl/*",
+        "*://*.disneyplus.com/*",
+        "*://*.canalplus.com/*",
+        "*://*.canal-plus.com/*",
+        "*://*.tf1.fr/*",
+        "*://*.m6.fr/*",
+        "*://*.france.tv/*",
+        "*://*.francetv.fr/*",
+        "*://*.hbomax.com/*",
+        "*://*.max.com/*",
+        "*://*.tv.apple.com/*",
+        "*://*.idmsa.apple.com/*",
+        "*://*.appleid.apple.com/*",
+        "*://*.paramountplus.com/*",
+        "*://*.mubi.com/*",
+        "*://*.arte.tv/*",
+        "*://*.crunchyroll.com/*",
+        "*://*.animationdigitalnetwork.com/*",
+        "*://*.animationdigitalnetwork.fr/*"
       ],
       "js": [
         "streamhub-reprise.user.js"

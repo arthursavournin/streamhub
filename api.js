@@ -3,7 +3,7 @@
 // - Streaming Availability (RapidAPI) : liens directs vers le film ou la série sur chaque plateforme
 // `type` vaut 'movie' (film) ou 'tv' (série), comme dans les URL de TMDB.
 import { cacheGet, cacheSet, relayUrl } from './store.js';
-import { autoplayLink, providerLogo, withLogos, withOriginals, withVirtualChannels, withVirtualProviders } from './providers.js';
+import { autoplayLink, providerLogo, webLink, withLogos, withOriginals, withVirtualChannels, withVirtualProviders } from './providers.js';
 
 const TMDB = 'https://api.themoviedb.org/3';
 const SA_HOST = 'streaming-availability.p.rapidapi.com';
@@ -249,14 +249,17 @@ export function makeApi(settings) {
     // Liens directs d'après JustWatch (via le relais) : [{ provider, type: FLATRATE | FREE | ADS | RENT | BUY, url, deeplink }]
     async relayOffers(type, tmdbId, title) {
       const cacheKey = `jw:${type}:${region}:${tmdbId}`;
+      // Liens web seulement (voir webLink), aussi pour les réponses déjà en mémoire
+      const safe = (offers) =>
+        offers.map((o) => ({ ...o, url: webLink(o.url), deeplink: webLink(o.deeplink) })).filter((o) => o.url);
       const cached = cacheGet(cacheKey, RELAY_CACHE_MS);
-      if (cached) return cached;
+      if (cached) return safe(cached);
       const params = new URLSearchParams({ tmdb: tmdbId, type, title, country: region });
       const res = await fetch(`${relayUrl(settings)}/offers?${params}`);
       if (!res.ok) throw new ApiError(`Relais : erreur ${res.status}.`, res.status);
       const { offers = [] } = await res.json();
       cacheSet(cacheKey, offers);
-      return offers;
+      return safe(offers);
     },
 
     // Liens directs (fiche ou lecture) par plateforme, via Streaming Availability v4.
@@ -286,14 +289,16 @@ export function makeApi(settings) {
       }
       const data = await res.json();
       const pick = (streamingOptions) =>
-        (streamingOptions?.[country] ?? []).map((o) => ({
-          service: o.service?.id,
-          name: o.service?.name,
-          type: o.type, // subscription | free | addon | rent | buy
-          link: o.link,
-          videoLink: o.videoLink ?? autoplayLink(o.link),
-          addon: o.addon?.name ?? null,
-        }));
+        (streamingOptions?.[country] ?? [])
+          .map((o) => ({
+            service: o.service?.id,
+            name: o.service?.name,
+            type: o.type, // subscription | free | addon | rent | buy
+            link: webLink(o.link), // liens web seulement (voir webLink)
+            videoLink: webLink(o.videoLink) ?? autoplayLink(webLink(o.link)),
+            addon: o.addon?.name ?? null,
+          }))
+          .filter((o) => o.link);
       const result = {
         options: pick(data.streamingOptions),
         seasons: (data.seasons ?? []).map((s, i) => ({

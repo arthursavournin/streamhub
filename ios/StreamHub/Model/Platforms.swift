@@ -267,6 +267,14 @@ nonisolated enum Platforms {
         return (tmdbLink, "Liens sur TMDB")
     }
 
+    // Adresses venues des services (Streaming Availability, JustWatch, TMDB) : seulement des liens web. Une adresse
+    // d'un autre type (« tel: », « sms: », autre appli…) n'est jamais ouverte (audit de sécurité, version 2.3.3).
+    // Les adresses d'applis fabriquées par StreamHub (sixplay://, appLink) passent à part.
+    static func webLink(_ href: String?) -> String? {
+        guard let href, let scheme = URL(string: href)?.scheme?.lowercased(), ["https", "http"].contains(scheme) else { return nil }
+        return href
+    }
+
     // Lien qui lance la lecture, quand la plateforme n'en fournit pas mais que sa fiche sait le faire.
     // Canal+ : la fiche avec « ?autoplay=true » lance son lecteur. Prime Video : la fiche « …/detail?gti=… » a son lien
     // de lecture « app.primevideo.com/watch?gti=… ».

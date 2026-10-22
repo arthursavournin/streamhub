@@ -1,10 +1,41 @@
 // ==UserScript==
 // @name         StreamHub – reprise après connexion
 // @namespace    https://arthursavournin.github.io/streamhub/
-// @version      3.1
+// @version      3.2
 // @description  Ouvre le titre lancé depuis StreamHub après la connexion ou le choix du profil, au lieu de laisser sur l'accueil.
 // @author       StreamHub
-// @match        *://*/*
+// @match        *://arthursavournin.github.io/streamhub*
+// @match        http://localhost/*
+// @match        http://127.0.0.1/*
+// @match        *://*.netflix.com/*
+// @match        *://*.primevideo.com/*
+// @match        *://*.amazon.fr/*
+// @match        *://*.amazon.com/*
+// @match        *://*.amazon.de/*
+// @match        *://*.amazon.co.uk/*
+// @match        *://*.amazon.es/*
+// @match        *://*.amazon.it/*
+// @match        *://*.amazon.ca/*
+// @match        *://*.amazon.com.be/*
+// @match        *://*.amazon.nl/*
+// @match        *://*.disneyplus.com/*
+// @match        *://*.canalplus.com/*
+// @match        *://*.canal-plus.com/*
+// @match        *://*.tf1.fr/*
+// @match        *://*.m6.fr/*
+// @match        *://*.france.tv/*
+// @match        *://*.francetv.fr/*
+// @match        *://*.hbomax.com/*
+// @match        *://*.max.com/*
+// @match        *://*.tv.apple.com/*
+// @match        *://*.idmsa.apple.com/*
+// @match        *://*.appleid.apple.com/*
+// @match        *://*.paramountplus.com/*
+// @match        *://*.mubi.com/*
+// @match        *://*.arte.tv/*
+// @match        *://*.crunchyroll.com/*
+// @match        *://*.animationdigitalnetwork.com/*
+// @match        *://*.animationdigitalnetwork.fr/*
 // @run-at       document-start
 // @grant        GM.getValue
 // @grant        GM.setValue
@@ -20,7 +51,9 @@
 // la plateforme redirige vers sa page de connexion. Le script mémorise le lien, puis, une fois connecté et le
 // profil choisi, ouvre le titre au lieu de laisser sur l'accueil.
 //
-// Ailleurs, et sans lien « #streamhub= » récent (15 minutes), le script ne fait rien.
+// Le script ne tourne que sur StreamHub et sur les sites des plateformes (et de leur connexion), jamais ailleurs
+// (version 3.2, audit de sécurité : avant, il tournait sur toutes les pages). Sans lien « #streamhub= » récent
+// (15 minutes), il ne fait rien.
 (() => {
   // StreamHub en ligne, ou lancé sur son ordinateur (python3 -m http.server)
   const onStreamHub =
@@ -64,12 +97,40 @@
     return;
   }
 
+  // ---------- Plateformes ----------
+
+  // Sites de chaque plateforme, connexion comprise (Prime Video se connecte sur Amazon, Apple TV sur idmsa.apple.com / appleid.apple.com).
+  // Même liste que les « @match » de l'en-tête. Un lien « #streamhub= » n'est retenu que vers une de ces plateformes,
+  // depuis une page de la même plateforme : une page tierce ne peut pas faire rediriger Netflix vers un autre site.
+  const PLATFORMS = [
+    ['netflix.com'],
+    ['primevideo.com', 'amazon.fr', 'amazon.com', 'amazon.de', 'amazon.co.uk', 'amazon.es', 'amazon.it', 'amazon.ca', 'amazon.com.be', 'amazon.nl'],
+    ['disneyplus.com'],
+    ['canalplus.com', 'canal-plus.com'],
+    ['tf1.fr'],
+    ['m6.fr'],
+    ['france.tv', 'francetv.fr'],
+    ['hbomax.com', 'max.com'],
+    ['tv.apple.com', 'idmsa.apple.com', 'appleid.apple.com'],
+    ['paramountplus.com'],
+    ['mubi.com'],
+    ['arte.tv'],
+    ['crunchyroll.com'],
+    ['animationdigitalnetwork.com', 'animationdigitalnetwork.fr'],
+  ];
+  // Numéro de la plateforme d'un nom de site (« www.netflix.com » → 0), -1 si ce n'est pas une plateforme
+  const platformOf = (host) => PLATFORMS.findIndex((sites) => sites.some((d) => host === d || host.endsWith(`.${d}`)));
+  const hostOf = (href) => {
+    try {
+      return new URL(href).hostname;
+    } catch {
+      return '';
+    }
+  };
+
   // ---------- Outils ----------
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  const squash = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
-  // « www.canalplus.com » → « canalplus » : reconnaît aussi « pass.canal-plus.com » (même marque)
-  const brandOf = (host) => squash(host.split('.').slice(-2, -1)[0] ?? host);
   const siteOf = (host) => host.split('.').slice(-2).join('.');
   const isVisible = (el) => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
   const visible = (selector, root = document) => {
@@ -199,8 +260,13 @@
       if (pending) await store.del(KEY);
       return false;
     }
+    // Lien enregistré par une version d'avant la 3.2 (plateforme non vérifiée) : oublié
+    if (!Number.isInteger(pending.platform) || pending.platform < 0) {
+      await store.del(KEY);
+      return false;
+    }
     // Uniquement sur les sites de la plateforme (ou de sa connexion) : jamais sur un site sans rapport
-    if (!squash(location.hostname).includes(pending.brand)) return true;
+    if (platformOf(location.hostname) !== pending.platform) return true;
 
     const known = KNOWN.find((k) => k.host.test(location.hostname));
     // Écran de connexion / profil / code PIN, y compris affiché à l'adresse même du titre (Netflix, Prime)
@@ -253,7 +319,9 @@
     // Arrivée depuis StreamHub : on mémorise le lien voulu et on retire le fragment de l'adresse
     const params = new URLSearchParams(location.hash.slice(1));
     const wanted = params.get('streamhub');
-    if (wanted && /^https?:\/\//.test(wanted)) {
+    // Lien vers une plateforme connue, ouvert sur cette même plateforme (sinon : ignoré, voir PLATFORMS)
+    const platform = wanted && /^https:\/\//.test(wanted) ? platformOf(hostOf(wanted)) : -1;
+    if (platform >= 0 && platformOf(location.hostname) === platform) {
       history.replaceState(null, '', location.pathname + location.search);
       const known = KNOWN.find((k) => k.host.test(location.hostname));
       const gated = GATE_URL.test(location.pathname);
@@ -261,7 +329,7 @@
         target: wanted,
         play: params.get('play') === '1', // StreamHub demande la lecture depuis la fiche (série Disney+)
         at: Date.now(),
-        brand: brandOf(new URL(wanted).hostname),
+        platform,
         sawGate: gated,
         // Page d'arrivée (la plateforme peut rediriger le lien vers une autre adresse du même titre)
         landing: gated || known?.home.test(location.pathname) ? null : location.href,

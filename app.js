@@ -3,7 +3,7 @@ import { makeApi, img, testTmdbKey, testSaKey, testRelay } from './api.js';
 import { syncNow, startAutoSync } from './sync.js';
 import { handleAuthRedirect, accountState } from './account.js';
 import { initAccountUi, accountSummary } from './account-ui.js';
-import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, seriesResumeLink, providerLogo, CANAL_CHANNELS, CANAL_CINE_SERIES, withVirtualChannels, withSaOffers, originalNetworks } from './providers.js';
+import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, safeLink, seriesResumeLink, providerLogo, CANAL_CHANNELS, CANAL_CINE_SERIES, withVirtualChannels, withSaOffers, originalNetworks } from './providers.js';
 import { INDEXED_PLATFORMS, platformEpisodeUrl, canalChannelPath } from './episodes.js';
 import { aliasMatches } from './aliases.js';
 import { loadTitles, suggest, splitNumber, arrangeSagas } from './search.js';
@@ -12,7 +12,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.3.2';
+const APP_VERSION = '2.3.3';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -409,6 +409,7 @@ function buildCard(m, { meta, href, target, typeTag = state.type === 'all', rank
   const type = m.media_type;
   const title = titleOf(m);
   const date = dateOf(m);
+  if (href && !safeLink(href)) href = null; // lien enregistré d'un type inattendu : la carte ouvre la fiche
   const card = document.createElement(href ? 'a' : 'button');
   if (href) {
     card.href = href;
@@ -1944,6 +1945,7 @@ function openAppOrWeb(appHref, webHref) {
 
 // Ouverture d'une plateforme depuis un bouton (Télécharger, Liker sur…) : même règle que les liens
 function openPlatform(href, service, platform) {
+  if (!safeLink(href)) return;
   const url = withResume(CAN_DOWNLOAD || wantsDesktopApps() ? href : desktopWebLink(href) ?? href);
   if (!openInIosApp(url)) window.open(url, platformTarget(service || platform));
 }
@@ -2724,6 +2726,19 @@ el.settingsForm.addEventListener('submit', (e) => {
 });
 
 // ---------- Événements ----------
+
+// Dernier rempart : un lien d'un type inattendu (« javascript: »…) n'est jamais suivi, d'où qu'il vienne
+document.addEventListener(
+  'click',
+  (e) => {
+    const a = e.target.closest?.('a[href]');
+    if (a && !safeLink(a.href)) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  },
+  true,
+);
 
 document.addEventListener('click', (e) => {
   const target = e.target;

@@ -60,7 +60,7 @@ struct LibraryView: View {
         case .watchlist: "Ajoute des titres avec « + Ma liste » sur leur fiche."
         case .likes: "Les titres que tu aimes apparaîtront ici."
         case .history: "Les titres lancés depuis StreamHub apparaîtront ici."
-        case .downloads: "Dans la fiche d’un film ou d’un épisode, touche « Télécharger » : StreamHub ouvre l’appli de la plateforme pour lancer le téléchargement et le note ici."
+        case .downloads: "Dans la fiche d’un film ou d’un épisode, touche « Télécharger » : StreamHub le note ici et ouvre l’appli de la plateforme pour lancer le téléchargement."
         }
     }
 }

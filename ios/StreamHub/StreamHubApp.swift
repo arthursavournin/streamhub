@@ -30,14 +30,6 @@ struct RootView: View {
     @Environment(AppModel.self) private var model
     @State private var tab = 1 // l'appli s'ouvre sur l'accueil
 
-    // « Le téléchargement de « Naruto » S1 E3 a bien démarré sur Netflix ? »
-    private var downloadQuestionTitle: String {
-        guard let e = model.downloadQuestion?.entry else { return "" }
-        let episode = e.season.flatMap { s in e.episode.map { " S\(s) E\($0)" } } ?? ""
-        let place = e.platform.map { " sur \(Platforms.shortName($0))" } ?? ""
-        return "Le téléchargement de « \(e.title) »\(episode) a bien démarré\(place) ?"
-    }
-
     var body: some View {
         @Bindable var model = model
         Group {
@@ -68,14 +60,7 @@ struct RootView: View {
         .sheet(isPresented: Binding(get: { model.progressQuestion != nil }, set: { if !$0 { model.progressQuestion = nil } })) {
             if let question = model.progressQuestion { ProgressSheet(entry: question.entry) }
         }
-        // Retour après « Télécharger » : le titre n'entre dans Téléchargés que si le téléchargement a démarré
-        .alert(
-            downloadQuestionTitle,
-            isPresented: Binding(get: { model.downloadQuestion != nil }, set: { if !$0 { model.downloadQuestion = nil } })
-        ) {
-            Button("Oui") { model.answerDownload(true) }
-            Button("Non", role: .cancel) { model.answerDownload(false) }
-        }
+
         #if DEBUG
         // Tests dans le simulateur (Supabase local : STREAMHUB_SUPABASE_URL / _KEY, voir Account.swift) ; « Où en es-tu ? »
         // affiché tout de suite pour une série (STREAMHUB_PROGRESS = identifiant TMDB, S1 E5)
@@ -83,8 +68,7 @@ struct RootView: View {
             // Compte (STREAMHUB_ACCOUNT = « action|valeur|valeur », la saisie au clavier du simulateur ne marchant pas
             // avec l'outil de test) : signin|e-mail|mdp, signup|e-mail|mdp, finish, unlock|mdp, change|ancien|nouveau,
             // reset|clé|nouveau, recovery, signout, delete|mdp, like|titre|id, watch|titre|id|movie ou tv|affiche (historique),
-            // unwatch|movie:id, clear (historique), key|clé TMDB, sync, download|titre|id|type|affiche (Téléchargés),
-            // askdownload|titre|id|type|affiche (question au retour).
+            // unwatch|movie:id, clear (historique), key|clé TMDB, sync, download|titre|id|type|affiche (Téléchargés).
             // Résultat dans la console (STREAMHUB_TEST).
             if let spec = ProcessInfo.processInfo.environment["STREAMHUB_ACCOUNT"] {
                 let p = spec.split(separator: "|", omittingEmptySubsequences: false).map(String.init) + ["", ""]
@@ -104,11 +88,11 @@ struct RootView: View {
                     case "watch":
                         let ref = TitleRef(type: MediaType(rawValue: p[3]) ?? .movie, id: Int(p[2]) ?? 1, title: p[1], poster: p[4].isEmpty ? nil : p[4])
                         model.store.recordWatch(LibraryEntry(ref: ref, date: "2025-09-19"))
-                    case "download", "askdownload":
+                    case "download":
                         var entry = LibraryEntry(ref: TitleRef(type: MediaType(rawValue: p[3]) ?? .movie, id: Int(p[2]) ?? 1, title: p[1], poster: p[4].isEmpty ? nil : p[4]))
                         entry.raw["platform"] = .string("Netflix")
                         entry.raw["href"] = .string("https://www.netflix.com/title/80057281")
-                        if p[0] == "download" { model.store.addDownload(entry) } else { model.downloadQuestion = PendingDownload(entry: entry, at: Date()) }
+                        model.store.addDownload(entry)
                     case "unwatch": model.store.remove(.history, key: p[1])
                     case "clear": model.store.clearHistory()
                     case "key": model.store.setSetting("tmdbKey", .string(p[1]))

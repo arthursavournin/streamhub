@@ -4,8 +4,8 @@
 // - watchlist : « Ma liste », les titres mis de côté pour plus tard
 // - history : les 30 derniers titres regardés depuis StreamHub (un par titre)
 // - downloads : rappel des films / épisodes téléchargés dans l'appli d'une plateforme
-// - pending : questions à poser au retour dans StreamHub (« Tu as regardé… ? », « Le téléchargement a démarré ? »,
-//   « Tu as liké… sur Netflix ? »). Rien n'est enregistré tant que la réponse n'est pas oui.
+// - pending : questions à poser au retour dans StreamHub (« Où en es-tu ? », « Tu as liké… sur Netflix ? »). Rien
+//   n'est enregistré tant que la réponse n'est pas oui.
 // - platformLikes : plateformes où un titre a aussi été liké, { 'movie:603': [{ service, platform }] }.
 //   Gardé à part des likes : retirer un like dans StreamHub ne le retire pas sur la plateforme.
 // - removed : titres retirés des listes synchronisées, { history: { 'movie:603': at, '*': at } } ('*' : liste vidée).
@@ -89,7 +89,8 @@ export function addDownload(entry) {
 }
 
 // ---------- Questions en attente ----------
-// { id, kind: 'progress' | 'download' | 'platformLike' | 'platformUnlike' (| 'watch' : avant la 1.9.2), entry, at }
+// { id, kind: 'progress' | 'platformLike' | 'platformUnlike' (| 'watch' : avant la 1.9.2, | 'download' : avant la 2.4.1),
+//   entry, at }
 // progress : série lancée, « Où en es-tu ? » au retour pour noter le dernier épisode vraiment regardé
 
 const platformId = (entry) => entry.service || entry.platform;
@@ -100,13 +101,17 @@ const pendingId = (kind, entry) => {
   return `download:${downloadKey(entry.type, entry.id, entry.season, entry.episode)}`;
 };
 
-// Titres lancés avant la version 1.9.2, quand « Tu as regardé… ? » décidait de l'historique : ils y entrent
-// (l'historique se remplit maintenant dès le lancement, demande de l'utilisateur)
+// Anciennes questions, versées dans leur liste (demandes de l'utilisateur) : titres lancés avant la version 1.9.2,
+// quand « Tu as regardé… ? » décidait de l'historique ; téléchargements demandés avant la version 2.4.1, quand
+// « Le téléchargement a bien démarré ? » décidait de la liste (ils y entrent maintenant dès l'appui)
 export function flushWatchPending() {
-  const watched = lib.pending.filter((p) => p.kind === 'watch');
-  if (!watched.length) return;
-  lib.pending = lib.pending.filter((p) => p.kind !== 'watch');
-  for (const p of [...watched].sort((a, b) => a.at - b.at)) putFirst('history', { ...p.entry, key: titleKey(p.entry.type, p.entry.id) }, HISTORY_MAX);
+  const old = lib.pending.filter((p) => p.kind === 'watch' || p.kind === 'download');
+  if (!old.length) return;
+  lib.pending = lib.pending.filter((p) => !old.includes(p));
+  for (const p of [...old].sort((a, b) => a.at - b.at)) {
+    if (p.kind === 'watch') putFirst('history', { ...p.entry, key: titleKey(p.entry.type, p.entry.id) }, HISTORY_MAX);
+    else addDownload(p.entry);
+  }
   saveLibrary(lib);
 }
 

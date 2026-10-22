@@ -12,7 +12,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.4.0';
+const APP_VERSION = '2.4.1';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -475,7 +475,7 @@ const LIBRARY_TEXT = {
   downloads: {
     intro: 'Ce que tu as téléchargé dans les applis des plateformes. Un clic ouvre le titre dans la bonne appli, où se trouve ton téléchargement.',
     empty: CAN_DOWNLOAD
-      ? 'Aucun téléchargement. Dans la fiche d’un film ou d’un épisode, appuie sur « ⬇ Télécharger » : StreamHub ouvre l’appli de la plateforme pour lancer le téléchargement et le note ici.'
+      ? 'Aucun téléchargement. Dans la fiche d’un film ou d’un épisode, appuie sur « ⬇ Télécharger » : StreamHub le note ici et ouvre l’appli de la plateforme pour lancer le téléchargement.'
       : 'Les téléchargements se font depuis ton téléphone ou ta tablette : les plateformes ne permettent pas de télécharger sur ordinateur ni sur TV. Ouvre StreamHub sur ton téléphone et appuie sur « ⬇ Télécharger » dans la fiche d’un film ou d’un épisode. Ils seront listés là-bas, car cette liste est propre à chaque appareil.',
     remove: 'Retirer des téléchargements',
   },
@@ -2065,11 +2065,12 @@ function onLaunch(link, event) {
 
 // ---------- Questions au retour dans StreamHub ----------
 
-// Questions posées au retour : téléchargement, like sur la plateforme (un titre lancé entre directement dans
-// l'historique depuis la version 1.9.2). watch : anciennes questions, vidées au démarrage (flushWatchPending).
+// Questions posées au retour : like sur la plateforme (un titre lancé entre directement dans l'historique depuis la
+// version 1.9.2, un téléchargement dans Téléchargements depuis la 2.4.1). watch, download : anciennes questions, vidées
+// au démarrage (flushWatchPending).
 // « Où en es-tu ? » n'est posé qu'après 3 minutes : un retour plus rapide, c'est souvent juste pour relancer après le
 // choix du profil
-const PENDING_DELAYS = { progress: 3 * 60 * 1000, download: 3 * 1000, platformLike: 3 * 1000, platformUnlike: 3 * 1000 };
+const PENDING_DELAYS = { progress: 3 * 60 * 1000, platformLike: 3 * 1000, platformUnlike: 3 * 1000 };
 let promptedId = null;
 
 function checkPending() {
@@ -2088,7 +2089,6 @@ function checkPending() {
   const question = {
     progress: `Où en es-tu de <strong>« ${esc(e.title)} »</strong>${where} ?`,
     watch: `Tu as regardé ${what}${where} ?`,
-    download: `Le téléchargement de ${what} a bien démarré${where} ?`,
     platformLike: `Tu as liké <strong>« ${esc(e.title)} »</strong>${where} ?`,
     platformUnlike: `Tu as retiré ton like de <strong>« ${esc(e.title)} »</strong>${where} ?`,
   }[item.kind];
@@ -2893,7 +2893,10 @@ document.addEventListener('click', (e) => {
     const href = download.dataset.href || watch?.dataset.page || watch?.href;
     const platform = download.dataset.platform;
     const service = download.dataset.service;
-    library.addPending('download', { ...currentEntry(), platform, service, href, ...episodeInfo(download) });
+    // Noté tout de suite dans Téléchargements, sans question au retour (demande de l'utilisateur, version 2.4.1)
+    library.addDownload({ ...currentEntry(), platform, service, href, ...episodeInfo(download) });
+    refreshDownloadButtons();
+    updateCounts();
     openPlatform(href, service, platform);
     toast(`Dans l’appli ${shortPlatformName(platform)}, appuie sur son bouton de téléchargement.`);
     return;

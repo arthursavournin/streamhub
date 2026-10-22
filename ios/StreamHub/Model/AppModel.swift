@@ -9,13 +9,6 @@ struct PendingProgress: Identifiable {
     var id: String { entry.key }
 }
 
-// Téléchargement demandé : au retour, « Le téléchargement a bien démarré ? » (comme le site)
-struct PendingDownload: Identifiable {
-    let entry: LibraryEntry
-    let at: Date
-    var id: String { entry.key }
-}
-
 // L'état de l'appli : réglages et bibliothèque, synchronisation, ouverture des titres sur les plateformes
 @Observable
 final class AppModel {
@@ -24,8 +17,6 @@ final class AppModel {
     let sync: SyncService
     var pendingProgress: PendingProgress?
     var progressQuestion: PendingProgress?
-    var pendingDownload: PendingDownload?
-    var downloadQuestion: PendingDownload?
     var showSettings = false // roue des réglages en haut de chaque page
 
     // « Où en es-tu ? » n'est posé qu'après 3 minutes : un retour plus rapide, c'est souvent juste pour changer de profil
@@ -187,18 +178,13 @@ final class AppModel {
         await openPlatform(watch.href)
     }
 
-    // « Télécharger » : ouvre le titre dans l'appli de la plateforme (c'est là qu'on télécharge) ; au retour, StreamHub
-    // demande si le téléchargement a démarré, et le note dans Mon espace → Téléchargés
+    // « Télécharger » : note le titre dans Mon espace → Téléchargés tout de suite, sans question au retour (demande de
+    // l'utilisateur, version 2.4.1), et l'ouvre dans l'appli de la plateforme (c'est là qu'on télécharge)
     func startDownload(_ watch: WatchEntry, for ref: TitleRef, date: String?, episode: Episode? = nil) async {
         var entry = libraryEntry(watch, for: ref, date: date, episode: episode)
         if episode != nil { entry.raw["href"] = .string(watch.href) } // épisode : son propre lien, pas la page de la série
-        pendingDownload = PendingDownload(entry: entry, at: Date())
+        store.addDownload(entry)
         await openPlatform(watch.page ?? watch.href)
-    }
-
-    func answerDownload(_ yes: Bool) {
-        if yes, let entry = downloadQuestion?.entry { store.addDownload(entry) }
-        downloadQuestion = nil
     }
 
     // Titre téléchargé : ouvert directement dans l'appli de la plateforme, où se trouve le fichier
@@ -236,10 +222,6 @@ final class AppModel {
     // Retour dans l'appli : synchronisation, et « Où en es-tu ? » si une série a été lancée il y a plus de 3 minutes
     func appBecameActive() {
         sync.appBecameActive()
-        if let pendingDownload, Date().timeIntervalSince(pendingDownload.at) >= 3 {
-            downloadQuestion = pendingDownload
-            self.pendingDownload = nil
-        }
         guard let pendingProgress, Date().timeIntervalSince(pendingProgress.at) >= Self.progressDelay else { return }
         progressQuestion = pendingProgress
         self.pendingProgress = nil

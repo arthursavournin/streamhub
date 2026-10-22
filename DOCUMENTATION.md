@@ -150,9 +150,8 @@ Un film ou un épisode lancé depuis StreamHub entre tout de suite dans l'histor
 on enchaîne souvent plusieurs épisodes sur la plateforme : en revenant dans StreamHub (au moins 3 minutes après), une
 seule fenêtre demande « Où en es-tu de *Naruto* ? » avec la saison et le dernier épisode regardé (l'épisode lancé est
 déjà choisi) ; « Enregistrer » met l'historique à jour, « Ignorer » garde l'épisode lancé. La même fenêtre propose
-« J'aime la série » (et, sur le site, « Liker aussi sur » la plateforme). Pour un
-téléchargement, StreamHub demande à ton retour « Le téléchargement a bien démarré ? » : le titre n'entre dans les
-téléchargements que si tu réponds oui.
+« J'aime la série » (et, sur le site, « Liker aussi sur » la plateforme). Un titre à télécharger entre tout de suite
+dans les téléchargements, sans question au retour.
 
 ### Liker aussi sur la plateforme
 
@@ -168,7 +167,7 @@ bouton **« ⬇ Télécharger »** ouvre donc le titre dans l'appli de la platef
 téléchargement, et le note dans Téléchargements (Mon espace → Téléchargés sur téléphone), qui sert de rappel. Il
 n'apparaît que sur iPhone, iPad et Android, et dans l'appli iPhone (version 2.4.0 : bouton sous « Regarder sur… »
 pour un film, ⬇ à côté de chaque épisode) : sur ordinateur et TV, les plateformes ne permettent pas de télécharger.
-Au retour, StreamHub demande si le téléchargement a bien démarré. Un appui sur un titre téléchargé l'ouvre dans
+Le titre entre dans la liste dès l'appui, sans question au retour (version 2.4.1). Un appui sur un titre téléchargé l'ouvre dans
 l'appli de la plateforme ; sa croix le retire de la liste (le fichier reste dans l'appli de la plateforme).
 
 ### Et aussi

@@ -12,7 +12,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.5.0';
+const APP_VERSION = '2.5.1';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -1084,7 +1084,7 @@ function fillLocalRow(section) {
   section.hidden = !entries.length && !row.always;
   const track = $('.row-track', section);
   track.innerHTML = entries.length ? '' : `<p class="muted row-message">${LIBRARY_TEXT[row.local].empty}</p>`;
-  for (const entry of entries.slice(0, 20)) track.append(libraryCard(entry, row.local, { removable: false }));
+  for (const entry of entries.slice(0, 20)) track.append(libraryCard(entry, row.local)); // avec sa croix (version 2.5.1)
 }
 
 // J'aime, Historique, Téléchargements ont changé : on met à jour leurs rangées
@@ -2861,6 +2861,7 @@ document.addEventListener('click', (e) => {
   if (remove) {
     library.remove(remove.dataset.remove, remove.dataset.key);
     renderLibrary();
+    refreshLocalRows(); // rangées de l'accueil et de Mon espace (ordinateur)
     updateCounts();
     return;
   }

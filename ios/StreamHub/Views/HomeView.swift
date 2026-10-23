@@ -230,6 +230,11 @@ private struct LocalRow: View {
                     LazyHStack(spacing: 10) {
                         ForEach(entries) { entry in
                             PosterLink(ref: entry.ref)
+                                .overlay(alignment: .topTrailing) {
+                                    RemoveButton(label: "Retirer \(entry.title) de \(list.title)") {
+                                        withAnimation { model.store.remove(list, key: entry.key) }
+                                    }
+                                }
                         }
                     }
                     .padding(.horizontal, 16)
@@ -282,7 +287,7 @@ struct LocalListPage: View {
     var body: some View {
         ScrollView {
             Group {
-                if list == .history { HistoryRow() } else { PosterGrid(refs: model.store.entries(list).map(\.ref)) }
+                if list == .history { HistoryRow() } else { LibraryGrid(list: list) }
             }
             .padding(.vertical, 8)
         }

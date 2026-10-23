@@ -62,7 +62,8 @@ les rubriques sont dans la barre du haut.
 - **Bibliothèque** : tout le catalogue en grille, avec des filtres (Tout / Films / Séries, plateforme, genre) et un
   tri (Populaires, Mieux notés, Plus récents). Le lien « Tout voir » de chaque rangée ouvre la Bibliothèque déjà
   filtrée. Le genre « Animés japonais » y est proposé avec les autres (aussi dans l'appli iPhone).
-- **Mon espace** : tes listes (Ma liste, J'aime, Historique, Téléchargements) et tes plateformes.
+- **Mon espace** : tes listes (Ma liste, J'aime, Historique, Téléchargements) et tes plateformes. Chaque titre a une
+  croix en haut à droite pour le retirer (aussi dans les rangées Ma liste et Reprendre de l'accueil).
 - **Recherche** (site et appli iPhone, même fonctionnement) : tape directement dans la barre du haut ; les résultats
   apparaissent dès la première lettre, sans changer de page. Par titre, mais aussi par surnom ou sigle (« DNA » trouve *Demain nous appartient*, grâce à une
   liste intégrée et à Wikidata).

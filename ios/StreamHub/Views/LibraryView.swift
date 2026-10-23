@@ -27,7 +27,7 @@ struct LibraryView: View {
                     } else if list == .downloads {
                         DownloadsGrid(entries: entries)
                     } else {
-                        PosterGrid(refs: entries.map(\.ref))
+                        LibraryGrid(list: list)
                     }
                 }
                 .padding(.vertical, 8)
@@ -108,7 +108,28 @@ struct DownloadsGrid: View {
     }
 }
 
-// Petite croix en haut à droite d'une affiche (Historique, Téléchargés)
+// Ma liste, J'aime : grille d'affiches, chacune avec sa croix pour la retirer (version 2.5.1, demande de l'utilisateur :
+// toutes les listes de Mon espace ont une croix, comme le site)
+struct LibraryGrid: View {
+    @Environment(AppModel.self) private var model
+    let list: LibraryList
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 12)], spacing: 16) {
+            ForEach(model.store.entries(list)) { entry in
+                PosterLink(ref: entry.ref, width: nil)
+                    .overlay(alignment: .topTrailing) {
+                        RemoveButton(label: "Retirer \(entry.title) de \(list.title)") {
+                            withAnimation { model.store.remove(list, key: entry.key) }
+                        }
+                    }
+            }
+        }
+        .padding(.horizontal, 16)
+    }
+}
+
+// Petite croix en haut à droite d'une affiche (toutes les listes de Mon espace)
 struct RemoveButton: View {
     let label: String
     let action: () -> Void

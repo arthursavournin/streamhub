@@ -991,6 +991,260 @@ html:has(dialog[open]) { overflow: hidden; }
 .toast-actions .btn { white-space: normal; text-align: left; }
 
 @media (max-width: 640px) {
+  .brand span { display: none; }
+  .topbar { gap: 10px; }
+  .filters { flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
+  .selects select { flex: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ---------- Films / Séries ---------- */
+
+.type-switch {
+  display: flex;
+  flex: none;
+  padding: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.type-switch button {
+  padding: 6px 16px;
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+.type-switch button:hover { color: var(--text); }
+.type-switch button[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+
+.type-badge {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 2px 10px;
+  background: rgba(var(--accent-rgb), 0.2);
+  border-radius: 999px;
+  color: var(--accent-soft);
+  font-size: 0.78em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.seasons { margin-top: 28px; }
+.seasons h3 { margin: 0 0 10px; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.season-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.season {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.season-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 10px;
+  background: none;
+  border: 0;
+  border-radius: var(--radius);
+  text-align: left;
+  cursor: pointer;
+}
+.season-head:hover { background: var(--border); }
+.season-head:focus-visible { outline-offset: -3px; }
+.season-head img, .season-placeholder { width: 56px; aspect-ratio: 2 / 3; flex: none; border-radius: 8px; background: var(--border); object-fit: cover; }
+.season-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.season-text small { color: var(--muted); }
+.season-platforms:empty { display: none; }
+.season-head .chevron { color: var(--muted); transition: transform 0.2s ease; }
+.season-head[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+
+/* Découpage « Sans filler » : épisodes hors-série en rouge, saison en rouge si elle n'a que des fillers */
+.season.filler { background: rgba(255, 69, 58, 0.1); border-color: rgba(255, 69, 58, 0.55); }
+.season-text .season-fillers { color: #ff7b72; }
+.episode.filler { background: rgba(255, 69, 58, 0.12); box-shadow: inset 3px 0 0 #ff453a; }
+.filler-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #ff453a;
+  color: #fff;
+  font-size: 0.72em;
+  font-weight: 700;
+  vertical-align: 2px;
+}
+
+.episodes { padding: 0 10px 10px; }
+.episodes > p { margin: 4px 6px 8px; }
+.episode-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.episode {
+  display: flex;
+  gap: 14px;
+  padding: 10px;
+  background: var(--bg);
+  border-radius: 10px;
+}
+.episode img, .episode-placeholder { width: 168px; aspect-ratio: 16 / 9; flex: none; border-radius: 8px; background: var(--surface-2); object-fit: cover; }
+.episode-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.episode-text small { color: var(--muted); }
+.episode-overview {
+  display: -webkit-box;
+  margin: 4px 0 0;
+  overflow: hidden;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  font-size: 0.92em;
+  color: #c9cfdb;
+}
+.episode-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; font-size: 0.9em; }
+.episode-links:empty { display: none; }
+.episode-play {
+  padding: 5px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+.episode-play span { color: var(--muted); font-weight: 400; }
+.episode-play:hover { background: var(--border); }
+.episode-play.mine { background: var(--accent-gradient); border-color: transparent; color: var(--accent-text); }
+.episode-play.mine span { color: rgba(255, 255, 255, 0.8); }
+
+@media (max-width: 640px) {
+  .episode { flex-direction: column; }
+  .episode img, .episode-placeholder { width: 100%; }
+}
+
+.card-tag {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 6px;
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .type-switch button { flex: 1; }
+}
+
+/* Carte de la bibliothèque, avec sa croix pour la retirer */
+.card-wrap { position: relative; }
+.card-wrap .card { width: 100%; text-decoration: none; color: inherit; }
+.card-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 0.85em;
+  cursor: pointer;
+}
+.card-remove:hover { background: #d93a3f; border-color: #d93a3f; }
+
+/* Historique : une seule rangée qui défile, le plus récent à gauche (version 2.3.6) */
+.grid.history-row {
+  display: flex;
+  gap: 12px;
+  margin: 0 calc(-1 * var(--gutter));
+  padding: 0 var(--gutter) 10px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding: 0 var(--gutter);
+  scrollbar-width: none;
+}
+.grid.history-row::-webkit-scrollbar { display: none; }
+.grid.history-row > .card-wrap { flex: none; width: clamp(118px, 13vw, 180px); scroll-snap-align: start; }
+.clear-history { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 16px; }
+.clear-history span { color: var(--text); }
+.clear-history .btn { padding: 7px 16px; }
+/* Bleu foncé, pas rouge (demande de l'utilisateur) */
+#status .clear-history .btn.dark { background: #1d3b72; border-color: transparent; color: #fff; }
+#status .clear-history .btn.dark:hover { background: #25498a; }
+
+/* ---------- Fiche : J'aime, Télécharger ---------- */
+
+.detail-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.like-btn[aria-pressed="true"] { background: rgba(var(--accent-rgb), 0.18); border-color: var(--accent-soft); color: var(--accent-soft); }
+
+.watch-row { display: flex; gap: 8px; min-width: 0; }
+/* « Regarder » + « Télécharger » côte à côte : il faut des colonnes plus larges */
+.watch-list:has(.watch-row) { grid-template-columns: repeat(auto-fill, minmax(min(400px, 100%), 1fr)); }
+.watch-row .watch { flex: 1; min-width: 0; }
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  padding: 0 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.download-btn:hover { background: var(--border); }
+.download-btn.done { color: var(--mine); border-color: rgba(156, 203, 255, 0.45); }
+.download-btn.compact { padding: 5px 10px; border-radius: 999px; }
+
+/* ---------- Barre « Relancer » après un premier lancement ---------- */
+
+.relaunch {
+  position: fixed;
+  inset: auto auto max(16px, env(safe-area-inset-bottom)) 50%;
+  margin: 0;
+  color: var(--text);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(720px, calc(100vw - 32px));
+  padding: 12px 12px 12px 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  transform: translateX(-50%);
+}
+.relaunch[hidden] { display: none; }
+/* Règle séparée : un navigateur qui ne connaît pas :popover-open ignorerait aussi [hidden] */
+.relaunch[popover]:not(:popover-open) { display: none; }
+.relaunch p { flex: 1; margin: 0; font-size: 0.92em; }
+.relaunch .btn { flex: none; }
+.relaunch .icon-btn { width: 34px; height: 34px; margin: 0; align-self: flex-start; }
+@media (max-width: 640px) {
+  .relaunch { flex-wrap: wrap; }
+  .relaunch p { flex-basis: calc(100% - 46px); }
+  .relaunch .btn { order: 3; flex: 1; justify-content: center; }
+}
+
+/* ---------- Question au retour : « Tu as regardé… ? » ---------- */
+
+.confirm { border-color: var(--mine); }
+.confirm-actions { display: flex; flex-wrap: wrap; gap: 8px; flex: none; }
+@media (max-width: 640px) {
   .confirm p { flex-basis: 100%; }
   .confirm-actions { flex: 1; }
   .confirm-actions .btn { flex: 1; justify-content: center; }

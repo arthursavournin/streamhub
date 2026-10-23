@@ -87,6 +87,9 @@ struct AppTopBar: View {
                     .frame(width: 34, height: 34)
                     .clipShape(.rect(cornerRadius: 9))
                     .accessibilityLabel(loc("StreamHub"))
+                    .contentShape(.rect)
+                    .onTapGesture { query = ""; focused.wrappedValue = false; model.homeRequest += 1 } // comme le logo du site
+                    .accessibilityAddTraits(.isButton)
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(.secondary)

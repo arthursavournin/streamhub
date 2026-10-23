@@ -48,6 +48,7 @@ struct RootView: View {
                     Tab(loc("Mon espace"), systemImage: "person.fill", value: 2) { LibraryView() }
                 }
                 .sheet(isPresented: $model.showSettings) { SettingsView() }
+                .onChange(of: model.homeRequest) { tab = 1 }
             } else if (model.account.isOpen && model.account.recoveryKey == nil) || model.account.guest {
                 // Connecté (clé de secours notée) ou invité, mais pas encore de clé TMDB : dernière étape
                 KeySetupView()

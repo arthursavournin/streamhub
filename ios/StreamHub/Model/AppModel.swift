@@ -18,6 +18,7 @@ final class AppModel {
     var pendingProgress: PendingProgress?
     var progressQuestion: PendingProgress?
     var showSettings = false // roue des réglages en haut de chaque page
+    var homeRequest = 0 // logo de la barre du haut touché : retour à l'accueil (onglet Accueil, rubrique Tout, sans fiche ouverte)
     var notice: String? // court message en bas de l'écran (pays détecté…)
 
     // « Où en es-tu ? » n'est posé qu'après 3 minutes : un retour plus rapide, c'est souvent juste pour changer de profil

@@ -39,6 +39,11 @@ struct HomeView: View {
                 opened.formUnion(HomeSection.allCases)
             }
         }
+        // Logo touché : retour à l'accueil (fiches fermées, rubrique Tout), comme sur le site
+        .onChange(of: model.homeRequest) {
+            path = NavigationPath()
+            withAnimation(.easeInOut(duration: 0.25)) { section = nil }
+        }
     }
 
     // L'accueil (Tout) : grande affiche, puis les rangées choisies

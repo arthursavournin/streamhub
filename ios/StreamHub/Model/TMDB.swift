@@ -49,10 +49,10 @@ nonisolated func releaseDateLabel(_ date: String?, long: Bool = false) -> String
     parser.locale = Locale(identifier: "en_US_POSIX")
     guard let day = parser.date(from: String(date.prefix(10))) else { return String(date.prefix(4)) }
     let formatter = DateFormatter()
-    formatter.locale = Locale(identifier: "fr_FR")
+    formatter.locale = L10n.locale
     formatter.dateFormat = long ? "d MMMM y" : "d MMM y"
     let text = formatter.string(from: day)
-    return Calendar.current.component(.day, from: day) == 1 ? "1er" + text.dropFirst(1) : text
+    return Calendar.current.component(.day, from: day) == 1 && !L10n.english ? "1er" + text.dropFirst(1) : text
 }
 
 extension [TMDBTitle] {
@@ -74,7 +74,7 @@ nonisolated struct LatestEpisode: Codable, Hashable, Sendable {
         f.dateFormat = "yyyy-MM-dd"
         f.locale = Locale(identifier: "en_US_POSIX")
         if let air = airDate, let date = f.date(from: air) {
-            text += " · " + date.formatted(.dateTime.day().month(.abbreviated).locale(Locale(identifier: "fr_FR")))
+            text += " · " + date.formatted(.dateTime.day().month(.abbreviated).locale(L10n.locale))
         }
         return text
     }

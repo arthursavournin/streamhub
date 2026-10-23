@@ -47,15 +47,15 @@ struct FieldBox<Aside: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
-                Text(label).font(.subheadline.weight(.semibold))
+                Text(loc(label)).font(.subheadline.weight(.semibold))
                 Spacer()
                 aside
             }
             Group {
                 if secure {
-                    SecureField(placeholder, text: $text)
+                    SecureField(loc(placeholder), text: $text)
                 } else {
-                    TextField(placeholder, text: $text)
+                    TextField(loc(placeholder), text: $text)
                         .keyboardType(keyboard)
                 }
             }
@@ -116,7 +116,7 @@ struct SocialButton: View {
                 } else {
                     Image(.gitHubLogo).resizable().renderingMode(.template).frame(width: 20, height: 20)
                 }
-                Text("Continuer avec \(AccountService.providers[provider] ?? provider)").font(.body.weight(.semibold))
+                Text(loc("Continuer avec \(AccountService.providers[provider] ?? provider)")).font(.body.weight(.semibold))
             }
             .foregroundStyle(provider == "google" ? Color(white: 0.12) : .white)
             .frame(maxWidth: .infinity, minHeight: 50)
@@ -132,7 +132,7 @@ struct OrDivider: View {
     var body: some View {
         HStack(spacing: 12) {
             Rectangle().fill(Color.appBorder).frame(height: 1)
-            Text("ou").font(.footnote).foregroundStyle(Color.appMuted)
+            Text(loc("ou")).font(.footnote).foregroundStyle(Color.appMuted)
             Rectangle().fill(Color.appBorder).frame(height: 1)
         }
     }
@@ -160,9 +160,9 @@ struct SettingsRowLabel: View {
         HStack(spacing: 14) {
             SectionIcon(systemName: icon)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.body.weight(.semibold)).foregroundStyle(.primary)
+                Text(loc(title)).font(.body.weight(.semibold)).foregroundStyle(.primary)
                 if let summary, !summary.isEmpty {
-                    Text(summary).font(.subheadline).foregroundStyle(Color.appMuted).lineLimit(1)
+                    Text(loc(summary)).font(.subheadline).foregroundStyle(Color.appMuted).lineLimit(1)
                 }
             }
             Spacer(minLength: 8)
@@ -205,7 +205,7 @@ struct ActionRow: View {
         Button(action: action) {
             HStack(spacing: 14) {
                 Image(systemName: icon).font(.system(size: 18)).frame(width: 24).foregroundStyle(danger ? Color.appDanger : Color.mine)
-                Text(title).foregroundStyle(danger ? Color.appDanger : .primary)
+                Text(loc(title)).foregroundStyle(danger ? Color.appDanger : .primary)
                 Spacer()
                 if busy { ProgressView() } else if chevron {
                     Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Color.appMuted)
@@ -223,7 +223,7 @@ struct ActionRow: View {
 struct PanelIntro: View {
     let text: String
     var body: some View {
-        Text(text).font(.subheadline).foregroundStyle(Color.appMuted).frame(maxWidth: .infinity, alignment: .leading)
+        Text(loc(text)).font(.subheadline).foregroundStyle(Color.appMuted).frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -232,7 +232,7 @@ struct StatusText: View {
     let message: (text: String, ok: Bool)?
     var body: some View {
         if let message {
-            Text(message.text).font(.footnote).foregroundStyle(message.ok ? Color.mine : Color.appDanger)
+            Text(loc(message.text)).font(.footnote).foregroundStyle(message.ok ? Color.mine : Color.appDanger)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }

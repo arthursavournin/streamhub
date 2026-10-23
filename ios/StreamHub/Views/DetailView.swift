@@ -99,7 +99,7 @@ struct DetailView: View {
                 PosterView(ref: TitleRef(type: ref.type, id: ref.id, title: ref.title, poster: details?.posterPath ?? ref.poster), width: 104)
                     .shadow(radius: 12)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(ref.type == .tv ? "SÉRIE" : "FILM")
+                    Text(loc(ref.type == .tv ? "SÉRIE" : "FILM"))
                         .font(.caption2.weight(.bold))
                         .padding(.horizontal, 7).padding(.vertical, 3)
                         .background(.white.opacity(0.15), in: .capsule)
@@ -140,20 +140,20 @@ struct DetailView: View {
         let inList = model.store.contains(.watchlist, full)
         let liked = model.store.contains(.likes, full)
         return VStack(alignment: .leading, spacing: 14) {
-            Text(metaLine(d)).font(.subheadline).foregroundStyle(.secondary)
+            Text(loc(metaLine(d))).font(.subheadline).foregroundStyle(.secondary)
             // Boutons sur une ligne, qui défile si l'écran est trop étroit
             ScrollView(.horizontal) {
             HStack(spacing: 10) {
                 Button {
                     model.store.toggle(.watchlist, full, date: d.date)
                 } label: {
-                    Label("Ma liste", systemImage: inList ? "checkmark" : "plus")
+                    Label(loc("Ma liste"), systemImage: inList ? "checkmark" : "plus")
                 }
                 .buttonStyle(.glass)
                 Button {
                     model.store.toggle(.likes, full, date: d.date)
                 } label: {
-                    Label("J’aime", systemImage: liked ? "heart.fill" : "heart")
+                    Label(loc("J’aime"), systemImage: liked ? "heart.fill" : "heart")
                 }
                 .buttonStyle(.glass)
                 .tint(liked ? .pink : nil)
@@ -162,7 +162,7 @@ struct DetailView: View {
                 Button {
                     model.store.setHome(rows: model.store.homeLayout, hero: onHero ? nil : full)
                 } label: {
-                    Label("À l’affiche", systemImage: onHero ? "star.fill" : "star")
+                    Label(loc("À l’affiche"), systemImage: onHero ? "star.fill" : "star")
                 }
                 .buttonStyle(.glass)
                 .tint(onHero ? .yellow : nil)
@@ -170,7 +170,7 @@ struct DetailView: View {
                     Button {
                         model.openWeb("https://www.youtube.com/watch?v=\(trailer.key)")
                     } label: {
-                        Label("Bande-annonce", systemImage: "play.rectangle")
+                        Label(loc("Bande-annonce"), systemImage: "play.rectangle")
                     }
                     .buttonStyle(.glass)
                 }
@@ -196,23 +196,23 @@ struct DetailView: View {
         let what = ref.type == .tv ? "Cette série" : "Ce film"
         VStack(alignment: .leading, spacing: 12) {
             if entries.isEmpty {
-                Text("\(what) n’est disponible sur aucune plateforme de streaming dans ce pays pour le moment.")
+                Text(loc("\(what) n’est disponible sur aucune plateforme de streaming dans ce pays pour le moment."))
                     .foregroundStyle(.secondary)
             }
             if !mine.isEmpty {
-                Text("Dans tes abonnements").font(.headline)
+                Text(loc("Dans tes abonnements")).font(.headline)
                 ForEach(mine) { entry in
                     watchButton(entry)
                     // Film : « Télécharger » ouvre l'appli de la plateforme (épisodes : dans la liste des épisodes)
                     if ref.type == .movie, !entry.kind.isPaid { downloadButton(entry, d) }
                 }
             } else if !entries.isEmpty, !model.store.providers.isEmpty {
-                Text("\(what) n’est \(ref.type == .tv ? "incluse" : "inclus") dans aucun de tes abonnements.")
+                Text(loc("\(what) n’est \(ref.type == .tv ? "incluse" : "inclus") dans aucun de tes abonnements."))
                     .foregroundStyle(.secondary)
             }
             if !others.isEmpty, !mine.isEmpty {
                 // Plateformes hors de tes abonnements : repliées, comme la location et l'achat
-                DisclosureGroup("Aussi disponible sur (\(others.count))") {
+                DisclosureGroup(loc("Aussi disponible sur (\(others.count))")) {
                     VStack(spacing: 10) {
                         ForEach(others) { entry in watchButton(entry) }
                     }
@@ -221,11 +221,11 @@ struct DetailView: View {
                 .tint(.secondary)
                 .padding(.top, 6)
             } else if !others.isEmpty {
-                Text("Disponible sur").font(.headline).padding(.top, 6)
+                Text(loc("Disponible sur")).font(.headline).padding(.top, 6)
                 ForEach(others) { entry in watchButton(entry) }
             }
             if !paid.isEmpty {
-                DisclosureGroup("Location et achat (\(paid.count))") {
+                DisclosureGroup(loc("Location et achat (\(paid.count))")) {
                     VStack(spacing: 10) {
                         ForEach(paid) { entry in watchButton(entry) }
                     }
@@ -239,7 +239,7 @@ struct DetailView: View {
             if !unlisted.isEmpty {
                 let names = unlisted.map(\.displayName).joined(separator: ", ")
                 let source = unlisted.allSatisfy { $0.unlisted == "network" } ? "d’après son diffuseur, en attendant" : "d’après Streaming Availability"
-                Text("Pas encore référencé\(ref.type == .tv ? "e" : "") dans ce pays par JustWatch : \(names) ajouté \(source).")
+                Text(loc("Pas encore référencé\(ref.type == .tv ? "e" : "") dans ce pays par JustWatch : \(names) ajouté \(source)."))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -253,7 +253,7 @@ struct DetailView: View {
         return Button {
             Task { await model.startDownload(entry, for: full, date: d.date) }
         } label: {
-            Label(done ? "Téléchargé" : "Télécharger", systemImage: done ? "checkmark.circle" : "arrow.down.circle")
+            Label(loc(done ? "Téléchargé" : "Télécharger"), systemImage: done ? "checkmark.circle" : "arrow.down.circle")
                 .font(.subheadline.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
@@ -261,7 +261,7 @@ struct DetailView: View {
         }
         .buttonStyle(.plain)
         .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 14))
-        .accessibilityLabel("Télécharger sur \(entry.displayName)")
+        .accessibilityLabel(loc("Télécharger sur \(entry.displayName)"))
     }
 
     private func watchButton(_ entry: WatchEntry) -> some View {
@@ -294,7 +294,7 @@ struct DetailView: View {
     }
 
     private func credit(_ label: String, _ value: String) -> some View {
-        Text("\(Text(label).foregroundStyle(.secondary))  \(value)").font(.subheadline)
+        Text("\(Text(loc(label)).foregroundStyle(.secondary))  \(value)").font(.subheadline)
     }
 
     // ---------- Onglets : Épisodes (séries, ouvert d'abord) et Suggestions (seul onglet d'un film) ----------
@@ -341,7 +341,7 @@ struct DetailView: View {
 
     private func tabButton(_ label: String, _ value: DetailTab, current: DetailTab) -> some View {
         Button { tab = value } label: {
-            Text(label)
+            Text(loc(label))
                 .font(.headline)
                 .foregroundStyle(current == value ? .primary : .secondary)
                 .padding(.vertical, 10)
@@ -361,11 +361,11 @@ struct DetailView: View {
                 TitleRow(title: "Dans le même univers", items: s.universe)
                 TitleRow(title: "Dans le même genre", items: Array(s.genre.prefix(20)))
                 if suggestionsDone && s.saga.isEmpty && s.universe.isEmpty && s.genre.isEmpty {
-                    Text("Pas de suggestion pour ce titre.").foregroundStyle(.secondary).padding(.horizontal, 16)
+                    Text(loc("Pas de suggestion pour ce titre.")).foregroundStyle(.secondary).padding(.horizontal, 16)
                 }
             }
             if !suggestionsDone {
-                ProgressView("Recherche des suggestions…").frame(maxWidth: .infinity).padding(.vertical, 16)
+                ProgressView(loc("Recherche des suggestions…")).frame(maxWidth: .infinity).padding(.vertical, 16)
             }
         }
         .onAppear { loadSuggestions(d) }
@@ -412,8 +412,8 @@ private struct WatchButton: View {
             HStack(spacing: 12) {
                 PlatformLogo(path: entry.logo, size: 44)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.title).font(.headline).foregroundStyle(.primary)
-                    Text("\(entry.kind.label) · \(loading && !entry.direct ? "Recherche du lien…" : entry.hint)")
+                    Text(loc(entry.title)).font(.headline).foregroundStyle(.primary)
+                    Text(loc("\(entry.kind.label) · \(loading && !entry.direct ? "Recherche du lien…" : entry.hint)"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

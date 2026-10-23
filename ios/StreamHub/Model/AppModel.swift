@@ -24,8 +24,20 @@ final class AppModel {
     // ou se connecter
     static let progressDelay: TimeInterval = 3 * 60
 
+    // Langue de l'interface (Réglages → Pays, langue et lecture), propre à l'appareil ; change toute l'appli tout de suite
+    var uiLang = "fr"
+
     init() {
         sync = SyncService(store: store, account: account)
+        uiLang = store.settings["uiLang"]?.string == "en" ? "en" : "fr"
+        L10n.english = uiLang == "en"
+    }
+
+    func setLanguage(_ lang: String) {
+        store.setSetting("uiLang", .string(lang))
+        L10n.english = lang == "en"
+        uiLang = lang
+        clearRows() // fiches TMDB dans la nouvelle langue
     }
 
     var tmdb: TMDBClient { TMDBClient(key: store.tmdbKey, region: store.region, language: store.language) }
@@ -282,9 +294,9 @@ final class AppModel {
         notice = nil
     }
 
-    // Nom d'un pays en français (« Japon »)
+    // Nom d'un pays dans la langue de l'interface (« Japon », « Japan »)
     nonisolated static func countryName(_ code: String) -> String {
-        Locale(identifier: "fr_FR").localizedString(forRegionCode: code) ?? code
+        L10n.locale.localizedString(forRegionCode: code) ?? code
     }
 
     // Réponse : le dernier épisode regardé remplace l'épisode lancé dans l'historique

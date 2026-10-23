@@ -63,7 +63,7 @@ struct PosterLink: View {
                 }
                 .overlay(alignment: .bottomLeading) {
                     if let rank {
-                        Text("\(rank)")
+                        Text(loc("\(rank)"))
                             .font(.system(size: 30, weight: .black, design: .rounded))
                             .foregroundStyle(.white)
                             .shadow(color: .black.opacity(0.8), radius: 4)
@@ -74,7 +74,7 @@ struct PosterLink: View {
         .buttonStyle(.plain)
         .contextMenu {
             let inList = model.store.contains(.watchlist, ref)
-            Button(inList ? "Retirer de Ma liste" : "Ajouter à Ma liste", systemImage: inList ? "bookmark.slash" : "bookmark") {
+            Button(loc(inList ? "Retirer de Ma liste" : "Ajouter à Ma liste"), systemImage: inList ? "bookmark.slash" : "bookmark") {
                 model.store.toggle(.watchlist, ref)
             }
         }
@@ -97,7 +97,7 @@ struct PlatformLogo: View {
 struct SectionTitle: View {
     let text: String
     var body: some View {
-        Text(text)
+        Text(loc(text))
             .font(.title3.weight(.bold))
             .padding(.horizontal, 16)
     }
@@ -126,9 +126,9 @@ struct EmptyMessage: View {
 
     var body: some View {
         ContentUnavailableView {
-            Label(title, systemImage: systemImage)
+            Label(loc(title), systemImage: systemImage)
         } description: {
-            if let message { Text(message) }
+            if let message { Text(loc(message)) }
         }
     }
 }

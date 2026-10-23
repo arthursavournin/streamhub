@@ -17,25 +17,25 @@ struct ProgressSheet: View {
         let liked = model.store.contains(.likes, ref)
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Où en es-tu de « \(entry.title) » ?")
+                Text(loc("Où en es-tu de « \(entry.title) » ?"))
                     .font(.title3.weight(.bold))
                 if let platform = entry.platform {
-                    Text("sur \(Platforms.shortName(platform))").foregroundStyle(.secondary)
+                    Text(loc("sur \(Platforms.shortName(platform))")).foregroundStyle(.secondary)
                 }
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Dernier épisode regardé").font(.subheadline).foregroundStyle(.secondary)
+                Text(loc("Dernier épisode regardé")).font(.subheadline).foregroundStyle(.secondary)
                 if seasons.isEmpty {
                     ProgressView().frame(maxWidth: .infinity)
                 } else {
                     HStack(spacing: 10) {
-                        Picker("Saison", selection: $season) {
-                            ForEach(seasons, id: \.seasonNumber) { s in Text("Saison \(s.seasonNumber)").tag(s.seasonNumber) }
+                        Picker(loc("Saison"), selection: $season) {
+                            ForEach(seasons, id: \.seasonNumber) { s in Text(loc("Saison \(s.seasonNumber)")).tag(s.seasonNumber) }
                         }
                         .fixedSize()
-                        Picker("Épisode", selection: $episode) {
-                            ForEach(episodes) { e in Text(label(e)).tag(e.episodeNumber) }
+                        Picker(loc("Épisode"), selection: $episode) {
+                            ForEach(episodes) { e in Text(loc(label(e))).tag(e.episodeNumber) }
                         }
                         .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -50,19 +50,19 @@ struct ProgressSheet: View {
                     let name = episodes.first { $0.episodeNumber == episode }?.name
                     model.saveProgress(entry, season: season, episode: episode, name: name)
                 } label: {
-                    Text("Enregistrer").frame(maxWidth: .infinity)
+                    Text(loc("Enregistrer")).frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .disabled(episodes.isEmpty)
 
                 HStack {
-                    Button(liked ? "Tu aimes la série" : "J’aime la série", systemImage: liked ? "heart.fill" : "heart") {
+                    Button(loc(liked ? "Tu aimes la série" : "J’aime la série"), systemImage: liked ? "heart.fill" : "heart") {
                         _ = model.store.toggle(.likes, ref, date: entry.raw["date"]?.string)
                     }
                     .tint(liked ? .mine : .primary)
                     Spacer()
-                    Button("Ignorer") { model.progressQuestion = nil }
+                    Button(loc("Ignorer")) { model.progressQuestion = nil }
                         .foregroundStyle(.secondary)
                 }
                 .font(.subheadline)

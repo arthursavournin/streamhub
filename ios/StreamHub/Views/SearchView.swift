@@ -26,7 +26,7 @@ struct SearchResults: View {
                     Button {
                         query = suggestion
                     } label: {
-                        Text("Tu voulais dire \(Text("« \(suggestion) »").bold()) ?")
+                        Text("\(Text(loc("Tu voulais dire"))) \(Text(L10n.english ? "“\(suggestion)”" : "« \(suggestion) »").bold())\(L10n.english ? "?" : " ?")")
                             .font(.callout)
                     }
                     .padding(.horizontal, 16)
@@ -67,23 +67,23 @@ struct SearchResults: View {
 
     private var controls: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Picker("Type", selection: $type) {
-                ForEach(CatalogType.allCases, id: \.self) { Text($0.label).tag($0) }
+            Picker(loc("Type"), selection: $type) {
+                ForEach(CatalogType.allCases, id: \.self) { Text(loc($0.label)).tag($0) }
             }
             .pickerStyle(.segmented)
             ScrollView(.horizontal) {
                 HStack(spacing: 8) {
                     Menu {
-                        Picker("Plateformes", selection: $platform) {
-                            if filtering { Text("Mes plateformes").tag(PlatformChoice?.some(.mine)) }
-                            Text("Toutes les plateformes").tag(PlatformChoice?.some(.all))
+                        Picker(loc("Plateformes"), selection: $platform) {
+                            if filtering { Text(loc("Mes plateformes")).tag(PlatformChoice?.some(.mine)) }
+                            Text(loc("Toutes les plateformes")).tag(PlatformChoice?.some(.all))
                             ForEach(model.store.providers) { p in Text(Platforms.shortName(p.name)).tag(PlatformChoice?.some(.one(p.id))) }
                         }
                     } label: { filterLabel(platformName, systemImage: "tv") }
                     Menu {
-                        Picker("Genre", selection: $genre) {
-                            Text("Tous les genres").tag(CatalogGenre?.none)
-                            ForEach(genres, id: \.self) { Text($0.name).tag(CatalogGenre?.some($0)) }
+                        Picker(loc("Genre"), selection: $genre) {
+                            Text(loc("Tous les genres")).tag(CatalogGenre?.none)
+                            ForEach(genres, id: \.self) { Text(loc($0.name)).tag(CatalogGenre?.some($0)) }
                         }
                     } label: { filterLabel(genre?.name ?? "Tous les genres", systemImage: "theatermasks") }
                 }
@@ -94,7 +94,7 @@ struct SearchResults: View {
     }
 
     private func filterLabel(_ text: String, systemImage: String) -> some View {
-        Label(text, systemImage: systemImage)
+        Label(loc(text), systemImage: systemImage)
             .font(.subheadline.weight(.medium))
             .padding(.horizontal, 12).padding(.vertical, 8)
             .glassEffect(.regular.interactive(), in: .capsule)
@@ -146,7 +146,7 @@ struct SearchResults: View {
         Button {
             platform = platform == .all ? (filtering ? .mine : .all) : .all
         } label: {
-            Text(platform == .all ? "Seulement mes abonnements" : "\(hidden) autre\(hidden > 1 ? "s" : "") hors de \(whereText) — tout afficher")
+            Text(loc(platform == .all ? "Seulement mes abonnements" : "\(hidden) autre\(hidden > 1 ? "s" : "") hors de \(whereText) — tout afficher"))
                 .font(.callout)
         }
         .padding(.horizontal, 16)

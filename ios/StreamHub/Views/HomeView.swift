@@ -116,19 +116,19 @@ struct HeroView: View {
                     .font(.largeTitle.weight(.heavy))
                     .multilineTextAlignment(.center)
                     .shadow(radius: 8)
-                Text(subtitle)
+                Text(loc(subtitle))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 HStack(spacing: 12) {
                     NavigationLink(value: ref) {
-                        Label("Voir", systemImage: "play.fill").frame(minWidth: 110)
+                        Label(loc("Voir"), systemImage: "play.fill").frame(minWidth: 110)
                     }
                     .buttonStyle(.glassProminent)
                     let inList = model.store.contains(.watchlist, ref)
                     Button {
                         model.store.toggle(.watchlist, ref, date: title.date)
                     } label: {
-                        Label("Ma liste", systemImage: inList ? "checkmark" : "plus").frame(minWidth: 110)
+                        Label(loc("Ma liste"), systemImage: inList ? "checkmark" : "plus").frame(minWidth: 110)
                     }
                     .buttonStyle(.glass)
                 }
@@ -261,7 +261,7 @@ private struct RowHeader<Trailing: View>: View {
 
 private struct SeeAllLabel: View {
     var body: some View {
-        Text("Tout voir ›").font(.subheadline.weight(.semibold)).foregroundStyle(Color.accentColor)
+        Text(loc("Tout voir ›")).font(.subheadline.weight(.semibold)).foregroundStyle(Color.accentColor)
     }
 }
 
@@ -275,7 +275,7 @@ private struct TitlesGridPage: View {
             PosterGrid(refs: items.map(\.ref), captions: items.captions).padding(.vertical, 8)
         }
         .background(Color.appBackground)
-        .navigationTitle(title)
+        .navigationTitle(loc(title))
     }
 }
 
@@ -292,6 +292,6 @@ struct LocalListPage: View {
             .padding(.vertical, 8)
         }
         .background(Color.appBackground)
-        .navigationTitle(list == .history ? "Reprendre" : list.title)
+        .navigationTitle(loc(list == .history ? "Reprendre" : list.title))
     }
 }

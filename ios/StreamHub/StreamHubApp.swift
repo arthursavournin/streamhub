@@ -37,15 +37,15 @@ struct RootView: View {
                 // Comme le site sur iPhone (version 2.4.0, demande de l'utilisateur) : trois onglets en bas, la recherche et
                 // les réglages dans la barre du haut de chaque page (AppTopBar)
                 TabView(selection: $tab) {
-                    Tab("Accueil", systemImage: "house.fill", value: 1) { HomeView() }
-                    Tab("Bibliothèque", systemImage: "square.grid.2x2.fill", value: 4) {
+                    Tab(loc("Accueil"), systemImage: "house.fill", value: 1) { HomeView() }
+                    Tab(loc("Bibliothèque"), systemImage: "square.grid.2x2.fill", value: 4) {
                         NavigationStack {
                             CatalogView(preset: CatalogPreset(), showsTitle: true)
                                 .appTopBar()
                                 .titleDestinations()
                         }
                     }
-                    Tab("Mon espace", systemImage: "person.fill", value: 2) { LibraryView() }
+                    Tab(loc("Mon espace"), systemImage: "person.fill", value: 2) { LibraryView() }
                 }
                 .sheet(isPresented: $model.showSettings) { SettingsView() }
             } else if (model.account.isOpen && model.account.recoveryKey == nil) || model.account.guest {
@@ -56,11 +56,12 @@ struct RootView: View {
                 OnboardingView()
             }
         }
+        .id(model.uiLang) // autre langue : toute l'appli se redessine dans cette langue
         .background(Color.appBackground)
         // Court message en bas (pays du catalogue détecté…), au-dessus de la barre d'onglets
         .overlay(alignment: .bottom) {
             if let notice = model.notice {
-                Text(notice)
+                Text(loc(notice))
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .glassEffect(.regular, in: .capsule)

@@ -51,13 +51,13 @@ struct AccountScreen: View {
                 Image(.welcomeIcon).resizable().frame(width: 76, height: 76).clipShape(.rect(cornerRadius: 18))
                     .shadow(color: Color.appAccent.opacity(0.4), radius: 18, y: 8)
                     .padding(.bottom, 6)
-                Text("Bienvenue sur StreamHub").font(.title2.weight(.bold))
-                Text("Tous tes films et séries, toutes tes plateformes, au même endroit.")
+                Text(loc("Bienvenue sur StreamHub")).font(.title2.weight(.bold))
+                Text(loc("Tous tes films et séries, toutes tes plateformes, au même endroit."))
                     .font(.subheadline).foregroundStyle(Color.appMuted).multilineTextAlignment(.center)
             }
             .padding(.vertical, 8)
         } else {
-            Text("Tu es en invité : tes données restent sur cet iPhone. Connecte-toi pour les retrouver partout, chiffrées de bout en bout.")
+            Text(loc("Tu es en invité : tes données restent sur cet iPhone. Connecte-toi pour les retrouver partout, chiffrées de bout en bout."))
                 .font(.subheadline).foregroundStyle(Color.mine)
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -68,7 +68,7 @@ struct AccountScreen: View {
             Card {
                 title("Mot de passe oublié", "Tu recevras un lien qui ouvre StreamHub sur le web : choisis-y le nouveau mot de passe, avec ta clé de secours, puis reviens te connecter ici.")
                 FieldBox(label: "Adresse e-mail", text: $email, placeholder: "toi@exemple.fr", content: .username, keyboard: .emailAddress)
-                Button("Envoyer le lien") { run { try await account.requestReset(email: try checkedEmail()); mode = "signin"; return "Si un compte existe pour \(email), un e-mail vient de partir." } }
+                Button(loc("Envoyer le lien")) { run { try await account.requestReset(email: try checkedEmail()); mode = "signin"; return "Si un compte existe pour \(email), un e-mail vient de partir." } }
                     .buttonStyle(WideButtonStyle()).disabled(busy)
                 switchLine(nil, "← Retour à la connexion", to: "signin")
             }
@@ -82,7 +82,7 @@ struct AccountScreen: View {
                     FieldBox(label: "Confirme le mot de passe", text: $password2, secure: true, content: .newPassword)
                 } else {
                     FieldBox(label: "Mot de passe", text: $password, secure: true, content: .password) {
-                        Button("Oublié ?") { mode = "forgot" }.font(.subheadline.weight(.semibold)).tint(Color.mine)
+                        Button(loc("Oublié ?")) { mode = "forgot" }.font(.subheadline.weight(.semibold)).tint(Color.mine)
                     }
                 }
                 Button {
@@ -95,7 +95,7 @@ struct AccountScreen: View {
                         return account.isOpen ? "Connecté." : nil
                     }
                 } label: {
-                    HStack { if busy && !oauthBusy { ProgressView().tint(.white) }; Text(signup ? "Créer mon compte" : "Se connecter") }
+                    HStack { if busy && !oauthBusy { ProgressView().tint(.white) }; Text(loc(signup ? "Créer mon compte" : "Se connecter")) }
                 }
                 .buttonStyle(WideButtonStyle())
                 .disabled(busy || email.isEmpty || password.isEmpty)
@@ -109,8 +109,8 @@ struct AccountScreen: View {
                 if onboarding {
                     Divider().overlay(Color.appBorder)
                     VStack(spacing: 6) {
-                        Button("Continuer sans compte") { account.guest = true }.buttonStyle(WideButtonStyle(kind: .secondary))
-                        Text("Tes données resteront sur cet iPhone. Tu pourras créer un compte plus tard dans les réglages.")
+                        Button(loc("Continuer sans compte")) { account.guest = true }.buttonStyle(WideButtonStyle(kind: .secondary))
+                        Text(loc("Tes données resteront sur cet iPhone. Tu pourras créer un compte plus tard dans les réglages."))
                             .font(.caption).foregroundStyle(Color.appMuted).multilineTextAlignment(.center)
                     }
                 }
@@ -123,11 +123,11 @@ struct AccountScreen: View {
         Card {
             iconBadge("envelope")
             title("Vérifie ta boîte mail", "Ouvre le lien envoyé à \(pending) (regarde aussi dans les indésirables), puis reviens ici.")
-            Button("J’ai confirmé mon adresse") { run { try await account.finishSignUp(); return account.isOpen ? "Compte créé." : nil } }
+            Button(loc("J’ai confirmé mon adresse")) { run { try await account.finishSignUp(); return account.isOpen ? "Compte créé." : nil } }
                 .buttonStyle(WideButtonStyle()).disabled(busy)
-            Button("Renvoyer l’e-mail") { run { try await account.resendConfirmation(); return "E-mail renvoyé." } }
+            Button(loc("Renvoyer l’e-mail")) { run { try await account.resendConfirmation(); return "E-mail renvoyé." } }
                 .buttonStyle(WideButtonStyle(kind: .secondary)).disabled(busy)
-            HStack { Spacer(); Button("Utiliser une autre adresse") { account.cancelPending() }.font(.subheadline.weight(.semibold)).tint(Color.mine); Spacer() }
+            HStack { Spacer(); Button(loc("Utiliser une autre adresse")) { account.cancelPending() }.font(.subheadline.weight(.semibold)).tint(Color.mine); Spacer() }
         }
     }
 
@@ -142,22 +142,22 @@ struct AccountScreen: View {
                 FieldBox(label: "Clé de secours", text: $recovery, placeholder: "ABCD-EFGH-JKLM-NPQR-STUV", monospaced: true)
                 FieldBox(label: "Nouveau \(word)", text: $password, placeholder: "\(AccountService.minPassword) caractères au moins", secure: true, content: .newPassword)
                 FieldBox(label: "Confirme le mot de passe", text: $password2, secure: true, content: .newPassword)
-                Button("Enregistrer") { run { try await account.resetWithRecovery(recovery, newPassword: try newPassword()); return "Nouveau mot de passe enregistré." } }
+                Button(loc("Enregistrer")) { run { try await account.resetWithRecovery(recovery, newPassword: try newPassword()); return "Nouveau mot de passe enregistré." } }
                     .buttonStyle(WideButtonStyle()).disabled(busy || recovery.isEmpty || password.isEmpty)
                 switchLine(nil, "← Retour", to: "unlock")
             } else if account.meta.needs == .create {
                 title("Choisis un mot de passe du coffre", "Il chiffre tes données sur l’iPhone, avant l’envoi. Tu le taperas une fois sur chaque nouvel appareil. Il ne sert qu’à StreamHub.")
                 FieldBox(label: "Mot de passe du coffre", text: $password, placeholder: "\(AccountService.minPassword) caractères au moins", secure: true, content: .newPassword)
                 FieldBox(label: "Confirme le mot de passe", text: $password2, secure: true, content: .newPassword)
-                Button("Créer mon coffre") { run { try await account.createVaultWith(try newPassword()); return nil } }
+                Button(loc("Créer mon coffre")) { run { try await account.createVaultWith(try newPassword()); return nil } }
                     .buttonStyle(WideButtonStyle()).disabled(busy || password.isEmpty)
             } else {
                 iconBadge("lock")
                 title("Ouvre tes données", "Entre ton \(word) pour ouvrir tes données sur cet iPhone.")
                 FieldBox(label: vault ? "Mot de passe du coffre" : "Mot de passe", text: $password, secure: true, content: .password) {
-                    Button("Oublié ?") { mode = "recover" }.font(.subheadline.weight(.semibold)).tint(Color.mine)
+                    Button(loc("Oublié ?")) { mode = "recover" }.font(.subheadline.weight(.semibold)).tint(Color.mine)
                 }
-                Button("Ouvrir") { run { try await account.unlockVault(password); return "Coffre ouvert : synchronisation…" } }
+                Button(loc("Ouvrir")) { run { try await account.unlockVault(password); return "Coffre ouvert : synchronisation…" } }
                     .buttonStyle(WideButtonStyle()).disabled(busy || password.isEmpty)
             }
         }
@@ -175,7 +175,7 @@ struct AccountScreen: View {
                 FieldBox(label: "\(word.prefix(1).uppercased())\(word.dropFirst()) actuel", text: $current, secure: true, content: .password)
                 FieldBox(label: "Nouveau \(word)", text: $password, placeholder: "\(AccountService.minPassword) caractères au moins", secure: true, content: .newPassword)
                 FieldBox(label: "Confirme le mot de passe", text: $password2, secure: true, content: .newPassword)
-                Button("Enregistrer") {
+                Button(loc("Enregistrer")) {
                     run { try await account.changePassword(current: current, new: try newPassword()); mode = "open"; return "Mot de passe changé." }
                 }
                 .buttonStyle(WideButtonStyle()).disabled(busy || current.isEmpty || password.isEmpty)
@@ -185,7 +185,7 @@ struct AccountScreen: View {
             Card {
                 title("Supprimer ton compte ?", "Ton compte, ton coffre et tes données synchronisées seront effacés. Tes données restent sur cet iPhone (en invité). Impossible d’annuler.")
                 FieldBox(label: "\(word.prefix(1).uppercased())\(word.dropFirst())", text: $current, secure: true, content: .password)
-                Button("Supprimer définitivement") {
+                Button(loc("Supprimer définitivement")) {
                     run { try await account.deleteAccount(password: current); mode = "signin"; return "Compte supprimé. Tes données restent sur cet iPhone." }
                 }
                 .buttonStyle(WideButtonStyle(kind: .danger)).disabled(busy || current.isEmpty)
@@ -230,16 +230,16 @@ struct AccountScreen: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(account.email).font(.body.weight(.semibold)).lineLimit(1).truncationMode(.middle)
-                Text(provider == "email" ? "Compte e-mail" : "Connecté avec \(AccountService.providers[provider] ?? provider)")
+                Text(loc(provider == "email" ? "Compte e-mail" : "Connecté avec \(AccountService.providers[provider] ?? provider)"))
                     .font(.subheadline).foregroundStyle(Color.appMuted)
                 if account.isOpen {
                     if let error = account.meta.error {
-                        Text("Synchronisation impossible : \(error)").font(.footnote).foregroundStyle(Color.appDanger)
+                        Text(loc("Synchronisation impossible : \(error)")).font(.footnote).foregroundStyle(Color.appDanger)
                     } else if let last = account.meta.lastSyncAt {
-                        Text("✓ Synchronisé \(Date(timeIntervalSince1970: last / 1000).formatted(.relative(presentation: .named)))")
+                        Text(loc("✓ Synchronisé \(Date(timeIntervalSince1970: last / 1000).formatted(.relative(presentation: .named).locale(L10n.locale)))"))
                             .font(.footnote).foregroundStyle(Color.mine)
                     } else {
-                        Text("Synchronisation…").font(.footnote).foregroundStyle(Color.appMuted)
+                        Text(loc("Synchronisation…")).font(.footnote).foregroundStyle(Color.appMuted)
                     }
                 }
             }
@@ -252,13 +252,13 @@ struct AccountScreen: View {
 
     private func recoveryCard(_ key: String) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("Ta clé de secours", systemImage: "checkmark.shield").font(.headline).foregroundStyle(Color.mine)
-            Text("Note-la dans ton gestionnaire de mots de passe. Si tu oublies ton mot de passe, elle seule permet de retrouver tes données : personne, pas même StreamHub, ne peut les rouvrir sans elle.")
+            Label(loc("Ta clé de secours"), systemImage: "checkmark.shield").font(.headline).foregroundStyle(Color.mine)
+            Text(loc("Note-la dans ton gestionnaire de mots de passe. Si tu oublies ton mot de passe, elle seule permet de retrouver tes données : personne, pas même StreamHub, ne peut les rouvrir sans elle."))
                 .font(.subheadline).foregroundStyle(Color.appMuted)
             HStack {
                 Text(key).font(.title3.monospaced()).textSelection(.enabled).minimumScaleFactor(0.7).lineLimit(1)
                 Spacer()
-                Button("Copier") {
+                Button(loc("Copier")) {
                     UIPasteboard.general.string = key
                     message = ("Clé copiée.", true)
                 }
@@ -266,7 +266,7 @@ struct AccountScreen: View {
             }
             .padding(12)
             .background(Color.appBackground, in: .rect(cornerRadius: 12))
-            Button("Je l’ai notée") { account.recoveryNoted() }.buttonStyle(WideButtonStyle())
+            Button(loc("Je l’ai notée")) { account.recoveryNoted() }.buttonStyle(WideButtonStyle())
         }
         .padding(18)
         .background(Color.appAccent.opacity(0.1), in: .rect(cornerRadius: 22))
@@ -277,8 +277,8 @@ struct AccountScreen: View {
 
     private func title(_ text: String, _ subtitle: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(text).font(.title3.weight(.bold))
-            Text(subtitle).font(.subheadline).foregroundStyle(Color.appMuted)
+            Text(loc(text)).font(.title3.weight(.bold))
+            Text(loc(subtitle)).font(.subheadline).foregroundStyle(Color.appMuted)
         }
     }
 
@@ -290,8 +290,8 @@ struct AccountScreen: View {
     private func switchLine(_ lead: String?, _ action: String, to target: String) -> some View {
         HStack(spacing: 4) {
             Spacer()
-            if let lead { Text(lead).foregroundStyle(Color.appMuted) }
-            Button(action) { mode = target; message = nil }.fontWeight(.semibold).tint(Color.mine)
+            if let lead { Text(loc(lead)).foregroundStyle(Color.appMuted) }
+            Button(loc(action)) { mode = target; message = nil }.fontWeight(.semibold).tint(Color.mine)
             Spacer()
         }
         .font(.subheadline)
@@ -299,7 +299,7 @@ struct AccountScreen: View {
 
     // Information au moment de la collecte (recommandation de la CNIL) : conditions et confidentialité
     private var legal: some View {
-        Text("En créant un compte ou en te connectant, tu acceptes les [conditions d’utilisation](https://arthursavournin.github.io/streamhub/conditions.html) et la [politique de confidentialité](https://arthursavournin.github.io/streamhub/confidentialite.html).")
+        Text(LocalizedStringKey(loc("En créant un compte ou en te connectant, tu acceptes les [conditions d’utilisation](https://arthursavournin.github.io/streamhub/conditions.html) et la [politique de confidentialité](https://arthursavournin.github.io/streamhub/confidentialite.html).")))
             .font(.caption).foregroundStyle(Color.appMuted).tint(Color.appMuted).multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
     }
@@ -383,23 +383,23 @@ struct KeySetupView: View {
             VStack(spacing: 16) {
                 VStack(spacing: 8) {
                     Image(.welcomeIcon).resizable().frame(width: 64, height: 64).clipShape(.rect(cornerRadius: 16))
-                    Text("Dernière étape").font(.title2.weight(.bold))
-                    Text("Colle ta clé TMDB : elle donne le catalogue. Elle est gratuite, sur themoviedb.org → Paramètres → API.")
+                    Text(loc("Dernière étape")).font(.title2.weight(.bold))
+                    Text(loc("Colle ta clé TMDB : elle donne le catalogue. Elle est gratuite, sur themoviedb.org → Paramètres → API."))
                         .font(.subheadline).foregroundStyle(Color.appMuted).multilineTextAlignment(.center)
                 }
                 if model.account.isOpen && model.sync.isRunning {
-                    HStack(spacing: 8) { ProgressView(); Text("Récupération de tes réglages…").foregroundStyle(Color.appMuted) }
+                    HStack(spacing: 8) { ProgressView(); Text(loc("Récupération de tes réglages…")).foregroundStyle(Color.appMuted) }
                 }
                 Card {
                     FieldBox(label: "Clé API TMDB", text: $key, placeholder: "Clé API (v3) ou jeton d’accès (v4)", secure: true)
-                    Button("Continuer") { model.store.setSetting("tmdbKey", .string(key.trimmingCharacters(in: .whitespaces))) }
+                    Button(loc("Continuer")) { model.store.setSetting("tmdbKey", .string(key.trimmingCharacters(in: .whitespaces))) }
                         .buttonStyle(WideButtonStyle())
                         .disabled(key.trimmingCharacters(in: .whitespaces).isEmpty)
-                    Link("Obtenir une clé gratuite", destination: URL(string: "https://www.themoviedb.org/settings/api")!)
+                    Link(loc("Obtenir une clé gratuite"), destination: URL(string: "https://www.themoviedb.org/settings/api")!)
                         .font(.subheadline.weight(.semibold)).tint(Color.mine).frame(maxWidth: .infinity)
                 }
                 if model.account.guest && !model.account.signedIn {
-                    Button("Me connecter plutôt") { model.account.guest = false }
+                    Button(loc("Me connecter plutôt")) { model.account.guest = false }
                         .font(.subheadline.weight(.semibold)).tint(Color.mine)
                 }
             }

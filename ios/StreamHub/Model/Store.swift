@@ -145,7 +145,7 @@ final class AppStore {
     var tmdbKey: String { settings["tmdbKey"]?.string?.trimmingCharacters(in: .whitespaces) ?? "" }
     var saKey: String { settings["saKey"]?.string?.trimmingCharacters(in: .whitespaces) ?? "" }
     var region: String { settings["region"]?.string.flatMap { $0.isEmpty ? nil : $0 } ?? "FR" }
-    var language: String { settings["language"]?.string.flatMap { $0.isEmpty ? nil : $0 } ?? "fr-FR" }
+    var language: String { L10n.tmdbLanguage ?? settings["language"]?.string.flatMap { $0.isEmpty ? nil : $0 } ?? "fr-FR" } // anglais : fiches en anglais
     // Relais fixe depuis la version 2.3.4, comme sur le site (le réglage « relay » d'avant est ignoré)
     var relayURL: String { Self.defaultRelay }
     var providers: [Provider] { settings["providers"]?.decode([Provider].self) ?? [] }

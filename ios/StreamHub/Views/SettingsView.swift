@@ -24,8 +24,8 @@ struct SettingsView: View {
                         let shown = model.store.homeLayout.filter(\.on).count
                         SettingsRowLabel(icon: "house", title: "Accueil", summary: "\(shown) rangées sur \(model.store.homeLayout.count) · \(model.store.homeHero.map { "à l’affiche : \($0.title)" } ?? "affiche automatique")")
                     }
-                    NavigationLink { page("Pays et lecture", "Pays du catalogue et plateformes disponibles. Il suit le pays de ta connexion (wifi, VPN, voyage) ; tu peux le changer à la main.") { RegionView() } } label: {
-                        SettingsRowLabel(icon: "globe", title: "Pays et lecture", summary: AppModel.countryName(model.store.region))
+                    NavigationLink { page("Pays, langue et lecture", "Pays du catalogue, langue de l’appli et ouverture des titres. Le pays suit celui de ta connexion (wifi, VPN, voyage) ; tu peux le changer à la main.") { RegionView() } } label: {
+                        SettingsRowLabel(icon: "globe", title: "Pays, langue et lecture", summary: "\(AppModel.countryName(model.store.region)) · \(model.uiLang == "en" ? "English" : "Français")")
                     }
                     NavigationLink { page("À propos", "Version, mentions légales et confidentialité.") { AboutView() } } label: {
                         SettingsRowLabel(icon: "info.circle", title: "À propos")
@@ -33,13 +33,14 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(16)
+                .id(model.uiLang) // langue changée feuille ouverte : lignes redessinées dans la nouvelle langue
             }
             .background(Color.appBackground)
-            .navigationTitle("Réglages")
+            .navigationTitle(loc("Réglages"))
             // Ouverts par la roue de la barre du haut, par-dessus la page
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("OK") { dismiss() }
+                    Button(loc("OK")) { dismiss() }
                 }
             }
         }
@@ -47,17 +48,7 @@ struct SettingsView: View {
 
     // Une section : intro sous le titre (comme .panel-head du site), contenu, fond de l'appli
     private func page<Content: View>(_ title: String, _ intro: String, @ViewBuilder content: () -> Content) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                PanelIntro(text: intro)
-                content()
-            }
-            .padding(16)
-        }
-        .scrollDismissesKeyboard(.interactively)
-        .background(Color.appBackground)
-        .navigationTitle(title)
-        .navigationBarTitleDisplayMode(.inline)
+        SettingsPage(title: title, intro: intro, content: content())
     }
 
     private var accountSummary: String {
@@ -88,18 +79,18 @@ private struct KeysView: View {
     var body: some View {
         Card {
             FieldBox(label: "Clé API TMDB", text: binding("tmdbKey"), placeholder: "Clé API (v3) ou jeton d’accès (v4)", secure: true) {
-                Link("Obtenir", destination: URL(string: "https://www.themoviedb.org/settings/api")!).font(.subheadline.weight(.semibold)).tint(Color.mine)
+                Link(loc("Obtenir"), destination: URL(string: "https://www.themoviedb.org/settings/api")!).font(.subheadline.weight(.semibold)).tint(Color.mine)
             }
-            Text("Obligatoire : catalogue, fiches, plateformes par pays.").font(.footnote).foregroundStyle(Color.appMuted)
+            Text(loc("Obligatoire : catalogue, fiches, plateformes par pays.")).font(.footnote).foregroundStyle(Color.appMuted)
         }
         Card {
             FieldBox(label: "Clé Streaming Availability", text: binding("saKey"), placeholder: "Clé RapidAPI", secure: true) {
-                Link("Obtenir", destination: URL(string: "https://rapidapi.com/movie-of-the-night-movie-of-the-night-default/api/streaming-availability")!)
+                Link(loc("Obtenir"), destination: URL(string: "https://rapidapi.com/movie-of-the-night-movie-of-the-night-default/api/streaming-availability")!)
                     .font(.subheadline.weight(.semibold)).tint(Color.mine)
             }
-            Text("Facultative : liens qui lancent directement le film, la série ou l’épisode.").font(.footnote).foregroundStyle(Color.appMuted)
+            Text(loc("Facultative : liens qui lancent directement le film, la série ou l’épisode.")).font(.footnote).foregroundStyle(Color.appMuted)
         }
-        Text("Enregistrées sur cet iPhone (et chiffrées dans ton compte). Elles ne sont jamais publiées.")
+        Text(loc("Enregistrées sur cet iPhone (et chiffrées dans ton compte). Elles ne sont jamais publiées."))
             .font(.footnote).foregroundStyle(Color.appMuted)
     }
 
@@ -120,6 +111,28 @@ private struct RegionView: View {
     }
 
     var body: some View {
+        // Langue de l'appli (comme le site) : français ou anglais, propre à cet iPhone
+        Text(loc("Langue")).font(.headline).frame(maxWidth: .infinity, alignment: .leading)
+        ActionList {
+            ForEach([("fr", "Français"), ("en", "English")], id: \.0) { code, name in
+                Button {
+                    model.setLanguage(code)
+                } label: {
+                    HStack {
+                        Text(name).foregroundStyle(.primary)
+                        Spacer()
+                        if model.uiLang == code {
+                            Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(Color.mine)
+                        }
+                    }
+                    .padding(.horizontal, 18)
+                    .frame(minHeight: 50)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        Text(loc("Pays")).font(.headline).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 8)
         ActionList {
             ForEach(sorted, id: \.0) { code, name in
                 Button {
@@ -151,8 +164,8 @@ private struct AboutView: View {
         HStack(spacing: 16) {
             Image(.welcomeIcon).resizable().frame(width: 56, height: 56).clipShape(.rect(cornerRadius: 14))
             VStack(alignment: .leading, spacing: 2) {
-                Text("StreamHub").font(.headline)
-                Text("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")")
+                Text(loc("StreamHub")).font(.headline)
+                Text(loc("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")"))
                     .font(.subheadline).foregroundStyle(Color.appMuted)
             }
             Spacer()
@@ -162,18 +175,18 @@ private struct AboutView: View {
         .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(Color.appBorder))
         ActionList {
             link("StreamHub sur le web", AppStore.site)
-            link("Mentions légales", AppStore.site.appending(path: "mentions-legales.html"))
-            link("Politique de confidentialité", AppStore.site.appending(path: "confidentialite.html"))
-            link("Conditions d’utilisation", AppStore.site.appending(path: "conditions.html"))
+            link("Mentions légales", AppStore.site.appending(path: L10n.english ? "legal-notice.html" : "mentions-legales.html"))
+            link("Politique de confidentialité", AppStore.site.appending(path: L10n.english ? "privacy.html" : "confidentialite.html"))
+            link("Conditions d’utilisation", AppStore.site.appending(path: L10n.english ? "terms.html" : "conditions.html"))
         }
-        Text("Catalogue et images : TMDB (ce produit utilise l’API de TMDB mais n’est ni approuvé ni certifié par TMDB). Liens vers les plateformes : JustWatch et Streaming Availability.")
+        Text(loc("Catalogue et images : TMDB (ce produit utilise l’API de TMDB mais n’est ni approuvé ni certifié par TMDB). Liens vers les plateformes : JustWatch et Streaming Availability."))
             .font(.footnote).foregroundStyle(Color.appMuted)
     }
 
     private func link(_ title: String, _ url: URL) -> some View {
         Link(destination: url) {
             HStack {
-                Text(title).foregroundStyle(.primary)
+                Text(loc(title)).foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: "arrow.up.right").font(.footnote.weight(.semibold)).foregroundStyle(Color.appMuted)
             }
@@ -197,7 +210,7 @@ struct ProvidersView: View {
         List {
             Section {
                 if let error {
-                    Text(error).foregroundStyle(Color.appDanger).listRowBackground(Color.appSurface)
+                    Text(loc(error)).foregroundStyle(Color.appDanger).listRowBackground(Color.appSurface)
                 }
                 ForEach(shown) { choice in
                     Button {
@@ -226,8 +239,8 @@ struct ProvidersView: View {
         .scrollContentBackground(.hidden)
         .background(Color.appBackground)
         .overlay { if choices.isEmpty, error == nil { ProgressView() } }
-        .searchable(text: $filter, prompt: "Rechercher une plateforme")
-        .navigationTitle("Mes abonnements")
+        .searchable(text: $filter, prompt: loc("Rechercher une plateforme"))
+        .navigationTitle(loc("Mes abonnements"))
         .navigationBarTitleDisplayMode(.inline)
         .task {
             do {
@@ -264,40 +277,64 @@ struct HomeSettingsView: View {
     var body: some View {
         List {
             Section {
-                LabeledContent("À l’affiche", value: model.store.homeHero.map { "« \($0.title) »" } ?? "Automatique")
+                LabeledContent(loc("À l’affiche"), value: model.store.homeHero.map { L10n.english ? "“\($0.title)”" : "« \($0.title) »" } ?? loc("Automatique"))
                     .listRowBackground(Color.appSurface)
                 if model.store.homeHero != nil {
-                    Button("Revenir au n° 1 du Top 50") { model.store.setHome(rows: rows, hero: nil) }
+                    Button(loc("Revenir au n° 1 du Top 50")) { model.store.setHome(rows: rows, hero: nil) }
                         .tint(Color.mine)
                         .listRowBackground(Color.appSurface)
                 }
             } header: {
                 PanelIntro(text: "Les rangées de l’accueil et le titre à l’affiche.").textCase(nil).padding(.bottom, 6)
             } footer: {
-                Text("Pour choisir un titre, ouvre sa fiche et appuie sur « À l’affiche ». Automatique : le n° 1 du Top 50 du moment.")
+                Text(loc("Pour choisir un titre, ouvre sa fiche et appuie sur « À l’affiche ». Automatique : le n° 1 du Top 50 du moment."))
             }
             .listRowSeparatorTint(Color.appBorder)
             Section {
                 ForEach($rows) { $row in
-                    Toggle(HomeRow.named(row.key)?.title ?? row.key, isOn: $row.on)
+                    Toggle(loc(HomeRow.named(row.key)?.title ?? row.key), isOn: $row.on)
                         .tint(Color.appAccent)
                         .foregroundStyle(row.on ? Color.primary : Color.appMuted)
                         .listRowBackground(Color.appSurface)
                 }
                 .onMove { rows.move(fromOffsets: $0, toOffset: $1) }
             } header: {
-                Text("Rangées")
+                Text(loc("Rangées"))
             } footer: {
-                Text("Active les rangées à afficher et fais-les glisser pour changer leur ordre.")
+                Text(loc("Active les rangées à afficher et fais-les glisser pour changer leur ordre."))
             }
             .listRowSeparatorTint(Color.appBorder)
         }
         .environment(\.editMode, .constant(.active))
         .scrollContentBackground(.hidden)
         .background(Color.appBackground)
-        .navigationTitle("Accueil")
+        .navigationTitle(loc("Accueil"))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { rows = model.store.homeLayout }
         .onChange(of: rows) { _, value in model.store.setHome(rows: value, hero: model.store.homeHero) }
+    }
+}
+
+// Une section des réglages. Vue à part (pas une fonction) : elle lit la langue, donc se redessine quand on la change
+// alors qu'elle est ouverte (Réglages → Pays, langue et lecture).
+private struct SettingsPage<Content: View>: View {
+    @Environment(AppModel.self) private var model
+    let title: String
+    let intro: String
+    let content: Content
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                PanelIntro(text: intro)
+                content
+            }
+            .padding(16)
+            .id(model.uiLang)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .background(Color.appBackground)
+        .navigationTitle(loc(title))
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

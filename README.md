@@ -22,7 +22,7 @@ Disney+, Canal+, TF1+, M6+, france.tv, Arte, Apple TV, Max, Paramount+…
 - Free, no ads, no tracking.
 
 Works on iPhone, iPad, Android, Mac, Windows and Linux, in Safari, Chrome, Edge and Firefox. The interface is in
-French or English (Settings → Country, language and playback).
+French or English, on the site and in the iPhone app (Settings → Country, language and playback).
 
 ### Installation
 
@@ -93,7 +93,7 @@ Prime Video, Disney+, Canal+, TF1+, M6+, france.tv, Arte, Apple TV, Max, Paramou
   tous tes appareils. Ou en invité : tout reste dans ton navigateur.
 - Gratuit, sans publicité, sans pistage.
 
-Fonctionne sur iPhone, iPad, Android, Mac, Windows et Linux, dans Safari, Chrome, Edge et Firefox. Interface en français ou en anglais (Réglages → Pays, langue et lecture).
+Fonctionne sur iPhone, iPad, Android, Mac, Windows et Linux, dans Safari, Chrome, Edge et Firefox. Interface en français ou en anglais, sur le site et dans l’appli iPhone (Réglages → Pays, langue et lecture).
 
 ---
 

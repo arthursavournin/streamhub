@@ -11,11 +11,11 @@ struct LibraryView: View {
             let entries = model.store.entries(list)
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text(list.title)
+                    Text(loc(list.title))
                         .font(.largeTitle.weight(.bold))
                         .padding(.horizontal, 16)
-                    Picker("Liste", selection: $list) {
-                        ForEach(LibraryList.allCases) { Text($0.shortTitle).tag($0) }
+                    Picker(loc("Liste"), selection: $list) {
+                        ForEach(LibraryList.allCases) { Text(loc($0.shortTitle)).tag($0) }
                     }
                     .pickerStyle(.segmented)
                     .padding(.horizontal, 16)
@@ -94,7 +94,7 @@ struct DownloadsGrid: View {
                     }
                 }
                 .contextMenu {
-                    NavigationLink(value: entry.ref) { Label("Voir la fiche", systemImage: "info.circle") }
+                    NavigationLink(value: entry.ref) { Label(loc("Voir la fiche"), systemImage: "info.circle") }
                 }
             }
         }
@@ -146,7 +146,7 @@ struct RemoveButton: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(label)
+        .accessibilityLabel(loc(label))
     }
 }
 
@@ -178,17 +178,17 @@ struct HistoryRow: View {
                 }
                 .scrollIndicators(.hidden)
                 // Bleu foncé, pas rouge (demande de l'utilisateur)
-                Button("Supprimer l’historique", systemImage: "trash") { confirming = true }
+                Button(loc("Supprimer l’historique"), systemImage: "trash") { confirming = true }
                     .buttonStyle(.borderedProminent)
                     .tint(Color(red: 0x1d / 255, green: 0x3b / 255, blue: 0x72 / 255))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 16)
             }
-            .alert("Supprimer l’historique ?", isPresented: $confirming) {
-                Button("Supprimer") { withAnimation { model.store.clearHistory() } }
-                Button("Annuler", role: .cancel) {}
+            .alert(loc("Supprimer l’historique ?"), isPresented: $confirming) {
+                Button(loc("Supprimer")) { withAnimation { model.store.clearHistory() } }
+                Button(loc("Annuler"), role: .cancel) {}
             } message: {
-                Text("Tous les titres regardés seront retirés, sur tous tes appareils.")
+                Text(loc("Tous les titres regardés seront retirés, sur tous tes appareils."))
             }
         }
     }

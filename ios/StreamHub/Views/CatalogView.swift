@@ -79,7 +79,7 @@ struct CatalogView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 if showsTitle {
-                    Text(preset.title).font(.largeTitle.weight(.bold)).padding(.horizontal, 16)
+                    Text(loc(preset.title)).font(.largeTitle.weight(.bold)).padding(.horizontal, 16)
                 }
                 controls
                 if let error, items.isEmpty {
@@ -104,7 +104,7 @@ struct CatalogView: View {
             .padding(.vertical, 8)
         }
         .background(Color.appBackground)
-        .navigationTitle(preset.title)
+        .navigationTitle(loc(preset.title))
         .task {
             // Réglages de départ (une seule fois : les changements de l'utilisateur sont gardés)
             guard !started else { return }
@@ -125,29 +125,29 @@ struct CatalogView: View {
 
     private var controls: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Picker("Type", selection: $type) {
-                ForEach(CatalogType.allCases, id: \.self) { Text($0.label).tag($0) }
+            Picker(loc("Type"), selection: $type) {
+                ForEach(CatalogType.allCases, id: \.self) { Text(loc($0.label)).tag($0) }
             }
             .pickerStyle(.segmented)
             ScrollView(.horizontal) {
                 HStack(spacing: 8) {
                     Menu {
-                        Picker("Plateformes", selection: $platform) {
-                            if !model.store.providers.isEmpty { Text("Mes plateformes").tag(PlatformChoice.mine) }
-                            Text("Toutes les plateformes").tag(PlatformChoice.all)
+                        Picker(loc("Plateformes"), selection: $platform) {
+                            if !model.store.providers.isEmpty { Text(loc("Mes plateformes")).tag(PlatformChoice.mine) }
+                            Text(loc("Toutes les plateformes")).tag(PlatformChoice.all)
                             ForEach(model.store.providers) { p in Text(Platforms.shortName(p.name)).tag(PlatformChoice.one(p.id)) }
                         }
                     } label: { filterLabel(platformName, systemImage: "tv") }
                     Menu {
-                        Picker("Genre", selection: $genre) {
-                            Text("Tous les genres").tag(CatalogGenre?.none)
-                            ForEach(genres, id: \.self) { Text($0.name).tag(CatalogGenre?.some($0)) }
+                        Picker(loc("Genre"), selection: $genre) {
+                            Text(loc("Tous les genres")).tag(CatalogGenre?.none)
+                            ForEach(genres, id: \.self) { Text(loc($0.name)).tag(CatalogGenre?.some($0)) }
                             if let genre, !genres.contains(genre) { Text(genre.name).tag(CatalogGenre?.some(genre)) }
                         }
                     } label: { filterLabel(genre?.name ?? "Tous les genres", systemImage: "theatermasks") }
                     Menu {
-                        Picker("Tri", selection: $sort) {
-                            ForEach(Sort.allCases, id: \.self) { Text($0.label).tag($0) }
+                        Picker(loc("Tri"), selection: $sort) {
+                            ForEach(Sort.allCases, id: \.self) { Text(loc($0.label)).tag($0) }
                         }
                     } label: { filterLabel(sort.label, systemImage: "arrow.up.arrow.down") }
                 }
@@ -158,7 +158,7 @@ struct CatalogView: View {
     }
 
     private func filterLabel(_ text: String, systemImage: String) -> some View {
-        Label(text, systemImage: systemImage)
+        Label(loc(text), systemImage: systemImage)
             .font(.subheadline.weight(.medium))
             .padding(.horizontal, 12).padding(.vertical, 8)
             .glassEffect(.regular.interactive(), in: .capsule)

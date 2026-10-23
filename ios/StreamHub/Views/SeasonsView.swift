@@ -58,11 +58,11 @@ struct SeasonsSection: View {
         if !seasons.isEmpty {
             VStack(alignment: .leading, spacing: 14) {
                 if fillerShow != nil || !groupChoices.isEmpty {
-                    Picker("Découpage", selection: $source) {
-                        if let fillerShow { Text("Découpage \(fillerShow.name)").tag(Self.fillers) }
-                        Text("Découpage TMDB").tag(Self.tmdbSource)
+                    Picker(loc("Découpage"), selection: $source) {
+                        if let fillerShow { Text(loc("Découpage \(fillerShow.name)")).tag(Self.fillers) }
+                        Text(loc("Découpage TMDB")).tag(Self.tmdbSource)
                         ForEach(groupChoices, id: \.id) { g in
-                            Text("Découpage \(g.name)\(g.groupCount.map { " · \($0) saison\($0 > 1 ? "s" : "")" } ?? "")").tag(g.id)
+                            Text(loc("Découpage \(g.name)\(g.groupCount.map { " · \($0) saison\($0 > 1 ? "s" : "")" } ?? "")")).tag(g.id)
                         }
                     }
                     .pickerStyle(.menu)
@@ -73,7 +73,7 @@ struct SeasonsSection: View {
                         HStack(spacing: 8) {
                             ForEach(seasonButtons, id: \.number) { season in
                                 let active = season.number == selected
-                                Button(season.title) { selected = season.number }
+                                Button(loc(season.title)) { selected = season.number }
                                     .buttonStyle(.glass)
                                     .tint(season.allFiller ? .red : active ? .accentColor : nil)
                                     .fontWeight(active ? .semibold : .regular)
@@ -90,22 +90,22 @@ struct SeasonsSection: View {
                 }
                 if fillerMode, let fillerShow, let selected {
                     if let title = fillerShow.seasonNames?[String(selected)] {
-                        Text(title).font(.subheadline.weight(.semibold)).padding(.horizontal, 16)
+                        Text(loc(title)).font(.subheadline.weight(.semibold)).padding(.horizontal, 16)
                     }
                     let fillers = fillerShow.fillerCount(of: selected)
                     if fillers.count > 0 {
-                        Text(fillers.all ? "Que des fillers dans cette saison" : "\(fillers.count) filler\(fillers.count > 1 ? "s" : "") dans cette saison")
+                        Text(loc(fillers.all ? "Que des fillers dans cette saison" : "\(fillers.count) filler\(fillers.count > 1 ? "s" : "") dans cette saison"))
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(.red)
                             .padding(.horizontal, 16)
                     }
                 }
                 if let error {
-                    Text(error).foregroundStyle(.secondary).padding(.horizontal, 16)
+                    Text(loc(error)).foregroundStyle(.secondary).padding(.horizontal, 16)
                 } else if loading {
                     ProgressView().frame(maxWidth: .infinity).padding(.vertical, 20)
                 } else if episodes.isEmpty {
-                    Text("Pas encore d’épisodes annoncés.").foregroundStyle(.secondary).padding(.horizontal, 16)
+                    Text(loc("Pas encore d’épisodes annoncés.")).foregroundStyle(.secondary).padding(.horizontal, 16)
                 } else {
                     LazyVStack(alignment: .leading, spacing: 18) {
                         ForEach(Array(episodes.prefix(shown).enumerated()), id: \.element.id) { i, ep in
@@ -120,7 +120,7 @@ struct SeasonsSection: View {
                             }
                         }
                         if episodes.count > shown {
-                            Button("Afficher \(min(30, episodes.count - shown)) épisodes de plus") { shown += 30 }
+                            Button(loc("Afficher \(min(30, episodes.count - shown)) épisodes de plus")) { shown += 30 }
                                 .buttonStyle(.glass)
                                 .frame(maxWidth: .infinity)
                         }
@@ -294,7 +294,7 @@ private struct EpisodeRow: View {
         var parts: [String] = []
         if absolute { parts.append("épisode \(episode.episodeNumber)") }
         if let air = episode.airDate, let date = Self.day.date(from: air) {
-            let text = date.formatted(.dateTime.day().month(.wide).year().locale(Locale(identifier: "fr_FR")))
+            let text = date.formatted(.dateTime.day().month(.wide).year().locale(L10n.locale))
             parts.append(date > Date() ? "Diffusion le \(text)" : text)
         }
         if let runtime = episode.runtime, runtime > 0 { parts.append("\(runtime) min") }
@@ -310,25 +310,25 @@ private struct EpisodeRow: View {
                     .clipShape(.rect(cornerRadius: 8))
                     .overlay(alignment: .bottomLeading) {
                         if watched {
-                            Text("Dernier vu").font(.caption2.weight(.bold)).padding(.horizontal, 6).padding(.vertical, 2)
+                            Text(loc("Dernier vu")).font(.caption2.weight(.bold)).padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(Color.accentColor, in: .capsule).padding(4)
                         }
                     }
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("\(number ?? episode.episodeNumber). \(episode.name ?? "Épisode \(episode.episodeNumber)")")
+                    Text(loc("\(number ?? episode.episodeNumber). \(episode.name ?? "Épisode \(episode.episodeNumber)")"))
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(2)
                     if filler {
-                        Text("Filler").font(.caption2.weight(.bold)).foregroundStyle(.white)
+                        Text(loc("Filler")).font(.caption2.weight(.bold)).foregroundStyle(.white)
                             .padding(.horizontal, 7).padding(.vertical, 2)
                             .background(.red, in: .capsule)
                     }
                     if !meta.isEmpty {
-                        Text(meta).font(.caption).foregroundStyle(.secondary)
+                        Text(loc(meta)).font(.caption).foregroundStyle(.secondary)
                     }
                 }
             }
-            Text(episode.overview.flatMap { $0.isEmpty ? nil : $0 } ?? "Pas encore de résumé en français.")
+            Text(episode.overview.flatMap { $0.isEmpty ? nil : $0 } ?? loc("Pas encore de résumé en français."))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .lineLimit(3)
@@ -339,7 +339,7 @@ private struct EpisodeRow: View {
                             Button {
                                 onLaunch(link)
                             } label: {
-                                Label(link.label, systemImage: "play.fill").font(.footnote.weight(.semibold))
+                                Label(loc(link.label), systemImage: "play.fill").font(.footnote.weight(.semibold))
                             }
                             .buttonStyle(.glass)
                             .tint(link.entry.mine ? .accentColor : nil)
@@ -351,16 +351,16 @@ private struct EpisodeRow: View {
                                     Image(systemName: "arrow.down.circle").font(.footnote.weight(.semibold))
                                 }
                                 .buttonStyle(.glass)
-                                .accessibilityLabel("Télécharger sur \(link.entry.displayName)")
+                                .accessibilityLabel(loc("Télécharger sur \(link.entry.displayName)"))
                             }
                         }
                     }
                 }
                 .scrollIndicators(.hidden)
             } else if links != nil {
-                Text("Pas disponible en streaming par abonnement").font(.caption).foregroundStyle(.secondary)
+                Text(loc("Pas disponible en streaming par abonnement")).font(.caption).foregroundStyle(.secondary)
             } else {
-                Text("Recherche des liens…").font(.caption).foregroundStyle(.secondary)
+                Text(loc("Recherche des liens…")).font(.caption).foregroundStyle(.secondary)
             }
         }
         // Filler : fond et bord rouges, comme sur le site

@@ -17,7 +17,7 @@ import * as library from './library.js';
 startTranslation();
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.8.0';
+const APP_VERSION = '2.9.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>

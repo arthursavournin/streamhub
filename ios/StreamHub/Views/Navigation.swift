@@ -86,11 +86,11 @@ struct AppTopBar: View {
                     .scaledToFit()
                     .frame(width: 34, height: 34)
                     .clipShape(.rect(cornerRadius: 9))
-                    .accessibilityLabel("StreamHub")
+                    .accessibilityLabel(loc("StreamHub"))
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(.secondary)
-                    TextField("Rechercher", text: $query)
+                    TextField(loc("Rechercher"), text: $query)
                         .focused(focused)
                         .submitLabel(.search)
                         .autocorrectionDisabled()
@@ -103,7 +103,7 @@ struct AppTopBar: View {
                             Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("Effacer la recherche")
+                        .accessibilityLabel(loc("Effacer la recherche"))
                     }
                 }
                 .padding(.horizontal, 14)
@@ -121,7 +121,7 @@ struct AppTopBar: View {
                 }
                 .buttonStyle(.plain)
                 .glassEffect(.regular.interactive(), in: .circle)
-                .accessibilityLabel("Réglages")
+                .accessibilityLabel(loc("Réglages"))
             }
             if let current = section {
                 HStack(spacing: 8) {
@@ -149,7 +149,7 @@ struct AppTopBar: View {
 
     private func chip(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title)
+            Text(loc(title))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(selected ? Color.appBackground : .white)
                 .padding(.horizontal, 16)

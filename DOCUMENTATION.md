@@ -40,6 +40,12 @@ l'accueil propose « ▶ Voir » et « + Ma liste », et Mon espace se présente
 Téléchargés). Tire la page vers le bas pour actualiser l'accueil ou une rubrique. Sur ordinateur, rien ne change :
 les rubriques sont dans la barre du haut.
 
+**Sur iPhone Duo (site dans Safari)** : mêmes fonctions, mise en page adaptée à chaque forme. **Fermé**, l'interface du
+téléphone, avec une grande affiche moins haute et trois affiches par ligne. **Ouvert en portrait**, l'interface du
+téléphone en plus grand : grande affiche en image large qui s'arrête avant le pli, affiches plus grandes (quatre par
+ligne), fiche plus aérée. **Ouvert en paysage**, l'interface d'ordinateur (comme sur iPad), avec le texte de la grande
+affiche à gauche du pli et la fiche en plein écran. L'appli iPhone n'est pas encore adaptée à l'iPhone Duo.
+
 - **Accueil** : une affiche mise en avant et des rangées façon Netflix : Top 50 du moment, Reprendre, Ma liste,
   Nouveautés, Nouveaux épisodes, Nouveaux films, Les mieux notés, puis une rangée par genre (Action & aventure, Comédie, Horreur, Science-fiction &
   fantastique, Thriller & policier, Drame, Animation, Animés japonais, Romance, Famille, Documentaires).

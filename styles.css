@@ -1750,3 +1750,67 @@ html:has(dialog[open]) { overflow: hidden; }
 .pull-hint.loading { opacity: 1; transform: translateY(24px); animation: pull-spin 0.8s linear infinite; }
 @keyframes pull-spin { to { transform: translateY(24px) rotate(360deg); } }
 @media (min-width: 861px) { .pull-hint { display: none; } }
+
+/* ---------- iPhone Duo (version 2.6.0, demande de l'utilisateur) ---------- */
+/* Pliable d'Apple, sorti en 2026. Tailles CSS estimées (Apple n'en publie pas pour le web) : fermé 466 × 678, ouvert
+   626 × 890 en portrait et 890 × 626 en paysage ; les deux écrans ont les mêmes proportions (environ 0,7, contre 0,46
+   pour l'iPhone 15). Mêmes fonctions partout, seule la mise en page change. Les conditions (largeur ET proportions)
+   écartent l'iPhone 15, les autres iPhone, l'iPad et le Mac. Le pli de l'écran intérieur est au milieu de la largeur
+   en paysage (les deux pages de l'écran d'accueil d'iOS) et au milieu de la hauteur en portrait :
+   env(viewport-segment-*) le donne si Safari le connaît, sinon 50 %. */
+
+/* Fermé (écran extérieur, presque carré) : l'interface du téléphone, avec une grande affiche moins haute pour voir
+   les rangées sans défiler, et trois affiches par ligne dans les grilles */
+@media (min-width: 441px) and (max-width: 540px) and (min-aspect-ratio: 3/5) and (max-aspect-ratio: 4/5) {
+  .hero { min-height: 60vh; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 16px 10px; }
+  .row-track > .card, .row-track > .card-wrap { width: 124px; }
+}
+
+/* Ouvert en portrait (grand écran presque carré) : interface du téléphone (barre du bas, pastilles), mais grande
+   affiche en image large (l'affiche verticale agrandie sur tout l'écran devenait floue), qui s'arrête avant le pli
+   (milieu de la hauteur) ; affiches plus grandes, quatre par ligne dans les grilles ; fiche plus aérée */
+@media (min-width: 560px) and (max-width: 720px) and (min-aspect-ratio: 3/5) and (max-aspect-ratio: 4/5) {
+  .hero {
+    min-height: calc(env(viewport-segment-height 0 0, 50vh) - 56px);
+    padding-bottom: 20px;
+    background-image: var(--backdrop, var(--poster, none));
+    background-position: center 20%;
+  }
+  .hero h1 { font-size: 2.5em; }
+  .hero-actions .btn { flex-basis: 170px; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 20px 14px; }
+  .row-track > .card, .row-track > .card-wrap { width: 140px; }
+  .bottom-nav { width: min(440px, calc(100vw - 24px)); }
+  .detail-hero { height: 280px; }
+  .detail-head { grid-template-columns: 140px minmax(0, 1fr); column-gap: 18px; }
+  .detail-poster { width: 140px; }
+  .detail-head h2 { font-size: 1.8em; }
+}
+
+/* Ouvert en paysage (890 × 626) : l'interface d'ordinateur, comme sur iPad, adaptée à la faible hauteur : logo sans
+   son nom pour laisser la place à la recherche, grande affiche moins haute dont le texte reste à gauche du pli,
+   fenêtres (fiche) en plein écran. Pas pour un iPhone tenu en paysage (moins de 560 px de haut) ; aussi pour une petite
+   fenêtre d'ordinateur de cette taille (sans gêne). */
+@media (min-width: 861px) and (max-width: 1000px) and (min-height: 560px) and (max-height: 700px) {
+  .brand span { display: none; }
+  .topbar { gap: 16px; }
+  .search { flex-basis: 240px; }
+  .hero { min-height: 66vh; padding-top: calc(var(--topbar-h) + env(safe-area-inset-top) + 12px); padding-bottom: 64px; }
+  .hero-content { max-width: calc(env(viewport-segment-width 0 0, 50vw) - var(--gutter) - 24px); }
+  .hero h1 { font-size: 2.2em; }
+  .hero-overview { -webkit-line-clamp: 2; }
+  .hero-actions { flex-wrap: nowrap; gap: 8px; margin-top: 14px; }
+  .hero-actions .btn { padding: 10px 16px; font-size: 0.95em; white-space: nowrap; }
+  .sheet {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+  .sheet-close .close { margin-top: max(14px, calc(env(safe-area-inset-top) + 6px)); margin-right: calc(env(safe-area-inset-right) + 14px); }
+  .detail-hero { height: 46vh; }
+}

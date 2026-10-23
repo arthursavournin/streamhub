@@ -18,6 +18,7 @@ final class AppModel {
     var pendingProgress: PendingProgress?
     var progressQuestion: PendingProgress?
     var showSettings = false // roue des réglages en haut de chaque page
+    var notice: String? // court message en bas de l'écran (pays détecté…)
 
     // « Où en es-tu ? » n'est posé qu'après 3 minutes : un retour plus rapide, c'est souvent juste pour changer de profil
     // ou se connecter
@@ -244,9 +245,46 @@ final class AppModel {
     // Retour dans l'appli : synchronisation, et « Où en es-tu ? » si une série a été lancée il y a plus de 3 minutes
     func appBecameActive() {
         sync.appBecameActive()
+        Task { await followCountry() }
         guard let pendingProgress, Date().timeIntervalSince(pendingProgress.at) >= Self.progressDelay else { return }
         progressQuestion = pendingProgress
         self.pendingProgress = nil
+    }
+
+    // ---------- Pays du catalogue ----------
+
+    // Le catalogue suit le pays de la connexion (wifi, réseau mobile ou VPN), vu par le relais (version 2.8.0, comme le
+    // site) : quand ce pays change, il devient le catalogue, même si un autre avait été choisi à la main ; tant qu'il ne
+    // change pas, le choix fait à la main reste. Réglage propre à l'appareil (Sync.deviceSettings).
+    static let detectedKey = "streamhub:detected-country"
+    private var detecting = false
+
+    func followCountry() async {
+        guard !detecting, isConfigured, let url = URL(string: "\(store.relayURL)/country") else { return }
+        detecting = true
+        defer { detecting = false }
+        nonisolated struct Answer: Decodable { let country: String? }
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 5)
+        request.httpMethod = "GET"
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              (response as? HTTPURLResponse)?.statusCode == 200,
+              let country = try? JSONDecoder().decode(Answer.self, from: data).country, country.count == 2 else { return }
+        let defaults = UserDefaults.standard
+        guard country != defaults.string(forKey: Self.detectedKey) else { return }
+        // Pays où TMDB n'a pas de catalogue : on garde le choix actuel (et on ne le redemande pas)
+        guard let codes = try? await tmdb.regions() else { return }
+        defaults.set(country, forKey: Self.detectedKey)
+        guard codes.contains(country), country != store.region else { return }
+        store.setSetting("region", .string(country))
+        clearRows()
+        notice = "Catalogue : \(Self.countryName(country)) (pays détecté)."
+        try? await Task.sleep(for: .seconds(4))
+        notice = nil
+    }
+
+    // Nom d'un pays en français (« Japon »)
+    nonisolated static func countryName(_ code: String) -> String {
+        Locale(identifier: "fr_FR").localizedString(forRegionCode: code) ?? code
     }
 
     // Réponse : le dernier épisode regardé remplace l'épisode lancé dans l'historique

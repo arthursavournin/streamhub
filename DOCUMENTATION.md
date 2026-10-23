@@ -325,7 +325,7 @@ account actions apply immediately.
 | **Clés API** (API keys) | TMDB key, Streaming Availability key, with a Test button for each. (The StreamHub relay, for JustWatch links, has no setting: its address is fixed since version 2.3.4.) |
 | **Accueil** (Home) | Rows shown on the home page, their order, and the featured title. |
 | **Apparence** (Appearance) | Glass effect: Automatic, Transparent or Tinted (per device). |
-| **Pays, langue et lecture** (Country, language and playback) | Catalog country (France, Belgium, Switzerland, Luxembourg, Canada, United Kingdom, United States, Germany, Spain, Italy), **app language** (French or English, on this device: the whole interface, the legal pages, and the titles, summaries and genres from TMDB; changing it reloads the page) and, on a computer, **Ouvrir les titres** (Open titles). |
+| **Pays, langue et lecture** (Country, language and playback) | Catalog country: every country where TMDB knows the platforms (over a hundred). By default, **the country of your connection** (Wi-Fi, mobile network or VPN, as seen by the StreamHub relay): when it changes (travel, VPN on or off), StreamHub selects that country on opening, even if you had picked another one, and says so in a short message; as long as it doesn't change, your manual choice stays. Per device. JustWatch Top 50 for France, Belgium, Switzerland, Luxembourg, Canada, United Kingdom, United States, Germany, Spain and Italy (elsewhere, ranked by TMDB popularity). Then **app language** (French or English, on this device: the whole interface, the legal pages, and the titles, summaries and genres from TMDB; changing it reloads the page) and, on a computer, **Ouvrir les titres** (Open titles). |
 | **À propos** (About) | Version, legal notice, privacy policy, terms of use, source code. |
 
 ### Open titles (computer)
@@ -381,8 +381,8 @@ when you come back to StreamHub. If two devices are changed at the same time, th
 A title removed from a list (or a cleared history) on one device does not come back from another, unless it is added
 or watched again there after the removal.
 
-- **Synced**: keys, country, subscriptions, home page, My list, Likes, history, likes on platforms.
-- **Per device**: downloads (they live on the device), pending questions, glass effect, "Open titles" setting.
+- **Synced**: keys, subscriptions, home page, My list, Likes, history, likes on platforms.
+- **Per device**: catalog country (it follows where you are), app language, downloads (they live on the device), pending questions, glass effect, "Open titles" setting.
 - **Always kept on the device too**: StreamHub works offline, and nothing is erased when you sign out.
 
 ### Forgotten password, changing your password, deleting the account

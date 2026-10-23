@@ -321,7 +321,7 @@ les actions du compte, elles, s'appliquent tout de suite.
 | **Clés API** | Clé TMDB, clé Streaming Availability, avec un bouton Tester pour chacune. (Le relais StreamHub, pour les liens JustWatch, n'a pas de réglage : son adresse est fixe depuis la version 2.3.4.) |
 | **Accueil** | Rangées affichées sur l'accueil, leur ordre, et le titre à l'affiche. |
 | **Apparence** | Effet verre : Automatique, Transparent ou Teinté (propre à chaque appareil). |
-| **Pays, langue et lecture** | Pays du catalogue (France, Belgique, Suisse, Luxembourg, Canada, Royaume-Uni, États-Unis, Allemagne, Espagne, Italie), **langue de l’appli** (français ou anglais, sur cet appareil : toute l’interface, les pages légales, et les titres, résumés et genres venus de TMDB ; changer de langue recharge la page) et, sur ordinateur, **Ouvrir les titres**. |
+| **Pays, langue et lecture** | Pays du catalogue : tous les pays où TMDB connaît les plateformes (plus d’une centaine). Par défaut, **celui de ta connexion** (wifi, réseau mobile ou VPN, vu par le relais StreamHub) : quand il change (voyage, VPN activé ou coupé), StreamHub sélectionne ce pays à l’ouverture, même si tu en avais choisi un autre, et l’affiche dans un court message ; tant qu’il ne change pas, ton choix fait à la main reste. Propre à chaque appareil. Top 50 JustWatch pour France, Belgique, Suisse, Luxembourg, Canada, Royaume-Uni, États-Unis, Allemagne, Espagne et Italie (ailleurs, classement par popularité TMDB). Puis **langue de l’appli** (français ou anglais, sur cet appareil : toute l’interface, les pages légales, et les titres, résumés et genres venus de TMDB ; changer de langue recharge la page) et, sur ordinateur, **Ouvrir les titres**. |
 | **À propos** | Version, mentions légales, politique de confidentialité, conditions d'utilisation, code source. |
 
 ### Ouvrir les titres (ordinateur)
@@ -378,8 +378,8 @@ ouverture ou quand tu reviens sur StreamHub. Deux appareils modifiés en même t
 n'est perdu. Un titre retiré d'une liste (ou l'historique supprimé) sur un appareil ne revient pas depuis un autre,
 sauf s'il y est de nouveau ajouté ou regardé après le retrait.
 
-- **Synchronisés** : clés, pays, abonnements, accueil, Ma liste, J'aime, historique, likes sur les plateformes.
-- **Propres à chaque appareil** : téléchargements (ils sont sur l'appareil), questions en attente, effet verre,
+- **Synchronisés** : clés, abonnements, accueil, Ma liste, J'aime, historique, likes sur les plateformes.
+- **Propres à chaque appareil** : pays du catalogue (il suit l'endroit où tu es), langue de l'appli, téléchargements (ils sont sur l'appareil), questions en attente, effet verre,
   réglage « Ouvrir les titres ».
 - **Toujours aussi gardés sur l'appareil** : StreamHub marche hors ligne, et rien n'est effacé à la déconnexion.
 

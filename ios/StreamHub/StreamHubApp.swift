@@ -57,6 +57,18 @@ struct RootView: View {
             }
         }
         .background(Color.appBackground)
+        // Court message en bas (pays du catalogue détecté…), au-dessus de la barre d'onglets
+        .overlay(alignment: .bottom) {
+            if let notice = model.notice {
+                Text(notice)
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .glassEffect(.regular, in: .capsule)
+                    .padding(.bottom, 96)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: model.notice)
         .sheet(isPresented: Binding(get: { model.progressQuestion != nil }, set: { if !$0 { model.progressQuestion = nil } })) {
             if let question = model.progressQuestion { ProgressSheet(entry: question.entry) }
         }

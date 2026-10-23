@@ -24,8 +24,8 @@ struct SettingsView: View {
                         let shown = model.store.homeLayout.filter(\.on).count
                         SettingsRowLabel(icon: "house", title: "Accueil", summary: "\(shown) rangées sur \(model.store.homeLayout.count) · \(model.store.homeHero.map { "à l’affiche : \($0.title)" } ?? "affiche automatique")")
                     }
-                    NavigationLink { page("Pays et lecture", "Pays du catalogue et plateformes disponibles.") { RegionView() } } label: {
-                        SettingsRowLabel(icon: "globe", title: "Pays et lecture", summary: Self.regions.first { $0.0 == model.store.region }?.1 ?? model.store.region)
+                    NavigationLink { page("Pays et lecture", "Pays du catalogue et plateformes disponibles. Il suit le pays de ta connexion (wifi, VPN, voyage) ; tu peux le changer à la main.") { RegionView() } } label: {
+                        SettingsRowLabel(icon: "globe", title: "Pays et lecture", summary: AppModel.countryName(model.store.region))
                     }
                     NavigationLink { page("À propos", "Version, mentions légales et confidentialité.") { AboutView() } } label: {
                         SettingsRowLabel(icon: "info.circle", title: "À propos")
@@ -77,10 +77,8 @@ struct SettingsView: View {
         "\(model.store.tmdbKey.isEmpty ? "TMDB manquante" : "TMDB ✓") · \(model.store.saKey.isEmpty ? "Streaming Availability —" : "Streaming Availability ✓")"
     }
 
-    static let regions = [
-        ("FR", "France"), ("BE", "Belgique"), ("CH", "Suisse"), ("LU", "Luxembourg"), ("CA", "Canada"),
-        ("GB", "Royaume-Uni"), ("US", "États-Unis"), ("DE", "Allemagne"), ("ES", "Espagne"), ("IT", "Italie"),
-    ]
+    // Liste de départ, avant la réponse de TMDB (tous les pays où il connaît les plateformes, version 2.8.0)
+    static let regions = ["FR", "BE", "CH", "LU", "CA", "GB", "US", "DE", "ES", "IT"]
 }
 
 // Clés TMDB et Streaming Availability (enregistrées à chaque frappe, comme avant)
@@ -113,10 +111,17 @@ private struct KeysView: View {
 // Pays du catalogue : une ligne par pays, coche sur celui choisi
 private struct RegionView: View {
     @Environment(AppModel.self) private var model
+    @State private var codes = SettingsView.regions
+
+    // Par ordre alphabétique du nom français
+    private var sorted: [(String, String)] {
+        Set(codes + [model.store.region]).map { ($0, AppModel.countryName($0)) }
+            .sorted { $0.1.localizedCompare($1.1) == .orderedAscending }
+    }
 
     var body: some View {
         ActionList {
-            ForEach(SettingsView.regions, id: \.0) { code, name in
+            ForEach(sorted, id: \.0) { code, name in
                 Button {
                     model.store.setSetting("region", .string(code))
                 } label: {
@@ -133,6 +138,9 @@ private struct RegionView: View {
                 }
                 .buttonStyle(.plain)
             }
+        }
+        .task {
+            if let list = try? await model.tmdb.regions(), !list.isEmpty { codes = list }
         }
     }
 }

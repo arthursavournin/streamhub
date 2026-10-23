@@ -1,5 +1,5 @@
 import { LANG, LOCALE, t, startTranslation } from './i18n.js';
-import { loadSettings, saveSettings, HISTORY_MAX } from './store.js';
+import { loadSettings, saveSettings, HISTORY_MAX, relayUrl } from './store.js';
 import { makeApi, img, testTmdbKey, testSaKey, clearMemo } from './api.js';
 import { syncNow, startAutoSync } from './sync.js';
 import { handleAuthRedirect, accountState } from './account.js';
@@ -17,7 +17,7 @@ import * as library from './library.js';
 startTranslation();
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.7.0';
+const APP_VERSION = '2.8.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -2437,7 +2437,7 @@ function fillSettings() {
   const f = el.settingsForm;
   f.tmdbKey.value = settings.tmdbKey;
   f.saKey.value = settings.saKey;
-  f.region.value = settings.region;
+  fillRegions();
   f.openIn.value = settings.desktopApps ?? settings.primeApp ? 'app' : 'web';
   f.glass.value = settings.glass || 'auto';
   f.uiLang.value = LANG;
@@ -2451,6 +2451,78 @@ function fillSettings() {
   loadProviderChoices();
   renderSettingsSummaries();
 }
+
+// ---------- Pays du catalogue ----------
+
+// Nom d'un pays dans la langue de l'interface (« Japon », « Japan »)
+const regionNames = new Intl.DisplayNames([LOCALE], { type: 'region' });
+const countryName = (code) => {
+  try {
+    return regionNames.of(code) ?? code;
+  } catch {
+    return code;
+  }
+};
+
+// Tous les pays où TMDB connaît les plateformes (une centaine), par ordre alphabétique dans la langue de l'interface ;
+// sans réponse de TMDB, la liste de départ (10 pays) reste
+async function fillRegions() {
+  const select = el.settingsForm.region;
+  select.value = settings.region;
+  const codes = await api.regions().catch(() => null);
+  if (!codes?.length) return;
+  const list = [...new Set([...codes, settings.region])].map((code) => ({ code, name: countryName(code) }));
+  list.sort((a, b) => a.name.localeCompare(b.name, LOCALE));
+  const chosen = select.value || settings.region; // pays absent de la liste de départ (Japon…) : vide jusqu'ici
+  select.innerHTML = list.map((c) => `<option value="${esc(c.code)}">${esc(c.name)}</option>`).join('');
+  select.value = chosen;
+  renderSettingsSummaries();
+}
+
+// Le catalogue suit le pays de la connexion (wifi, réseau mobile ou VPN), vu par le relais (version 2.8.0, demande de
+// l'utilisateur) : quand ce pays change (voyage, VPN activé ou coupé), il devient le catalogue, même si un autre avait
+// été choisi à la main ; tant qu'il ne change pas, le choix fait à la main reste. Réglage propre à chaque appareil.
+const DETECTED_KEY = 'streamhub:detected-country';
+let detecting = false;
+async function followCountry() {
+  if (detecting || !settings.tmdbKey) return;
+  detecting = true;
+  try {
+    const res = await fetch(`${relayUrl()}/country`, { cache: 'no-store', signal: AbortSignal.timeout?.(5000) });
+    const { country } = res.ok ? await res.json() : {};
+    if (!/^[A-Z]{2}$/.test(country ?? '')) return;
+    let last = null;
+    try {
+      last = localStorage.getItem(DETECTED_KEY);
+    } catch {
+      /* stockage bloqué : on ne suit pas le pays */
+      return;
+    }
+    if (country === last) return;
+    // Pays où TMDB n'a pas de catalogue : on garde le choix actuel (et on ne le redemande pas)
+    const codes = await api.regions().catch(() => null);
+    if (!codes) return;
+    try {
+      localStorage.setItem(DETECTED_KEY, country);
+    } catch {
+      return;
+    }
+    if (!codes.includes(country) || country === settings.region) return;
+    settings = { ...settings, region: country };
+    saveSettings(settings);
+    api = makeApi(settings);
+    state.filter = defaultFilter();
+    if (!el.detail.open && !el.settings.open) showView(state.view);
+    toast(`Catalogue : ${countryName(country)} (pays détecté).`);
+  } catch {
+    /* relais injoignable : le catalogue ne change pas */
+  } finally {
+    detecting = false;
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) followCountry();
+});
 
 // ---------- Réglages : accueil ----------
 
@@ -3047,6 +3119,7 @@ initSpatialNav({
 library.flushWatchPending();
 checkPending(); // l'appli a pu être fermée pendant le téléchargement
 showView('home');
+followCountry(); // pays de la connexion : catalogue de ce pays s'il a changé
 // Premier lancement : connexion / création de compte seulement ; invité déjà choisi : réglages (clé TMDB)
 if (!settings.tmdbKey) {
   if (!accountState().signedIn && !choseGuest()) startOnboarding();

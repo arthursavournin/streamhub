@@ -231,6 +231,14 @@ struct TMDBClient {
         }
     }
 
+    // Pays où TMDB (données JustWatch) connaît les plateformes : la liste des catalogues des réglages (comme le site)
+    func regions() async throws -> [String] {
+        nonisolated struct Region: Decodable { let iso31661: String }
+        nonisolated struct List: Decodable { let results: [Region] }
+        let list: List = try await get("/watch/providers/regions", ["language": language])
+        return list.results.map(\.iso31661).filter { $0.count == 2 }
+    }
+
     // Plateformes du pays, films et séries confondus (certaines ne proposent que des séries)
     func providers() async throws -> [ProviderChoice] {
         nonisolated struct Item: Decodable {

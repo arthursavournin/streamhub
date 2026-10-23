@@ -101,6 +101,12 @@ export function makeApi(settings) {
   const localizedList = async (res, type) => ({ ...res, results: await Promise.all(res.results.map((m) => localized(m, type ?? m.media_type))) });
 
   return {
+    // Pays où TMDB (données JustWatch) connaît les plateformes : la liste des catalogues des réglages
+    async regions() {
+      const data = await tmdb('/watch/providers/regions', { language });
+      return (data.results ?? []).map((r) => r.iso_3166_1).filter((c) => /^[A-Z]{2}$/.test(c));
+    },
+
     // Plateformes du pays, films et séries confondus (certaines ne proposent que des séries)
     async providers() {
       const lists = await Promise.all(

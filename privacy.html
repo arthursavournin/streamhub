@@ -90,7 +90,10 @@
     <ul>
       <li><strong>Site hosting</strong>: GitHub Pages records visitors’ IP addresses for the security of its service.</li>
       <li><strong>StreamHub relay</strong> (Cloudflare): to find links to platforms, your browser sends it the identifier
-        and title of the movie or series. The relay only keeps these answers (a few hours), with no link to you.</li>
+        and title of the movie or series. The relay only keeps these answers (a few hours), with no link to you. It also
+        tells StreamHub the <strong>country of your connection</strong> (as Cloudflare sees it from your IP address,
+        VPN included), to pick that country’s catalog; it does not keep it, and StreamHub only remembers it on your
+        device.</li>
       <li><strong>Services called directly by your browser</strong>: TMDB (catalog and images), Streaming Availability
         (with your key, if you entered one), Wikidata (search by nickname) and, when you choose to go there, the
         streaming platforms’ websites. They receive your IP address and what you request, and apply their own privacy

@@ -64,7 +64,7 @@ struct SyncError: LocalizedError {
 @Observable
 final class SyncService {
     // Propres à chaque appareil : jamais synchronisés (comme DEVICE_SETTINGS du site)
-    static let deviceSettings: Set<String> = ["desktopApps", "primeApp", "glass"]
+    static let deviceSettings: Set<String> = ["desktopApps", "primeApp", "glass", "uiLang", "region"]
     // Téléchargements et questions en attente : sur l'appareil ; removed : titres retirés (voir AppStore.remove), pour la
     // fusion
     static let syncedLibrary = ["likes", "watchlist", "history", "platformLikes", "removed"]

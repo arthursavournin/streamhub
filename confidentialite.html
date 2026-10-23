@@ -93,7 +93,9 @@
         son service.</li>
       <li><strong>Relais StreamHub</strong> (Cloudflare) : pour trouver les liens vers les plateformes, ton navigateur lui
         envoie l’identifiant et le titre du film ou de la série. Le relais ne garde que ces réponses (quelques heures),
-        sans lien avec toi.</li>
+        sans lien avec toi. Il indique aussi à StreamHub le <strong>pays de ta connexion</strong> (tel que Cloudflare le
+        voit d’après ton adresse IP, VPN compris), pour choisir le catalogue de ce pays ; il ne le garde pas, et
+        StreamHub ne le retient que sur ton appareil.</li>
       <li><strong>Services appelés directement par ton navigateur</strong> : TMDB (catalogue et images), Streaming
         Availability (avec ta clé, si tu en as mis une), Wikidata (recherche par surnom) et, quand tu choisis d’y aller,
         les sites des plateformes de streaming. Ils reçoivent ton adresse IP et ce que tu demandes, et appliquent leurs

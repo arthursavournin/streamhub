@@ -245,6 +245,8 @@ export const EN = {
   'Pays du catalogue, langue de l’appli et ouverture des titres.': 'Catalog country, app language and how titles open.',
   Pays: 'Country',
   'catalogue et plateformes disponibles': 'catalog and available platforms',
+  'catalogue et plateformes ; suit le pays de ta connexion (wifi, VPN, voyage), modifiable à la main':
+    'catalog and platforms; follows the country of your connection (Wi-Fi, VPN, travel), can be changed by hand',
   Langue: 'Language',
   'de l’appli et des fiches, sur cet appareil': 'of the app and title pages, on this device',
   France: 'France',
@@ -524,6 +526,7 @@ export const EN_PATTERNS = [
   [/^Connexion refusée : (.+)$/, (e) => `Sign-in refused: ${e}`],
   [/^Version (.+)$/, (v) => `Version ${v}`],
   [/^Numéro (\d+)$/, (c) => `Number ${c}`],
+  [/^Catalogue : (.+) \(pays détecté\)\.$/, (c) => `Catalog: ${c} (detected country).`],
   [/^Monter (.+)$/, (r) => `Move up ${EN[r] ?? r}`],
   [/^Descendre (.+)$/, (r) => `Move down ${EN[r] ?? r}`],
 ];

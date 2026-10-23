@@ -787,6 +787,22 @@ html:has(dialog[open]) { overflow: hidden; }
 .choice span { font-weight: 600; }
 .choice em { display: block; font-weight: 400; font-style: normal; color: var(--muted); font-size: 0.88em; }
 .field select { padding: 10px 12px; border-radius: 10px; }
+/* Réglages (Pays, Langue…) : menus en cartes, comme les choix « Ouvrir les titres » juste dessous (version 2.8.0,
+   demande de l'utilisateur), avec une petite flèche dessinée à droite */
+.settings-panel .field select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding: 13px 44px 13px 16px;
+  background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5' fill='none' stroke='%23e8edf6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 18px center;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.settings-panel .field select:hover { border-color: var(--muted); }
+.settings-panel .field select:focus-visible { outline: none; border-color: var(--accent); background-color: rgba(var(--accent-rgb), 0.14); }
 .field > label em { display: block; margin-top: 2px; font-size: 0.9em; }
 .key-row { display: flex; gap: 8px; margin-top: 10px; }
 .field .key-row { margin-top: 0; }

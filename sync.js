@@ -11,7 +11,7 @@ import { loadAccount, saveAccount, vaultKey, fetchData, pushData, Conflict } fro
 // Propres à chaque appareil : jamais synchronisés
 // desktopApps (avant : primeApp) : les applis sont installées sur un ordinateur, pas un autre ; glass : réglé selon
 // l'appareil
-const DEVICE_SETTINGS = ['desktopApps', 'primeApp', 'glass', 'uiLang'];
+const DEVICE_SETTINGS = ['desktopApps', 'primeApp', 'glass', 'uiLang', 'region'];
 // téléchargements et questions : sur l'appareil ; removed : titres retirés (voir library.js), pour la fusion
 const SYNCED_LIBRARY = ['likes', 'watchlist', 'history', 'platformLikes', 'removed'];
 

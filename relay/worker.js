@@ -7,6 +7,10 @@
 //   GET /offers?tmdb=317555&type=tv&title=Michael%20Jackson&country=FR
 //   → { found: true, offers: [{ provider, type, url, deeplink }] }
 //
+//   GET /country → { country: "FR" }
+//   Pays de la connexion (wifi, réseau mobile ou VPN), tel que Cloudflare le voit : StreamHub choisit ainsi le catalogue
+//   du pays où l'on se trouve (version 2.8.0). Rien n'est gardé.
+//
 // Il ne stocke rien. (Jusqu'à la version 2.3.3, il gardait aussi dans Workers KV les données de l'ancienne
 // synchronisation par code, retirée en 2.1.0 : route /sync supprimée après l'audit de sécurité, car n'importe qui
 // pouvait y écrire.)
@@ -46,6 +50,12 @@ export default {
   async fetch(request, env, ctx) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request) });
     const url = new URL(request.url);
+    if (url.pathname === '/country') {
+      const country = request.cf?.country;
+      return new Response(JSON.stringify({ country: /^[A-Z]{2}$/.test(country ?? '') ? country : null }), {
+        headers: { ...corsHeaders(request), 'content-type': 'application/json', 'cache-control': 'no-store' },
+      });
+    }
     if (url.pathname !== '/offers') return json({ service: 'StreamHub relay' }, request);
 
     const tmdb = url.searchParams.get('tmdb') ?? '';

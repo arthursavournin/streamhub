@@ -12,7 +12,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.4.2';
+const APP_VERSION = '2.4.3';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -300,15 +300,20 @@ async function loadMore() {
     if (state.query) {
       // Première page : on cherche aussi la correction proposée (« hary poter » → « Harry Potter ») et, pour
       // « harry potter 1 », le nom sans le numéro ; puis les sagas sont rangées dans l'ordre (voir search.js)
+      // Toutes les requêtes partent en même temps : la recherche telle quelle n'attend plus la liste des titres
       const { text, number } = splitNumber(state.query);
-      const suggestion = page === 1 ? suggest(state.query, await loadTitles()) : null;
-      if (page === 1) state.suggestion = suggestion;
-      const extra = page === 1 ? [suggestion, number && text].filter(Boolean) : [];
-      const [res, aliases, ...more] = await Promise.all([
+      const first = page === 1;
+      const searchOf = (q) => api.search(state.type, q, 1).catch(() => ({ results: [] }));
+      const pending = [
         api.search(state.type, state.query, page),
-        page === 1 ? aliasMatches(state.query).catch(() => []) : [],
-        ...extra.map((q) => api.search(state.type, q, 1).catch(() => ({ results: [] }))),
-      ]);
+        first ? aliasMatches(state.query).catch(() => []) : [],
+        first && number ? searchOf(text) : null,
+      ];
+      pending[0].catch(() => {}); // erreur lue plus bas par Promise.all
+      const suggestion = first ? suggest(state.query, await loadTitles()) : null;
+      if (first) state.suggestion = suggestion;
+      const [res, aliases, withoutNumber, fixed] = await Promise.all([...pending, suggestion ? searchOf(suggestion) : null]);
+      const more = [fixed, withoutNumber].filter(Boolean);
       totalPages = res.total_pages;
       // Correction en tête : la recherche telle quelle contient une faute
       const found = suggestion ? [...more.flatMap((r) => r.results), ...res.results] : [...res.results, ...more.flatMap((r) => r.results)];
@@ -615,8 +620,30 @@ async function showView(view, { library: filters } = {}) {
   } else if (grid) {
     renderLibrary();
   } else {
-    renderRowsPage(view);
+    await renderRowsPage(view);
   }
+}
+
+// Passage d'une rubrique à l'autre par les pastilles (Tout, Films, Séries, Animés) : fondu entre les deux pages, comme
+// dans l'appli (version 2.4.3). Rangées déjà prêtes (en mémoire) affichées dans la nouvelle page avant le fondu.
+function switchSection(view) {
+  if (!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) return showView(view);
+  // Un fondu interrompu par un autre appui (ou page cachée) est simplement sauté : pas une erreur
+  document.startViewTransition(() => showView(view)).ready.catch(() => {});
+}
+
+// Rubriques préparées en arrière-plan 2 s après l'accueil (téléphone) : leurs premières rangées sont déjà en mémoire
+// quand on touche une pastille. Une rangée après l'autre, pour ne pas faire refuser des requêtes par TMDB.
+let sectionsPrepared = false;
+function prepareSections() {
+  if (sectionsPrepared || !PHONE.matches || !settings.tmdbKey) return;
+  sectionsPrepared = true;
+  setTimeout(async () => {
+    for (const view of SECTIONS) {
+      const rows = await rowsFor(view).catch(() => []);
+      for (const row of rows.slice(0, 4)) await fetchRow(row).catch(() => {});
+    }
+  }, 2000);
 }
 
 // En haut d'une page avec affiche, la barre est transparente ; elle devient opaque en défilant
@@ -810,8 +837,37 @@ async function fetchTop(row) {
   return items.filter(Boolean);
 }
 
+// Rangées gardées en mémoire (version 2.4.3) : revenir sur une rubrique ne recharge rien. Oubliées quand les réglages
+// changent (nouvel objet api) et au bout de 30 min.
+const ROW_CACHE_MS = 30 * 60 * 1000;
+let rowCache = new Map();
+let rowCacheApi = null;
+const rowKey = (row) => JSON.stringify([row, activeProviderIds(row.filter), settings.region]);
+function rowEntry(row) {
+  if (rowCacheApi !== api) {
+    rowCache = new Map();
+    rowCacheApi = api;
+  }
+  const entry = rowCache.get(rowKey(row));
+  return entry && Date.now() - entry.at < ROW_CACHE_MS ? entry : null;
+}
+const rowReady = (row) => Boolean(rowEntry(row)?.done);
+
+function fetchRow(row) {
+  const cached = rowEntry(row);
+  if (cached) return cached.promise;
+  const key = rowKey(row);
+  const entry = { at: Date.now(), done: false, promise: loadRowItems(row) };
+  rowCache.set(key, entry);
+  entry.promise.then(
+    () => (entry.done = true),
+    () => rowCache.get(key) === entry && rowCache.delete(key),
+  );
+  return entry.promise;
+}
+
 // Les titres d'une rangée, vérifiés comme dans la Bibliothèque (vraiment inclus dans la plateforme choisie)
-async function fetchRow(row) {
+async function loadRowItems(row) {
   if (row.top) {
     const top = await fetchTop(row);
     if (top?.length) return top;
@@ -822,6 +878,7 @@ async function fetchRow(row) {
   } else {
     const types = (row.type === 'all' ? ['movie', 'tv'] : [row.type]).filter((t) => !row.genres || row.genres[t] != null);
     const pages = Array.from({ length: row.pages ?? 1 }, (_, i) => i + 1);
+    const unlistedTask = fetchUnlisted(row, types).catch(() => []); // en même temps que la recherche de la rangée
     const lists = await Promise.all(
       types.flatMap((t) =>
         pages.map((page) =>
@@ -834,7 +891,7 @@ async function fetchRow(row) {
     );
     const seen = new Set();
     items = lists.flat().filter((m) => !seen.has(`${m.media_type}:${m.id}`) && seen.add(`${m.media_type}:${m.id}`));
-    const unlisted = (await fetchUnlisted(row, types)).filter((m) => !seen.has(`tv:${m.id}`));
+    const unlisted = (await unlistedTask).filter((m) => !seen.has(`tv:${m.id}`));
     items.push(...unlisted);
     // Séries récentes : leur dernier épisode (pour les classer parmi les films, et affiché sur l'affiche à la place de
     // l'année de création)
@@ -907,6 +964,7 @@ async function renderRowsPage(view) {
   el.rowsPage.innerHTML = view === 'me' ? meHeader() : '<section class="hero hero-loading" aria-label="À la une"></section>';
   const rows = await rowsFor(view);
   if (token !== rowsToken) return;
+  const ready = []; // rangées en mémoire : remplies tout de suite, sans squelette
   for (const row of rows) {
     const section = document.createElement('section');
     section.className = 'row';
@@ -923,10 +981,13 @@ async function renderRowsPage(view) {
       </div>`;
     el.rowsPage.append(section);
     if (row.local) fillLocalRow(section);
+    else if (rowReady(row)) ready.push(loadRow(section));
     else if (row.hero) loadRow(section); // tout de suite : elle fournit l'affiche
     else rowObserver.observe(section);
   }
   if (view === 'home' && !rows.some((r) => r.hero)) loadHomeHero(token);
+  if (view === 'home') prepareSections();
+  await Promise.all(ready);
   updateTopbar();
 }
 
@@ -1777,7 +1838,7 @@ function renderDetail(item, type) {
         ${cast.length ? `<dt>Avec</dt><dd>${cast.map(esc).join(', ')}</dd>` : ''}</dl>` : ''}
       ${detailTabsHtml(type)}
     </div>`);
-  if (!$('#panel-suggestions', el.detail).hidden) loadSuggestions();
+  loadSuggestions(); // dès l'ouverture de la fiche, même onglet fermé : prêtes quand on y va
   refreshLikeButton();
   refreshHeroPick();
   refreshDownloadButtons();
@@ -1807,28 +1868,42 @@ function selectDetailTab(key) {
 }
 
 // Rangées de l'onglet Suggestions : la saga, le même univers, puis le même genre (voir suggestions.js). Cherchées en même
-// temps, affichées dans cet ordre dès qu'elles arrivent, sans doublons.
+// temps, chacune affichée à sa place dès qu'elle arrive (avant : le même genre attendait le même univers), sans doublons.
 async function loadSuggestions() {
   const panel = $('#panel-suggestions', el.detail);
   if (!panel || panel.dataset.loaded) return;
   panel.dataset.loaded = 'true';
-  panel.innerHTML = '<p class="muted suggest-status">Recherche des suggestions…</p>';
+  panel.innerHTML = `<div data-slot="saga"></div><div data-slot="universe"></div><div data-slot="genre"></div>
+    <p class="muted suggest-status">Recherche des suggestions…</p>`;
   const { key, item, type } = current;
+  const keyOf = (m) => `${m.media_type}:${m.id}`;
   const saga = sagaTitles(api, item).catch(() => ({ items: [] }));
   const universe = saga.then((s) => universeTitles(api, item, type, new Set(s.items.map((m) => `movie:${m.id}`)))).catch(() => []);
   const genre = genreTitles(api, item, type).then(availableFirst).catch(() => []);
-  const shown = new Set([key]);
-  const add = (title, items) => {
-    if (current?.key !== key) return;
-    const fresh = items.filter((m) => !shown.has(`${m.media_type}:${m.id}`));
-    if (!fresh.length) return;
-    fresh.forEach((m) => shown.add(`${m.media_type}:${m.id}`));
-    $('.suggest-status', panel)?.before(suggestionRow(title, fresh));
+  const taken = { saga: new Set(), universe: new Set() };
+  const show = (slot, title, items) => {
+    if (current?.key !== key || !items.length) return;
+    $(`[data-slot="${slot}"]`, panel).replaceChildren(suggestionRow(title, items));
   };
-  const s = await saga;
-  add(s.name ? `La saga ${s.name}` : 'La saga', s.items);
-  add('Dans le même univers', await universe);
-  add('Dans le même genre', (await genre).slice(0, 20));
+  const showGenre = async () => {
+    // Sans le titre lui-même ni ceux déjà dans la saga ou le même univers (rangée refaite si le même univers arrive après)
+    const items = (await genre).filter((m) => keyOf(m) !== key && !taken.saga.has(keyOf(m)) && !taken.universe.has(keyOf(m)));
+    show('genre', 'Dans le même genre', items.slice(0, 20));
+  };
+  const sagaDone = saga.then((s) => {
+    const items = s.items.filter((m) => keyOf(m) !== key);
+    items.forEach((m) => taken.saga.add(keyOf(m)));
+    show('saga', s.name ? `La saga ${s.name}` : 'La saga', items);
+  });
+  const universeDone = universe.then(async (list) => {
+    await sagaDone;
+    const items = list.filter((m) => keyOf(m) !== key && !taken.saga.has(keyOf(m)));
+    items.forEach((m) => taken.universe.add(keyOf(m)));
+    show('universe', 'Dans le même univers', items);
+    if ($('[data-slot="genre"] .row', panel)) await showGenre();
+  });
+  const genreDone = sagaDone.then(showGenre);
+  await Promise.all([sagaDone, universeDone, genreDone]);
   if (current?.key !== key) return;
   const status = $('.suggest-status', panel);
   if (panel.querySelector('.row')) status?.remove();
@@ -2836,7 +2911,7 @@ document.addEventListener('click', (e) => {
 
   // Pastilles de l'accueil : Tout (l'accueil), Films, Séries, Animés
   const chip = target.closest('[data-chip]');
-  if (chip) return chip.dataset.chip === state.view ? undefined : showView(chip.dataset.chip);
+  if (chip) return chip.dataset.chip === state.view ? undefined : switchSection(chip.dataset.chip);
   const personal = target.closest('[data-personal]');
   if (personal) return showView(personal.dataset.personal);
   const clearHistory = target.closest('[data-clear-history]');
@@ -2961,8 +3036,10 @@ el.search.addEventListener('input', () => {
     if (q === state.query && state.view === 'library') return;
     state.query = q;
     showView('library'); // une recherche se fait dans la Bibliothèque
-  }, 400);
+  }, 250);
 });
+// Liste des titres (fautes de frappe) chargée dès qu'on touche la recherche, pas à la première recherche
+el.search.addEventListener('focus', () => loadTitles(), { once: true });
 el.searchForm.addEventListener('submit', (e) => {
   e.preventDefault();
   clearTimeout(searchTimer);

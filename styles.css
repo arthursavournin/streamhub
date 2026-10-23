@@ -1786,3 +1786,7 @@ html:has(dialog[open]) { overflow: hidden; }
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
 }
+
+/* Fondu entre les rubriques Tout, Films, Séries, Animés (pastilles), comme dans l'appli (version 2.4.3) */
+::view-transition-old(root),
+::view-transition-new(root) { animation-duration: 0.25s; }

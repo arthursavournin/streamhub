@@ -106,24 +106,32 @@ export async function universeTitles(api, item, type, exclude = new Set()) {
     return c.names.length > 0 || c.recommended;
   });
 
-  const kept = [];
+  // Titres à vérifier sur leur fiche complète (mêmes choix et mêmes limites qu'avant), vérifiés tous en même temps
+  // (avant : l'un après l'autre, jusqu'à 22 requêtes à la suite). Un titre trouvé deux fois (par son nom, puis dans les
+  // recommandations) est revérifié avec l'autre règle, comme avant, sauf s'il est déjà gardé d'office par son nom.
   const checks = { named: 0, recommended: 0 };
+  const plan = [];
+  const sure = new Set(seen);
   for (const { m, names: inTitle } of candidates) {
-    if (seen.has(keyOf(m))) continue;
-    let ok = inTitle.some((n) => namedAfter(titleOf(m), n) || namedAfter(originalOf(m), n));
+    if (sure.has(keyOf(m))) continue;
+    const ok = inTitle.some((n) => namedAfter(titleOf(m), n) || namedAfter(originalOf(m), n));
+    if (ok) sure.add(keyOf(m));
     const kind = inTitle.length ? 'named' : 'recommended';
-    if (!ok && checks[kind] < MAX_CHECKS[kind]) {
-      checks[kind]++;
-      const full = await api.withKeywords(m.media_type, m.id).catch(() => null);
+    const check = !ok && checks[kind] < MAX_CHECKS[kind];
+    if (check) checks[kind]++;
+    plan.push({ m, ok, check, named: inTitle.length > 0 });
+  }
+  const verdicts = await Promise.all(
+    plan.map(async (p) => {
+      if (p.ok || !p.check) return p.ok;
+      const full = await api.withKeywords(p.m.media_type, p.m.id).catch(() => null);
       const shared = (full?.production_companies ?? []).filter((c) => base.companies.has(c.id)).length;
       const creator = (full?.created_by ?? []).some((c) => base.creators.has(c.id));
       const keywords = (full?.keywords?.keywords ?? full?.keywords?.results ?? []).map((k) => k.name);
-      ok = inTitle.length ? shared > 0 || creator : shared >= 2 && keywords.some((k) => SEQUEL.test(k));
-    }
-    if (!ok) continue;
-    seen.add(keyOf(m));
-    kept.push(m);
-  }
+      return p.named ? shared > 0 || creator : shared >= 2 && keywords.some((k) => SEQUEL.test(k));
+    }),
+  );
+  const kept = plan.filter((p, i) => verdicts[i] && !seen.has(keyOf(p.m)) && seen.add(keyOf(p.m))).map((p) => p.m);
   // Les plus connus d'abord (Star Wars en a des dizaines : séries LEGO, parodies…)
   return kept.sort((a, b) => (b.vote_count ?? 0) - (a.vote_count ?? 0)).slice(0, 20);
 }

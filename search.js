@@ -165,13 +165,14 @@ export async function arrangeSagas(found, query, api) {
   const seen = new Set();
   const results = found.filter((m) => !seen.has(`${m.media_type}:${m.id}`) && seen.add(`${m.media_type}:${m.id}`));
   const movies = results.filter((m) => m.media_type === 'movie').slice(0, 20);
-  const infos = await Promise.all(movies.map((m) => api.title('movie', m.id).catch(() => null)));
+  // Avec un numéro, la saga peut manquer des résultats (« harry potter 1 » ne trouve pas le 1er film) : on la cherche,
+  // en même temps que les fiches des films
+  const [infos, named] = await Promise.all([
+    Promise.all(movies.map((m) => api.title('movie', m.id).catch(() => null))),
+    number ? api.searchCollections(text).catch(() => []) : [],
+  ]);
   const collectionIds = new Set(infos.map((d) => d?.belongs_to_collection?.id).filter(Boolean));
-  // Avec un numéro, la saga peut manquer des résultats (« harry potter 1 » ne trouve pas le 1er film) : on la cherche
-  if (number) {
-    const found = await api.searchCollections(text).catch(() => []);
-    for (const c of found.slice(0, 2)) if (simplify(c.name).startsWith(text)) collectionIds.add(c.id);
-  }
+  for (const c of named.slice(0, 2)) if (simplify(c.name).startsWith(text)) collectionIds.add(c.id);
   const collections = (await Promise.all([...collectionIds].map((id) => api.collection(id).catch(() => null)))).filter(Boolean);
 
   // Position de chaque film dans sa saga (films sortis, dans l'ordre de sortie), et son numéro « logique » : un film coupé

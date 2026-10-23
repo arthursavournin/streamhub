@@ -4,9 +4,6 @@ import SwiftUI
 // recherche et la roue des réglages ; en bas, Accueil, Bibliothèque, Mon espace ; sur l'accueil, les pastilles Tout,
 // Films, Séries, Animés.
 
-// Page de recherche, ouverte par la barre du haut
-struct SearchRoute: Hashable {}
-
 // Rubriques de l'accueil (pastilles)
 enum HomeSection: String, CaseIterable, Identifiable, Hashable {
     case movies, tv, anime
@@ -70,12 +67,16 @@ enum HomeSection: String, CaseIterable, Identifiable, Hashable {
     }
 }
 
-// Barre du haut : logo, recherche, réglages ; sur l'accueil et ses rubriques, une seconde ligne de pastilles
+// Barre du haut : logo, recherche, réglages ; sur l'accueil et ses rubriques, une seconde ligne de pastilles.
+// Recherche tapée sur place, comme le site sur iPhone (version 2.5.0, demande de l'utilisateur) : toucher le champ
+// n'ouvre plus de page (avant : une page glissait avant de pouvoir taper), les résultats remplacent la page dès qu'on tape.
 struct AppTopBar: View {
     @Environment(AppModel.self) private var model
     var section: HomeSection?? = nil // nil : pas de pastilles ; .some(nil) : l'accueil (Tout)
     var onSection: (HomeSection?) -> Void = { _ in }
     var transparent = false // au-dessus de la grande affiche
+    @Binding var query: String
+    var focused: FocusState<Bool>.Binding
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -86,18 +87,29 @@ struct AppTopBar: View {
                     .frame(width: 34, height: 34)
                     .clipShape(.rect(cornerRadius: 9))
                     .accessibilityLabel("StreamHub")
-                NavigationLink(value: SearchRoute()) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "magnifyingglass")
-                        Text("Rechercher")
-                        Spacer(minLength: 0)
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                    TextField("Rechercher", text: $query)
+                        .focused(focused)
+                        .submitLabel(.search)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .onSubmit { focused.wrappedValue = false }
+                    if !query.isEmpty {
+                        Button {
+                            query = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Effacer la recherche")
                     }
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 14)
-                    .frame(height: 42)
-                    .contentShape(.capsule)
                 }
-                .buttonStyle(.plain)
+                .padding(.horizontal, 14)
+                .frame(height: 42)
+                .contentShape(.capsule)
+                .onTapGesture { focused.wrappedValue = true }
                 .glassEffect(.regular.interactive(), in: .capsule)
                 Button {
                     model.showSettings = true
@@ -154,10 +166,36 @@ struct AppTopBar: View {
 extension View {
     // Page racine d'un onglet : la barre du haut à la place de la barre de navigation d'iOS
     func appTopBar(section: HomeSection?? = nil, transparent: Bool = false, onSection: @escaping (HomeSection?) -> Void = { _ in }) -> some View {
-        toolbar(.hidden, for: .navigationBar)
-            .safeAreaInset(edge: .top, spacing: 0) {
-                AppTopBar(section: section, onSection: onSection, transparent: transparent)
+        modifier(TopBarPage(section: section, transparent: transparent, onSection: onSection))
+    }
+}
+
+// Page avec la barre du haut : tant qu'une recherche est tapée, ses résultats couvrent la page, sans transition
+// (la page reste dessous, telle quelle, quand on efface la recherche)
+private struct TopBarPage: ViewModifier {
+    let section: HomeSection??
+    let transparent: Bool
+    let onSection: (HomeSection?) -> Void
+    @State private var query = ""
+    @FocusState private var focused: Bool
+
+    func body(content: Content) -> some View {
+        let searching = !query.trimmingCharacters(in: .whitespaces).isEmpty
+        content
+            .overlay {
+                if searching { SearchResults(query: $query) }
             }
+            .toolbar(.hidden, for: .navigationBar)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                AppTopBar(section: searching ? nil : section, onSection: onSection, transparent: transparent && !searching,
+                          query: $query, focused: $focused)
+            }
+            #if DEBUG
+            // Tests dans le simulateur : recherche passée au lancement (STREAMHUB_SEARCH), sur l'accueil
+            .onAppear {
+                if section != nil, query.isEmpty, let q = ProcessInfo.processInfo.environment["STREAMHUB_SEARCH"] { query = q }
+            }
+            #endif
     }
 }
 

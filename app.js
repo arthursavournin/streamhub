@@ -1,5 +1,5 @@
 import { loadSettings, saveSettings, HISTORY_MAX } from './store.js';
-import { makeApi, img, testTmdbKey, testSaKey } from './api.js';
+import { makeApi, img, testTmdbKey, testSaKey, clearMemo } from './api.js';
 import { syncNow, startAutoSync } from './sync.js';
 import { handleAuthRedirect, accountState } from './account.js';
 import { initAccountUi, accountSummary } from './account-ui.js';
@@ -12,7 +12,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.4.3';
+const APP_VERSION = '2.5.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -185,12 +185,9 @@ const defaultFilter = () => (settings.providers.length ? 'mine' : 'all');
 // C'est un popover (comme les barres du bas) pour rester visible quand une fiche est ouverte.
 let toastTimer;
 let toastAction = null;
-// custom : contenu HTML complet à la place du message (notification des likes sur les plateformes)
-function toast(message, action = null, { custom = '', duration = 0 } = {}) {
-  el.toast.innerHTML = custom || `<span>${esc(message)}</span>${action ? `<button type="button" class="btn primary" data-toast-action>${esc(action.label)}</button>` : ''}`;
-  el.toast.classList.toggle('custom', Boolean(custom));
+function toast(message, action = null, { duration = 0 } = {}) {
+  el.toast.innerHTML = `<span>${esc(message)}</span>${action ? `<button type="button" class="btn primary" data-toast-action>${esc(action.label)}</button>` : ''}`;
   toastAction = action?.run ?? null;
-  toastEntry = null;
   togglePopover(el.toast, true);
   requestAnimationFrame(() => el.toast.classList.add('show'));
   clearTimeout(toastTimer);
@@ -837,6 +834,49 @@ async function fetchTop(row) {
   return items.filter(Boolean);
 }
 
+// Tirer vers le bas pour actualiser (téléphone, pages à rangées), comme l'appli (version 2.5.0) : au-delà de 70 px
+// tirés depuis le haut de la page, les rangées sont oubliées et redemandées
+const PULL_LIMIT = 70;
+let pullStart = null;
+const pullHint = document.createElement('div');
+pullHint.className = 'pull-hint';
+pullHint.setAttribute('aria-hidden', 'true');
+document.body.append(pullHint);
+const canPull = () => PHONE.matches && !el.rowsPage.hidden && state.view !== 'me' && window.scrollY <= 0 && !document.querySelector('dialog[open]');
+document.addEventListener(
+  'touchstart',
+  (e) => (pullStart = e.touches.length === 1 && canPull() && !pullHint.classList.contains('loading') ? e.touches[0].clientY : null),
+  { passive: true },
+);
+document.addEventListener(
+  'touchmove',
+  (e) => {
+    if (pullStart === null) return;
+    const pulled = window.scrollY > 0 ? 0 : Math.max(0, e.touches[0].clientY - pullStart);
+    pullHint.style.setProperty('--pull', Math.min(pulled / PULL_LIMIT, 1.3).toFixed(3));
+    pullHint.classList.toggle('ready', pulled >= PULL_LIMIT);
+  },
+  { passive: true },
+);
+document.addEventListener('touchend', () => {
+  if (pullStart === null) return;
+  pullStart = null;
+  const ready = pullHint.classList.contains('ready');
+  pullHint.classList.remove('ready');
+  pullHint.style.setProperty('--pull', 0);
+  if (ready) refreshRowsPage();
+});
+async function refreshRowsPage() {
+  pullHint.classList.add('loading');
+  clearMemo();
+  rowCache = new Map();
+  topFiles.clear();
+  sectionsPrepared = false;
+  const started = Date.now();
+  await renderRowsPage(state.view).catch(() => {});
+  setTimeout(() => pullHint.classList.remove('loading'), Math.max(0, 600 - (Date.now() - started)));
+}
+
 // Rangées gardées en mémoire (version 2.4.3) : revenir sur une rubrique ne recharge rien. Oubliées quand les réglages
 // changent (nouvel objet api) et au bout de 30 min.
 const ROW_CACHE_MS = 30 * 60 * 1000;
@@ -1131,8 +1171,7 @@ function onHeroAction(btn) {
   const liked = library.toggleLike(entry);
   refreshHeroLike();
   refreshLocalRows();
-  if (liked) toast('Ajouté à J’aime.');
-  else if (!remindPlatformLikes(entry)) toast('Retiré de J’aime.');
+  toast(liked ? 'Ajouté à J’aime.' : 'Retiré de J’aime.');
 }
 
 // ---------- Fiche film / série ----------
@@ -1284,43 +1323,6 @@ function refreshLikeButton() {
   btn.textContent = liked ? '♥ Aimé' : '♡ J’aime';
 }
 
-// Après un J'aime : notification temporaire avec un bouton par plateforme de tes abonnements où le titre n'est
-// pas encore liké (la page du titre s'ouvre, où est son pouce). Rien ne reste affiché dans la fiche.
-let toastEntry = null;
-function likeToast(entry, targets) {
-  const seen = new Set();
-  const chips = targets
-    .filter((t) => t.platform && t.href && !library.isLikedOn(entry.type, entry.id, t.service, t.platform))
-    .filter((t) => !seen.has(t.service || t.platform) && seen.add(t.service || t.platform))
-    .map(
-      (t) => `<button type="button" class="like-chip" data-platform-like data-platform="${esc(t.platform)}"
-        data-service="${esc(t.service ?? '')}" data-href="${esc(t.href)}">${t.logo ? `<img src="${esc(t.logo)}" alt="">` : ''}${esc(shortPlatformName(t.platform))}</button>`,
-    )
-    .join('');
-  if (!chips) return toast('Ajouté à J’aime.');
-  toast('', null, {
-    duration: 9000,
-    custom: `<div class="like-pop">
-      <div class="like-pop-head"><strong>♥ Ajouté à J’aime</strong>
-        <button type="button" class="like-pop-close" data-toast-close aria-label="Fermer">✕</button></div>
-      <p>Liker aussi sur</p>
-      <div class="like-chips">${chips}</div>
-    </div>`,
-  });
-  toastEntry = entry;
-}
-
-// Plateformes de tes abonnements où se trouve le titre de la fiche, avec la page du titre
-const likeTargets = () =>
-  [...el.detail.querySelectorAll('a.watch.mine')].map((a) => ({
-    platform: a.dataset.platform,
-    service: a.dataset.service,
-    logo: $('img', a)?.getAttribute('src') ?? '',
-    href: a.dataset.page || a.href.split('#')[0],
-  }));
-
-// « Liker aussi sur… » de la question « Tu as regardé… ? » : aucune plateforme ne permet de liker à distance, on
-// ouvre la page du titre. Mêmes pastilles (logo + nom court) que la notification « Liker aussi sur ».
 // Partout où un nom de plateforme s'affiche (les données gardent le nom TMDB, qui sert à reconnaître tes abonnements)
 const SHORT_PLATFORM_NAMES = {
   amazonprimevideo: 'Prime Video',
@@ -1339,29 +1341,6 @@ const channelName = (name) => {
   return m ? `${SHORT_PLATFORM_NAMES[squash(m[1])] ?? m[1]} (${CHANNEL_HOSTS[m[2].toLowerCase()]})` : null;
 };
 const shortPlatformName = (name) => SHORT_PLATFORM_NAMES[squash(name)] ?? channelName(name) ?? name;
-// Logo d'une plateforme : celui de tes abonnements (Réglages), sinon celui du bouton de la fiche ouverte
-function platformLogo(platform, service) {
-  const p = settings.providers.find((x) => squash(x.name) === squash(platform) || (service && serviceFor(x.name)?.id === service));
-  if (p?.logo) return img(providerLogo(p.name, p.logo), 'w92');
-  const a = [...el.detail.querySelectorAll('a.watch')].find((x) => x.dataset.platform === platform);
-  return a ? ($('img', a)?.getAttribute('src') ?? '') : '';
-}
-function platformLikeButtons(type, id, targets) {
-  const seen = new Set();
-  const chips = targets
-    .filter((t) => t.platform && t.href && !seen.has(t.service || t.platform) && seen.add(t.service || t.platform))
-    .map((t) => {
-      const done = library.isLikedOn(type, id, t.service, t.platform);
-      const logo = platformLogo(t.platform, t.service);
-      return `<button type="button" class="like-chip ${done ? 'done' : ''}" data-platform-like
-        data-platform="${esc(t.platform)}" data-service="${esc(t.service ?? '')}" data-href="${esc(t.href)}"
-        aria-label="${done ? `Liké sur ${esc(t.platform)}` : `Liker aussi sur ${esc(t.platform)}`}"
-        >${logo ? `<img src="${esc(logo)}" alt="">` : ''}${done ? '✓ ' : ''}${esc(shortPlatformName(t.platform))}</button>`;
-    })
-    .join('');
-  return chips && `<span class="platform-likes-label">Liker aussi sur</span>${chips}`;
-}
-
 const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
 
 // Ligne d'infos sous le titre : année(s), durée ou nombre de saisons, genres
@@ -2140,12 +2119,13 @@ function onLaunch(link, event) {
 
 // ---------- Questions au retour dans StreamHub ----------
 
-// Questions posées au retour : like sur la plateforme (un titre lancé entre directement dans l'historique depuis la
-// version 1.9.2, un téléchargement dans Téléchargements depuis la 2.4.1). watch, download : anciennes questions, vidées
-// au démarrage (flushWatchPending).
+// Question posée au retour : « Où en es-tu ? » après une série (un titre lancé entre directement dans l'historique depuis
+// la version 1.9.2, un téléchargement dans Téléchargements depuis la 2.4.1). watch, download : anciennes questions,
+// vidées au démarrage (flushWatchPending). « Liker aussi sur… » et « Tu as liké… ? » retirés en 2.5.0 (comme l'appli) :
+// les anciennes questions platformLike / platformUnlike ne sont plus posées.
 // « Où en es-tu ? » n'est posé qu'après 3 minutes : un retour plus rapide, c'est souvent juste pour relancer après le
 // choix du profil
-const PENDING_DELAYS = { progress: 3 * 60 * 1000, platformLike: 3 * 1000, platformUnlike: 3 * 1000 };
+const PENDING_DELAYS = { progress: 3 * 60 * 1000 };
 let promptedId = null;
 
 function checkPending() {
@@ -2164,8 +2144,6 @@ function checkPending() {
   const question = {
     progress: `Où en es-tu de <strong>« ${esc(e.title)} »</strong>${where} ?`,
     watch: `Tu as regardé ${what}${where} ?`,
-    platformLike: `Tu as liké <strong>« ${esc(e.title)} »</strong>${where} ?`,
-    platformUnlike: `Tu as retiré ton like de <strong>« ${esc(e.title)} »</strong>${where} ?`,
   }[item.kind];
   const bar = $('#confirm');
   bar.dataset.pendingId = item.id;
@@ -2182,7 +2160,7 @@ function checkPending() {
     <div class="confirm-actions">
       <button type="button" class="btn primary" data-confirm="yes">${progress ? 'Enregistrer' : 'Oui'}</button>
       <button type="button" class="btn" data-confirm="no">${progress ? 'Ignorer' : 'Non'}</button>
-      ${progress || item.kind === 'watch' ? '<button type="button" class="btn like-btn" data-confirm-like aria-pressed="false"></button><span class="platform-likes" data-platform-likes></span>' : ''}
+      ${progress || item.kind === 'watch' ? '<button type="button" class="btn like-btn" data-confirm-like aria-pressed="false"></button>' : ''}
     </div>`;
   if (progress) fillProgressPick(item);
   refreshConfirmLike();
@@ -2234,32 +2212,6 @@ function refreshConfirmLike() {
   const liked = library.has('likes', library.titleKey(e.type, e.id));
   btn.setAttribute('aria-pressed', liked);
   btn.textContent = `${liked ? '♥ Tu aimes' : '♡ J’aime'}${e.type === 'tv' ? ' la série' : ''}`;
-  const pending = library.list('pending').find((p) => p.id === $('#confirm').dataset.pendingId)?.entry;
-  const targets = liked && pending ? [{ platform: pending.platform, service: pending.service, href: pending.page }] : [];
-  $('#confirm [data-platform-likes]').innerHTML = platformLikeButtons(e.type, e.id, targets);
-}
-
-// Retirer un like dans StreamHub ne le retire pas sur la plateforme : on le rappelle, avec un bouton
-// qui ouvre la page du titre sur la plateforme (puis « Tu as retiré ton like… ? » au retour)
-function remindPlatformLikes(entry) {
-  const platforms = library.likedOn(entry.type, entry.id);
-  if (!platforms.length) return false;
-  const names = platforms.map((p) => shortPlatformName(p.platform)).join(' et ');
-  // Les likes notés avant qu'on retienne la page du titre : on la reprend dans la fiche ouverte
-  const pageOf = (p) => p.href || (current && p.service && $(`a.watch[data-service="${p.service}"]`, el.detail)?.dataset.page);
-  const first = platforms.map((p) => ({ ...p, href: pageOf(p) })).find((p) => p.href);
-  const title = { type: entry.type, id: entry.id, title: entry.title, poster: entry.poster, date: entry.date };
-  toast(
-    `Retiré de J’aime. Ton like sur ${names} est toujours là.`,
-    first && {
-      label: `Retirer aussi sur ${shortPlatformName(first.platform)}`,
-      run() {
-        library.addPending('platformUnlike', { ...title, platform: first.platform, service: first.service });
-        openPlatform(first.href, first.service, first.platform);
-      },
-    },
-  );
-  return true;
 }
 
 function answerPending(yes) {
@@ -2869,20 +2821,9 @@ document.addEventListener('click', (e) => {
   if (target.closest('[data-relaunch-close]')) return showRelaunch(false);
   const answer = target.closest('[data-confirm]');
   if (answer) return answerPending(answer.dataset.confirm === 'yes');
-  const platformLike = target.closest('[data-platform-like]');
-  if (platformLike) {
-    const entry = platformLike.closest('#confirm') ? confirmLikeEntry() : platformLike.closest('#toast') ? toastEntry : current?.item && currentEntry();
-    if (platformLike.closest('#toast')) hideToast();
-    if (!entry) return;
-    const { platform, service, href } = platformLike.dataset;
-    library.addPending('platformLike', { ...entry, platform, service: service || null, href });
-    openPlatform(href, service, platform);
-    toast(`Sur ${shortPlatformName(platform)}, appuie sur le pouce ou le bouton « J’aime ».`);
-    return;
-  }
   if (target.closest('[data-confirm-like]')) {
     const entry = confirmLikeEntry();
-    if (entry && !library.toggleLike(entry)) remindPlatformLikes(entry);
+    if (entry) library.toggleLike(entry);
     refreshConfirmLike();
     refreshLikeButton();
     updateCounts();
@@ -2918,11 +2859,9 @@ document.addEventListener('click', (e) => {
   if (clearHistory) return onClearHistory(clearHistory);
   const remove = target.closest('[data-remove]');
   if (remove) {
-    const entry = library.list(remove.dataset.remove).find((e) => e.key === remove.dataset.key);
     library.remove(remove.dataset.remove, remove.dataset.key);
     renderLibrary();
     updateCounts();
-    if (remove.dataset.remove === 'likes' && entry) remindPlatformLikes(entry);
     return;
   }
   if (target.closest('[data-toast-close]')) return hideToast();
@@ -2957,8 +2896,7 @@ document.addEventListener('click', (e) => {
     const liked = library.toggleLike(currentEntry());
     refreshLikeButton();
     updateCounts();
-    if (liked) likeToast(currentEntry(), likeTargets());
-    else if (!remindPlatformLikes(currentEntry())) toast('Retiré de J’aime.');
+    toast(liked ? 'Ajouté à J’aime.' : 'Retiré de J’aime.');
     return;
   }
 

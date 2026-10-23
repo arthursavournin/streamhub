@@ -135,9 +135,7 @@ struct EmptyMessage: View {
 
 extension View {
     // Destination commune : la fiche d'un titre
-    // (et la recherche, ouverte par la barre du haut)
     func titleDestinations() -> some View {
         navigationDestination(for: TitleRef.self) { DetailView(ref: $0) }
-            .navigationDestination(for: SearchRoute.self) { _ in SearchView() }
     }
 }

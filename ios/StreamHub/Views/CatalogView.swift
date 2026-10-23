@@ -113,7 +113,7 @@ struct CatalogView: View {
             sort = preset.sort
             genre = preset.genre
             platform = model.store.providers.isEmpty ? .all : .mine
-            await loadGenres()
+            genres = await Self.loadGenres(model.tmdb)
         }
         .task(id: filterKey) {
             guard started else { return }
@@ -172,15 +172,14 @@ struct CatalogView: View {
         }
     }
 
-    // Genres films et séries réunis par nom (« Drame » a le même nom des deux côtés)
-    private func loadGenres() async {
-        let tmdb = model.tmdb
+    // Genres films et séries réunis par nom (« Drame » a le même nom des deux côtés) ; aussi pour la recherche
+    static func loadGenres(_ tmdb: TMDBClient) async -> [CatalogGenre] {
         async let movies = (try? await tmdb.genres(.movie)) ?? []
         async let shows = (try? await tmdb.genres(.tv)) ?? []
         var byName: [String: CatalogGenre] = [:]
         for g in await movies { byName[g.name] = CatalogGenre(name: g.name, movie: g.id, tv: byName[g.name]?.tv) }
         for g in await shows { byName[g.name] = CatalogGenre(name: g.name, movie: byName[g.name]?.movie, tv: g.id) }
-        genres = (Array(byName.values) + [.anime]).sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
+        return (Array(byName.values) + [.anime]).sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
     }
 
     // ---------- Chargement ----------

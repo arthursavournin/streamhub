@@ -20,8 +20,25 @@ nonisolated struct Episode: Decodable, Identifiable, Hashable, Sendable {
     let stillPath: String?
     let airDate: String?
     let runtime: Int?
+    var order: Int? // place dans une saison d'un autre découpage (groupe d'épisodes TMDB)
 
     var id: String { "\(seasonNumber)-\(episodeNumber)" }
+}
+
+// Autre découpage d'une série proposé sur TMDB (ex. « TF1+ » : les saisons telles que la plateforme les présente)
+nonisolated struct EpisodeGroupRef: Decodable, Hashable, Sendable {
+    let id: String
+    let name: String
+    let groupCount: Int?
+}
+
+nonisolated struct EpisodeGroup: Decodable, Sendable {
+    struct Part: Decodable, Sendable {
+        let name: String
+        let order: Int
+        let episodes: [Episode]
+    }
+    let groups: [Part]
 }
 
 nonisolated struct SeasonDetails: Decodable, Sendable {

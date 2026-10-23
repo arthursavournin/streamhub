@@ -39,6 +39,8 @@ const foreignScript = (text) => /[^\P{L}\p{Script=Latin}]/u.test(text);
 
 // Partagé entre instances : une même URL n'est demandée qu'une fois par session.
 const memo = new Map();
+// « Tirer pour actualiser » : on oublie les réponses gardées pour redemander à TMDB
+export const clearMemo = () => memo.clear();
 
 export function makeApi(settings) {
   const region = settings.region;

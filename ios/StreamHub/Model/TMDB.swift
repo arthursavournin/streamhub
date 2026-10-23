@@ -388,6 +388,17 @@ struct TMDBClient {
         try await get("/tv/\(tvID)/season/\(number)", ["language": language])
     }
 
+    // Autres découpages d'une série (groupes d'épisodes), comme episodeGroups du site
+    func episodeGroups(_ tvID: Int) async throws -> [EpisodeGroupRef] {
+        nonisolated struct List: Decodable { let results: [EpisodeGroupRef] }
+        let list: List = try await get("/tv/\(tvID)/episode_groups")
+        return list.results
+    }
+
+    func episodeGroup(_ id: String) async throws -> EpisodeGroup {
+        try await get("/tv/episode_group/\(id)", ["language": language])
+    }
+
     // ---------- Sagas ----------
 
     nonisolated struct Collection: Decodable, Sendable {

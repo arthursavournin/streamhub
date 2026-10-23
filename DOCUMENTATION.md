@@ -37,7 +37,8 @@ réglages ; en bas, trois onglets : **Accueil**, **Bibliothèque** et **Mon espa
 s'ouvrent depuis l'accueil, par les pastilles **Tout · Films · Séries · Animés** sous la barre du haut. Les affiches
 s'affichent sans texte dessous (le dernier épisode d'une série récente est posé sur l'affiche), la grande affiche de
 l'accueil propose « ▶ Voir » et « + Ma liste », et Mon espace se présente en segments (Ma liste, J'aime, Historique,
-Téléchargés). Sur ordinateur, rien ne change : les rubriques sont dans la barre du haut.
+Téléchargés). Tire la page vers le bas pour actualiser l'accueil ou une rubrique. Sur ordinateur, rien ne change :
+les rubriques sont dans la barre du haut.
 
 - **Accueil** : une affiche mise en avant et des rangées façon Netflix : Top 50 du moment, Reprendre, Ma liste,
   Nouveautés, Nouveaux épisodes, Nouveaux films, Les mieux notés, puis une rangée par genre (Action & aventure, Comédie, Horreur, Science-fiction &
@@ -62,7 +63,8 @@ Téléchargés). Sur ordinateur, rien ne change : les rubriques sont dans la bar
   tri (Populaires, Mieux notés, Plus récents). Le lien « Tout voir » de chaque rangée ouvre la Bibliothèque déjà
   filtrée. Le genre « Animés japonais » y est proposé avec les autres (aussi dans l'appli iPhone).
 - **Mon espace** : tes listes (Ma liste, J'aime, Historique, Téléchargements) et tes plateformes.
-- **Recherche** : par titre, mais aussi par surnom ou sigle (« DNA » trouve *Demain nous appartient*, grâce à une
+- **Recherche** (site et appli iPhone, même fonctionnement) : tape directement dans la barre du haut ; les résultats
+  apparaissent dès la première lettre, sans changer de page. Par titre, mais aussi par surnom ou sigle (« DNA » trouve *Demain nous appartient*, grâce à une
   liste intégrée et à Wikidata).
   - **Fautes de frappe** : « hary poter » affiche quand même les films Harry Potter, avec « Tu voulais dire
     « Harry Potter » ? » pour corriger la recherche (la recherche est comparée à environ 28 000 titres populaires).
@@ -72,7 +74,7 @@ Téléchargés). Sur ordinateur, rien ne change : les rubriques sont dans la bar
     « hunger games 3 partie 2 » *La Révolte, partie 2* (les films sortis en plusieurs parties partagent un numéro :
     « harry potter 7 » donne les deux parties des *Reliques de la Mort*).
   - **Sagas dans l'ordre** : les films d'une même saga sont regroupés et rangés dans l'ordre de sortie (1, 2, 3).
-  - **Seulement tes abonnements** (site et appli iPhone) : Tout / Films / Séries, et seuls les titres disponibles sur
+  - **Seulement tes abonnements** : Tout / Films / Séries, plateformes et genre, et seuls les titres disponibles sur
     tes abonnements s'affichent ; les autres restent derrière « N autres hors de tes abonnements — tout afficher »
     (« Aucun titre trouvé… sur tes abonnements » si aucun ne l'est).
 
@@ -125,7 +127,9 @@ l'épisode 1 si tu ne l'as jamais regardée ([détails](#reprendre-une-série)).
 Sous le résumé, la fiche a des **onglets** (aussi dans l'appli iPhone) :
 
 - **Épisodes** (séries, ouvert d'abord) : chaque saison se déplie pour afficher ses épisodes (résumé, date, durée),
-  avec un bouton pour lancer directement celui que tu veux quand la plateforme le permet. Pour **Naruto**,
+  avec un bouton pour lancer directement celui que tu veux quand la plateforme le permet. Quand TMDB propose d'autres
+  découpages (ex. « TF1+ » pour *Demain nous appartient* : 10 saisons au lieu de 3), le menu « Découpage » permet d'en
+  changer ; celui qui porte le nom d'une plateforme où se trouve la série est choisi d'office. Pour **Naruto**,
   **Naruto Shippuden** et **Boruto**, le découpage **« Netflix - Sans filler »** est choisi d’office (9 saisons pour
   Naruto ; 21 comme sur Netflix pour Shippuden et pour Boruto, avec les titres de saison de Netflix) : les
   épisodes hors-série (fillers, d'après la liste d'animotaku.fr) sont en rouge avec l'étiquette « Filler », et une
@@ -153,15 +157,13 @@ Un film ou un épisode lancé depuis StreamHub entre tout de suite dans l'histor
 on enchaîne souvent plusieurs épisodes sur la plateforme : en revenant dans StreamHub (au moins 3 minutes après), une
 seule fenêtre demande « Où en es-tu de *Naruto* ? » avec la saison et le dernier épisode regardé (l'épisode lancé est
 déjà choisi) ; « Enregistrer » met l'historique à jour, « Ignorer » garde l'épisode lancé. La même fenêtre propose
-« J'aime la série » (et, sur le site, « Liker aussi sur » la plateforme). Un titre à télécharger entre tout de suite
+« J'aime la série ». Un titre à télécharger entre tout de suite
 dans les téléchargements, sans question au retour.
 
-### Liker aussi sur la plateforme
+### Liker sur la plateforme
 
-Aucune plateforme ne permet de liker un titre à distance. Quand tu aimes un titre dans StreamHub, une notification
-propose pendant quelques secondes **« Liker aussi sur »**, avec une pastille par plateforme : elle ouvre la page du
-titre, où tu appuies sur le pouce ou « J'adore ». Au retour, StreamHub demande « Tu as liké… ? » pour s'en souvenir.
-Retirer un J'aime dans StreamHub rappelle que le like est toujours là sur la plateforme, avec un bouton pour y aller.
+Aucune plateforme ne permet de liker un titre à distance : le J'aime de StreamHub reste dans StreamHub (depuis la
+version 2.5.0, plus de notification « Liker aussi sur… » ni de question « Tu as liké… ? », comme dans l'appli iPhone).
 
 ### Télécharger pour regarder hors ligne
 

@@ -41,7 +41,7 @@ its own window).
 
 #### First launch
 
-1. Open StreamHub: create an account (email, Google or GitHub), sign in, or choose **Continuer sans compte**
+1. Open StreamHub, pick **English** on the welcome screen, then create an account (email, Google or GitHub), sign in, or choose **Continuer sans compte**
    (Continue without an account). Already using StreamHub on another device? Sign in: everything comes back.
 2. Paste your **TMDB key** in **Clés API** (API keys). It is free: create an account on
    [themoviedb.org](https://www.themoviedb.org), then **Settings → API**.
@@ -113,7 +113,7 @@ plus pratique (une icône, sa propre fenêtre).
 
 #### Premier lancement
 
-1. Ouvre StreamHub : crée un compte (e-mail, Google ou GitHub), connecte-toi, ou choisis **Continuer sans compte**.
+1. Ouvre StreamHub (Français ou English, au choix dès l’écran d’accueil) : crée un compte (e-mail, Google ou GitHub), connecte-toi, ou choisis **Continuer sans compte**.
    Tu utilises déjà StreamHub sur un autre appareil ? Connecte-toi : tout revient.
 2. Colle ta **clé TMDB** dans **Clés API**. Elle est gratuite : crée un compte sur
    [themoviedb.org](https://www.themoviedb.org), puis **Paramètres → API**.

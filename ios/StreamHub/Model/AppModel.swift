@@ -39,6 +39,7 @@ final class AppModel {
         L10n.english = lang == "en"
         uiLang = lang
         clearRows() // fiches TMDB dans la nouvelle langue
+        Task { try? await account.rememberLanguage() } // langue des e-mails du compte
     }
 
     var tmdb: TMDBClient { TMDBClient(key: store.tmdbKey, region: store.region, language: store.language) }

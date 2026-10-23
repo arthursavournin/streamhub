@@ -54,6 +54,22 @@ struct AccountScreen: View {
                 Text(loc("Bienvenue sur StreamHub")).font(.title2.weight(.bold))
                 Text(loc("Tous tes films et séries, toutes tes plateformes, au même endroit."))
                     .font(.subheadline).foregroundStyle(Color.appMuted).multilineTextAlignment(.center)
+                // Langue choisie avant même le compte (comme le site) : toute l'appli passe dans cette langue
+                HStack(spacing: 2) {
+                    ForEach([("fr", "Français"), ("en", "English")], id: \.0) { code, name in
+                        Button { model.setLanguage(code) } label: {
+                            Text(name).font(.subheadline.weight(.semibold))
+                                .foregroundStyle(model.uiLang == code ? Color.primary : Color.appMuted)
+                                .padding(.horizontal, 18).padding(.vertical, 7)
+                                .background(model.uiLang == code ? Color.white.opacity(0.16) : .clear, in: .capsule)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(3)
+                .background(Color.appSurface, in: .capsule)
+                .overlay(Capsule().strokeBorder(Color.appBorder))
+                .padding(.top, 10)
             }
             .padding(.vertical, 8)
         } else {

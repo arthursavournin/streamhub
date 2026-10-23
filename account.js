@@ -8,6 +8,8 @@
 // un « mot de passe de connexion » envoyé à Supabase Auth et une clé qui ouvre le coffre, gardée ici.
 //
 // Appels HTTP directs (pas de bibliothèque : le site n'a pas d'étape de construction).
+import { LANG } from './i18n.js';
+
 const SUPABASE_URL = 'https://bfcmqdvztmkpqwamwejp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_RB_4r6Da9y2SLQPjavQXVA_w2Brn3LI'; // clé publique (faite pour être dans le code)
 // Ce que l'adresse du site devient après la connexion Google / GitHub et les liens des e-mails (liste autorisée
@@ -409,6 +411,7 @@ async function createVault(mode, unlockRaw, salt) {
 
 // Après la connexion : ouvrir le coffre si on a de quoi, sinon dire ce qui manque
 async function afterSignIn({ unlockRaw = null } = {}) {
+  rememberLanguage().catch(() => {}); // e-mails suivants (mot de passe oublié…) dans la langue de cet appareil
   const vault = await fetchVault();
   if (!vault) {
     // Premier passage : compte e-mail (mot de passe connu) → coffre créé tout de suite ; sinon on demande
@@ -424,6 +427,12 @@ async function afterSignIn({ unlockRaw = null } = {}) {
   update({ needs: 'unlock' });
 }
 
+// Langue des e-mails du compte = langue de l'interface (user_metadata.lang, lu par les modèles d'e-mails)
+export async function rememberLanguage(lang = LANG) {
+  if (!loadAccount().session) return;
+  await call('/auth/v1/user', { method: 'PUT', token: await accessToken(), body: { data: { lang } }, headers: authHeaders });
+}
+
 // ---------- Actions ----------
 
 // Inscription par e-mail. Avec la confirmation d'adresse (réglage Supabase), pas de session tout de suite :
@@ -434,7 +443,9 @@ export async function signUp(email, password) {
   const secrets = await passwordSecrets(email, password);
   const data = await call(`/auth/v1/signup?redirect_to=${encodeURIComponent(SITE_URL)}`, {
     method: 'POST',
-    body: { email, password: secrets.login },
+    // Langue de l'interface gardée dans le compte (user_metadata.lang) : les modèles d'e-mails de Supabase
+    // (supabase/templates) écrivent en anglais quand elle vaut « en »
+    body: { email, password: secrets.login, data: { lang: LANG } },
     headers: authHeaders,
   });
   if (data?.access_token) {

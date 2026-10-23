@@ -2,7 +2,7 @@ import { LANG, LOCALE, t, startTranslation } from './i18n.js';
 import { loadSettings, saveSettings, HISTORY_MAX, relayUrl } from './store.js';
 import { makeApi, img, testTmdbKey, testSaKey, clearMemo } from './api.js';
 import { syncNow, startAutoSync } from './sync.js';
-import { handleAuthRedirect, accountState } from './account.js';
+import { handleAuthRedirect, accountState, rememberLanguage } from './account.js';
 import { initAccountUi, accountSummary } from './account-ui.js';
 import { serviceFor, hostServiceFor, isChannel, fallbackLink, episodesLink, iosLink, iosAppLink, desktopAppLink, desktopWebLink, autoplayLink, safeLink, isPlatformLink, seriesResumeLink, providerLogo, CANAL_CHANNELS, CANAL_CINE_SERIES, withVirtualChannels, withSaOffers, originalNetworks } from './providers.js';
 import { INDEXED_PLATFORMS, platformEpisodeUrl, canalChannelPath } from './episodes.js';
@@ -17,7 +17,7 @@ import * as library from './library.js';
 startTranslation();
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.9.2';
+const APP_VERSION = '2.9.3';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -2765,6 +2765,8 @@ const accountUi = initAccountUi({
   onPulled: applySynced,
   onChange: renderSettingsSummaries,
   isOnboarding: () => el.settings.classList.contains('onboarding'),
+  language: () => LANG,
+  setLanguage: changeLanguage,
   onGuest: () => {
     try {
       localStorage.setItem(GUEST_KEY, '1');
@@ -2774,6 +2776,15 @@ const accountUi = initAccountUi({
     finishOnboarding();
   },
 });
+// Langue de l'interface (réglages, ou écran de bienvenue avant le compte) : enregistrée sur l'appareil, retenue dans le
+// compte pour la langue des e-mails, puis la page se recharge dans cette langue
+async function changeLanguage(lang) {
+  if (lang === LANG) return;
+  settings = { ...settings, uiLang: lang };
+  saveSettings(settings);
+  await rememberLanguage(lang).catch(() => {});
+  location.reload();
+}
 window.addEventListener('streamhub:account', () => {
   if (!el.settings.open) return;
   renderSettingsSummaries();
@@ -2885,7 +2896,7 @@ el.settingsForm.addEventListener('submit', (e) => {
   };
   saveSettings(settings);
   // Autre langue : la page se recharge dans cette langue
-  if (settings.uiLang !== LANG) return location.reload();
+  if (settings.uiLang !== LANG) return changeLanguage(settings.uiLang);
   applyGlass();
   api = makeApi(settings);
   state.filter = defaultFilter();

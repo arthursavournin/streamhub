@@ -256,7 +256,9 @@ appli TV :
 
 ## 3. Premier lancement
 
-1. Ouvre StreamHub : au premier lancement, seule la page de connexion s'affiche.
+1. Ouvre StreamHub : au premier lancement, seule la page de connexion s'affiche. Sous « Bienvenue sur StreamHub »,
+   choisis **Français** ou **English** : tout passe dans cette langue, et les e-mails du compte (confirmation, mot de
+   passe oublié) arriveront dans la même langue.
 2. **Connecte-toi ou crée un compte** (e-mail et mot de passe, Google ou GitHub) : si tu utilises déjà StreamHub
    ailleurs, clés, abonnements et listes reviennent, et c'est fini. Tu peux aussi choisir **Continuer sans compte**
    (invité) : tout reste alors sur cet appareil ([partie 6](#6-ton-compte-et-la-synchronisation)).

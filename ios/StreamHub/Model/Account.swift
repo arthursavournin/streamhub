@@ -377,6 +377,7 @@ final class AccountService {
 
     // Après la connexion : ouvrir le coffre si on a de quoi, sinon dire ce qui manque
     private func afterSignIn(unlock: Data?) async throws {
+        Task { try? await rememberLanguage() } // e-mails suivants (mot de passe oublié…) dans la langue de cet iPhone
         guard let vault = try await fetchVault() else {
             if let unlock { return try await createVault(mode: "login", unlock: unlock) }
             meta.needs = .create
@@ -410,8 +411,10 @@ final class AccountService {
         let email = AccountCrypto.normalizeEmail(rawEmail)
         let derived = await Task.detached { AccountCrypto.passwordSecrets(email: email, password: password) }.value
         let site = AppStore.site.absoluteString.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? ""
+        // Langue de l'interface gardée dans le compte (user_metadata.lang) : e-mails en anglais si « en » (comme le site)
         let data = try await call("/auth/v1/signup?redirect_to=\(site)", method: "POST", body: .object([
             "email": .string(email), "password": .string(derived.login),
+            "data": .object(["lang": .string(L10n.english ? "en" : "fr")]),
         ]))
         if data["access_token"]?.string != nil {
             keepSession(data)
@@ -544,6 +547,13 @@ final class AccountService {
         guard let raw = AccountCrypto.unlock(vault.recovery_lock, with: key) else { throw AccountError(message: "Clé de secours incorrecte.") }
         try await setPassword(vault, raw: raw, password: newPassword)
         opened(raw)
+    }
+
+    // Langue des e-mails du compte = langue de l'interface (user_metadata.lang, lue par les modèles d'e-mails)
+    func rememberLanguage() async throws {
+        guard signedIn else { return }
+        _ = try await call("/auth/v1/user", method: "PUT", body: .object(["data": .object(["lang": .string(L10n.english ? "en" : "fr")])]),
+                           token: try await accessToken())
     }
 
     func changePassword(current: String, new: String) async throws {

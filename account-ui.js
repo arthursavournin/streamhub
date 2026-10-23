@@ -118,7 +118,11 @@ function renderGuest() {
   const hero = onboarding
     ? `<div class="auth-hero"><img src="icon.svg?v=3" alt="" width="72" height="72">
         <h2>Bienvenue sur StreamHub</h2>
-        <p>Tous tes films et séries, toutes tes plateformes, au même endroit.</p></div>`
+        <p>Tous tes films et séries, toutes tes plateformes, au même endroit.</p>
+        <div class="lang-switch" role="group" aria-label="Langue">
+          <button type="button" data-acc="langFr" aria-pressed="${hooks.language?.() !== 'en'}">Français</button>
+          <button type="button" data-acc="langEn" aria-pressed="${hooks.language?.() === 'en'}">English</button>
+        </div></div>`
     : `<p class="auth-note">Tu es en invité : tes données restent sur cet appareil. Connecte-toi pour les retrouver
         partout, chiffrées de bout en bout.</p>`;
   if (ui.mode === 'forgot') {
@@ -269,6 +273,9 @@ const ACTIONS = {
   deleteMode: () => (ui.mode = 'delete'),
   openMode: () => (ui.mode = 'open'),
   guest: () => hooks.onGuest?.(),
+  // Premier lancement : langue choisie avant même le compte (la page se recharge dans cette langue)
+  langFr: () => hooks.setLanguage?.('fr'),
+  langEn: () => hooks.setLanguage?.('en'),
   async signup() {
     const result = await signUp(email(), newPassword());
     return result === 'open' ? 'Compte créé.' : '';

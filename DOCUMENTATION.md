@@ -258,7 +258,9 @@ interface can already be driven with the remote's arrows, OK and Back. Ideas for
 
 ## 3. First launch
 
-1. Open StreamHub: on first launch, only the sign-in page is shown.
+1. Open StreamHub: on first launch, only the sign-in page is shown. Under "Bienvenue sur StreamHub", pick
+   **Français** or **English**: everything switches to that language, and the account emails (confirmation, forgotten
+   password) arrive in the same language.
 2. **Sign in or create an account** (email and password, Google or GitHub): if you already use StreamHub elsewhere,
    your keys, subscriptions and lists come back, and you are done. You can also choose **Continuer sans compte**
    (Continue without an account, as a guest): everything then stays on this device

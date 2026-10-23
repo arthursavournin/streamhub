@@ -1,753 +1,750 @@
-# StreamHub : documentation
+# StreamHub: documentation
 
-Tout ce qu'il faut savoir pour utiliser StreamHub, de l'installation au dépannage, et pour les développeurs.
-Pour une présentation rapide, voir le [README](README.md).
+Everything you need to know to use StreamHub, from installation to troubleshooting, plus a section for developers.
+For a quick overview, see the [README](README.md).
+
+🇫🇷 Version française : **[DOCUMENTATION_fr.md](DOCUMENTATION_fr.md)**
 
 👉 **https://arthursavournin.github.io/streamhub/**
 
----
-
-## Sommaire
-
-1. [Ce que fait StreamHub](#1-ce-que-fait-streamhub)
-2. [Installer StreamHub sur chaque appareil](#2-installer-streamhub-sur-chaque-appareil)
-3. [Premier lancement](#3-premier-lancement)
-4. [Les clés API](#4-les-clés-api)
-5. [Les réglages](#5-les-réglages)
-6. [Ton compte et la synchronisation](#6-ton-compte-et-la-synchronisation)
-7. [Comment StreamHub ouvre les titres](#7-comment-streamhub-ouvre-les-titres)
-8. [Le script « reprise après connexion »](#8-le-script--reprise-après-connexion-)
-9. [Tes données et ta vie privée](#9-tes-données-et-ta-vie-privée)
-10. [Dépannage](#10-dépannage)
-11. [Pour les développeurs](#11-pour-les-développeurs)
+> StreamHub's interface is in French. Button and menu names are quoted here as they appear on screen, with an English
+> translation the first time they come up.
 
 ---
 
-## 1. Ce que fait StreamHub
+## Contents
 
-StreamHub rassemble le catalogue des films et séries disponibles en streaming dans ton pays, t'indique sur quelles
-plateformes chaque titre se trouve, en commençant par tes abonnements, et l'ouvre directement sur la bonne
-plateforme. C'est une appli web : elle fonctionne dans le navigateur, sans compte, et peut s'installer comme une
-appli sur téléphone, tablette et ordinateur.
+1. [What StreamHub does](#1-what-streamhub-does)
+2. [Installing StreamHub on each device](#2-installing-streamhub-on-each-device)
+3. [First launch](#3-first-launch)
+4. [API keys](#4-api-keys)
+5. [Settings](#5-settings)
+6. [Your account and sync](#6-your-account-and-sync)
+7. [How StreamHub opens titles](#7-how-streamhub-opens-titles)
+8. [The "resume after sign-in" script](#8-the-resume-after-sign-in-script)
+9. [Your data and privacy](#9-your-data-and-privacy)
+10. [Troubleshooting](#10-troubleshooting)
+11. [For developers](#11-for-developers)
 
-### Parcourir le catalogue
+---
 
-**Sur téléphone (site dans Safari et appli iPhone, même interface)** : en haut, le logo, la recherche et la roue des
-réglages ; en bas, trois onglets : **Accueil**, **Bibliothèque** et **Mon espace**. Les pages Films, Séries et Animés
-s'ouvrent depuis l'accueil, par les pastilles **Tout · Films · Séries · Animés** sous la barre du haut. Les affiches
-s'affichent sans texte dessous (le dernier épisode d'une série récente est posé sur l'affiche), la grande affiche de
-l'accueil propose « ▶ Voir » et « + Ma liste », et Mon espace se présente en segments (Ma liste, J'aime, Historique,
-Téléchargés). Tire la page vers le bas pour actualiser l'accueil ou une rubrique. Sur ordinateur, rien ne change :
-les rubriques sont dans la barre du haut.
+## 1. What StreamHub does
 
-**Sur iPhone Duo (site dans Safari)** : mêmes fonctions, mise en page adaptée à chaque forme. **Fermé**, l'interface du
-téléphone, avec une grande affiche moins haute et trois affiches par ligne. **Ouvert en portrait**, l'interface du
-téléphone en plus grand : grande affiche en image large qui s'arrête avant le pli, affiches plus grandes (quatre par
-ligne), fiche plus aérée. **Ouvert en paysage**, l'interface d'ordinateur (comme sur iPad), avec le texte de la grande
-affiche à gauche du pli et la fiche en plein écran. L'appli iPhone n'est pas encore adaptée à l'iPhone Duo.
+StreamHub brings together the catalog of movies and series available for streaming in your country, shows you which
+platforms each title is on (starting with your subscriptions), and opens it directly on the right platform. It is a
+web app: it runs in the browser, works without an account, and can be installed like an app on phones, tablets and
+computers.
 
-- **Accueil** : une affiche mise en avant et des rangées façon Netflix : Top 50 du moment, Reprendre, Ma liste,
-  Nouveautés, Nouveaux épisodes, Nouveaux films, Les mieux notés, puis une rangée par genre (Action & aventure, Comédie, Horreur, Science-fiction &
-  fantastique, Thriller & policier, Drame, Animation, Animés japonais, Romance, Famille, Documentaires).
-  **Personnaliser l'accueil** (Réglages → Accueil) : coche les rangées à afficher et range-les avec les flèches. Le
-  titre en grand en haut est le n° 1 du Top 50 du moment, sauf si tu en choisis un : bouton « ☆ À l’affiche » dans sa
-  fiche (un second appui, ou « Automatique » dans les réglages, revient au n° 1). Synchronisé avec tes autres appareils
-  et l'appli iPhone.
-  Une série compte comme nouvelle quand elle a eu un **épisode ces 7 derniers jours** (nouvelle saison ou épisode de la
-  semaine), même si elle a commencé il y a des années ; son affiche indique le dernier épisode (« S3 E2 · 16 oct. »).
-  Ces dates sont celles de la première diffusion dans le monde : un épisode diffusé aux États-Unis n'est pas forcément
-  déjà sur ta plateforme en France. Les talk-shows, infos, feuilletons quotidiens et la téléréalité n'y figurent pas.
-  Le **Top 50 du moment** reprend le classement « populaire » de JustWatch dans ton pays (ce que ses utilisateurs
-  consultent en ce moment), mis à jour toutes les 6 heures et limité à tes abonnements : ce n'est pas un classement
-  de tous les temps.
-- **Films** et **Séries** : les mêmes rangées, réservées aux films ou aux séries.
-- **Animés** : l'animation japonaise (genre Animation avec le Japon comme pays d'origine), films et séries : Animés
-  populaires, Nouveaux épisodes, Séries animées, Films d’animation, Les mieux notés, puis Action & aventure,
-  Science-fiction & fantastique, Comédie, Drame, Mystère et Famille. Le « Tout voir » de la rangée Animés japonais de
-  l'accueil ouvre cette page.
-- **Bibliothèque** : tout le catalogue en grille, avec des filtres (Tout / Films / Séries, plateforme, genre) et un
-  tri (Populaires, Mieux notés, Plus récents). Le lien « Tout voir » de chaque rangée ouvre la Bibliothèque déjà
-  filtrée. Le genre « Animés japonais » y est proposé avec les autres (aussi dans l'appli iPhone).
-- **Mon espace** : tes listes (Ma liste, J'aime, Historique, Téléchargements) et tes plateformes. Chaque titre a une
-  croix en haut à droite pour le retirer (aussi dans les rangées Ma liste et Reprendre de l'accueil).
-- **Recherche** (site et appli iPhone, même fonctionnement) : tape directement dans la barre du haut ; les résultats
-  apparaissent dès la première lettre, sans changer de page. Par titre, mais aussi par surnom ou sigle (« DNA » trouve *Demain nous appartient*, grâce à une
-  liste intégrée et à Wikidata).
-  - **Fautes de frappe** : « hary poter » affiche quand même les films Harry Potter, avec « Tu voulais dire
-    « Harry Potter » ? » pour corriger la recherche (la recherche est comparée à environ 28 000 titres populaires).
-  - **Numéro de film** : « harry potter 1 » ne donne que le premier film de la saga (pas *Les Reliques de la Mort,
-    1re partie*, qui est le 7e) ; « toy story 3 » donne *Toy Story 3*. Le numéro est le premier nombre après le nom,
-    et la suite peut préciser une partie : « harry potter 7 partie 2 » donne *Les Reliques de la Mort, 2e partie*,
-    « hunger games 3 partie 2 » *La Révolte, partie 2* (les films sortis en plusieurs parties partagent un numéro :
-    « harry potter 7 » donne les deux parties des *Reliques de la Mort*).
-  - **Sagas dans l'ordre** : les films d'une même saga sont regroupés et rangés dans l'ordre de sortie (1, 2, 3).
-  - **Seulement tes abonnements** : Tout / Films / Séries, plateformes et genre, et seuls les titres disponibles sur
-    tes abonnements s'affichent ; les autres restent derrière « N autres hors de tes abonnements — tout afficher »
-    (« Aucun titre trouvé… sur tes abonnements » si aucun ne l'est).
+### Browsing the catalog
 
-Par défaut, StreamHub ne montre que les titres disponibles sur **tes abonnements** ; un lien permet d'afficher aussi
-les autres.
+**On a phone (the site in Safari and the iPhone app share the same interface)**: at the top, the logo, the search
+field and the settings gear; at the bottom, three tabs: **Accueil** (Home), **Bibliothèque** (Library) and
+**Mon espace** (My space). The Movies, Series and Anime pages open from the home page, using the chips
+**Tout · Films · Séries · Animés** (All · Movies · Series · Anime) under the top bar. Posters are shown without text
+underneath (the latest episode of a recent series is printed on the poster), the big poster on the home page offers
+"▶ Voir" (Watch) and "+ Ma liste" (+ My list), and My space is split into segments (My list, Likes, History,
+Downloads). Pull the page down to refresh the home page or a section. On a computer nothing changes: the sections are
+in the top bar.
 
-### La fiche d'un titre
+**On iPhone Duo (the site in Safari)**: same features, with a layout adapted to each form. **Closed**: the phone
+interface, with a shorter big poster and three posters per line. **Open in portrait**: the phone interface, larger:
+a wide image as the big poster that stops before the fold, bigger posters (four per line), a roomier title page.
+**Open in landscape**: the computer interface (as on iPad), with the big poster's text kept left of the fold and the
+title page full screen. The iPhone app is not adapted to the iPhone Duo yet.
 
-Un clic sur une affiche ouvre sa fiche : résumé, date de sortie (film, seulement dans la fiche : sous les affiches,
-l'année) ou années de diffusion (série), durée ou nombre de saisons, genres, bande-annonce, et les
-boutons **« Regarder sur… »**, rangés en trois groupes :
+- **Home**: a featured poster and Netflix-style rows: Top 50 right now, Continue watching, My list, New releases, New
+  episodes, New movies, Top rated, then one row per genre (Action & adventure, Comedy, Horror, Sci-fi & fantasy,
+  Thriller & crime, Drama, Animation, Japanese anime, Romance, Family, Documentaries).
+  **Customize the home page** (Settings → Accueil): tick the rows to show and order them with the arrows. The big
+  title at the top is the No. 1 of the current Top 50, unless you pick one yourself with the "☆ À l’affiche"
+  (Feature it) button on its page (tap it again, or choose "Automatique" in the settings, to go back to the No. 1).
+  Synced with your other devices and the iPhone app.
+  A series counts as new when it had an **episode in the last 7 days** (new season or weekly episode), even if it
+  started years ago; its poster shows the latest episode ("S3 E2 · 16 oct."). These are worldwide first-air dates: an
+  episode aired in the United States is not necessarily on your platform in France yet. Talk shows, news, daily soaps
+  and reality TV are left out.
+  The **Top 50 right now** uses JustWatch's "popular" ranking in your country (what its users are looking at right
+  now), updated every 6 hours and limited to your subscriptions: it is not an all-time ranking.
+- **Movies** and **Series**: the same rows, for movies only or series only.
+- **Anime**: Japanese animation (Animation genre with Japan as the country of origin), movies and series: Popular
+  anime, New episodes, Animated series, Animated movies, Top rated, then Action & adventure, Sci-fi & fantasy, Comedy,
+  Drama, Mystery and Family. The "Tout voir" (See all) link of the Japanese anime row on the home page opens this page.
+- **Library**: the whole catalog as a grid, with filters (All / Movies / Series, platform, genre) and a sort order
+  (Popular, Top rated, Newest). The "See all" link of each row opens the Library already filtered. The "Animés
+  japonais" genre is offered alongside the others (also in the iPhone app).
+- **My space**: your lists (My list, Likes, History, Downloads) and your platforms. Each title has a cross in its
+  top-right corner to remove it (also in the My list and Continue watching rows of the home page).
+- **Search** (same behavior on the site and in the iPhone app): type straight into the top bar; results appear from
+  the first letter, without changing pages. By title, but also by nickname or acronym ("DNA" finds *Demain nous
+  appartient*, thanks to a built-in list and Wikidata).
+  - **Typos**: "hary poter" still shows the Harry Potter movies, with "Tu voulais dire « Harry Potter » ?" (Did you
+    mean…?) to fix the search (your query is compared with about 28,000 popular titles).
+  - **Movie number**: "harry potter 1" only gives the first movie of the saga (not *Deathly Hallows Part 1*, which is
+    the 7th); "toy story 3" gives *Toy Story 3*. The number is the first number after the name, and what follows can
+    name a part: "harry potter 7 partie 2" gives *Deathly Hallows Part 2*, "hunger games 3 partie 2" *Mockingjay
+    Part 2* (movies released in several parts share one number: "harry potter 7" gives both parts of *Deathly
+    Hallows*).
+  - **Sagas in order**: movies from the same saga are grouped and sorted by release date (1, 2, 3).
+  - **Only your subscriptions**: All / Movies / Series, platforms and genre, and only titles available on your
+    subscriptions are shown; the others stay behind "N autres hors de tes abonnements — tout afficher" (N others
+    outside your subscriptions — show all), or "Aucun titre trouvé… sur tes abonnements" (No title found… on your
+    subscriptions) when none is.
 
-- **Dans tes abonnements** : les plateformes que tu as cochées dans les réglages.
-- **Aussi disponible sur** (menu replié, à ouvrir) : les autres plateformes où le titre est inclus (abonnement, gratuit, avec pub).
-  Une chaîne vendue sur une autre plateforme s'affiche avec sa plateforme entre parenthèses : « HBO Max (Prime
-  Video) », « HBO Max (Canal+) », « Apple TV (Canal+) », « Paramount+ (Canal+) ». Les chaînes HBO Max, Apple TV et
-  Paramount+ de Canal+ ne sont pas référencées par TMDB ni JustWatch : StreamHub les propose pour chaque titre
-  disponible sur ces plateformes (France), et ouvre la fiche du titre sur Canal+ (pas la fiche Canal VOD, qui est
-  une location payante), grâce à l'index du catalogue de chaque chaîne qu'il publie toutes les 6 heures. Un titre
-  absent de l'index ouvre la page de la chaîne sur Canal+. Sur iPhone et iPad, l'appli Canal+ s'ouvre sur la fiche.
-- **Location et achat** : les boutiques (Apple TV, Amazon Video…), repliées par défaut.
+By default, StreamHub only shows titles available on **your subscriptions**; a link lets you show the others too.
 
-Les plateformes viennent de TMDB, qui reprend les données de JustWatch. Une nouveauté peut sortir avant que JustWatch
-la référence dans ton pays (exemple : VisionQuest, sortie sur Disney+ partout le même jour). StreamHub complète alors
-la liste, avec la mention « Pas encore référencée dans ce pays par JustWatch » sous les boutons :
+### A title's page
 
-- **d'après son diffuseur** : une série en cours de diffusion (ou sortie depuis moins de 60 jours), création de
-  Netflix, Disney+, Prime Video, Apple TV, HBO Max ou Paramount+, est ajoutée sur sa plateforme si elle n'a encore
-  aucune offre dans ton pays. Ça marche sans clé, aussi pour les affiches, le filtre « Mes plateformes » de la
-  recherche et les rangées de l'accueil qui la concernent (son genre, Nouveautés, Nouveaux épisodes…).
-- **d'après Streaming Availability** (avec ta clé) : les plateformes que Streaming Availability donne dans ton pays,
-  mais pas JustWatch, sont ajoutées à l'ouverture de la fiche, avec leur lien direct.
+Tapping a poster opens its page: summary, release date (movies; only on the page, posters show the year) or years on
+air (series), runtime or number of seasons, genres, trailer, and the **"Regarder sur…"** (Watch on…) buttons, in
+three groups:
 
-Sous chaque bouton, une indication précise ce qu'il va faire :
+- **Dans tes abonnements** (In your subscriptions): the platforms you ticked in the settings.
+- **Aussi disponible sur** (Also available on; a collapsed menu): the other platforms where the title is included
+  (subscription, free, with ads). A channel sold on another platform is shown with that platform in parentheses:
+  "HBO Max (Prime Video)", "HBO Max (Canal+)", "Apple TV (Canal+)", "Paramount+ (Canal+)". Canal+'s HBO Max, Apple TV
+  and Paramount+ channels are not listed by TMDB or JustWatch: StreamHub offers them for every title available on
+  those platforms (France) and opens the title's page on Canal+ (not the Canal VOD page, which is a paid rental),
+  thanks to an index of each channel's catalog it publishes every 6 hours. A title missing from the index opens the
+  channel's page on Canal+. On iPhone and iPad, the Canal+ app opens on the title.
+- **Location et achat** (Rent and buy): the stores (Apple TV, Amazon Video…), collapsed by default.
 
-| Indication | Ce qui se passe |
+Platforms come from TMDB, which uses JustWatch data. A new release can come out before JustWatch lists it in your
+country (example: VisionQuest, released on Disney+ everywhere on the same day). StreamHub then completes the list,
+with the note "Pas encore référencée dans ce pays par JustWatch" (Not yet listed in this country by JustWatch) under
+the buttons:
+
+- **from its network**: a series currently airing (or released less than 60 days ago) that is an original from
+  Netflix, Disney+, Prime Video, Apple TV, HBO Max or Paramount+ is added on its platform if it has no offer yet in
+  your country. This works without a key, also for posters, the "Mes plateformes" (My platforms) search filter and
+  the home rows it belongs to (its genre, New releases, New episodes…).
+- **from Streaming Availability** (with your key): platforms that Streaming Availability lists in your country but
+  JustWatch does not are added when the page opens, with their direct link.
+
+Under each button, a hint says what it will do:
+
+| Hint | What happens |
 |---|---|
-| **Lecture directe** | La vidéo démarre sur la plateforme |
-| **Reprise de la série** | La série reprend à l'épisode suivant, là où tu t'es arrêté (ou à l'épisode 1 si tu ne l'as jamais regardée) |
-| **Épisode suivant : S1 E7** | L'épisode qui suit le dernier que tu as regardé depuis StreamHub (TF1+, M6+) |
-| **Fiche du titre** | La page du titre s'ouvre sur la plateforme (il reste à appuyer sur Lecture) |
-| **Page de la série** | La page de la série s'ouvre (Disney+, TF1+), avec son bouton « Reprendre » ou « Lecture » |
-| **Recherche sur la plateforme** | Une recherche du titre s'ouvre sur la plateforme |
-| **Accueil de la plateforme** | La plateforme s'ouvre sur son accueil (aucun lien plus précis n'existe) |
-| **Liens sur TMDB** | La page « Où regarder » de TMDB, qui renvoie vers chaque plateforme |
+| **Lecture directe** (Direct playback) | The video starts on the platform |
+| **Reprise de la série** (Resume series) | The series resumes at the next episode, where you left off (or episode 1 if you never watched it) |
+| **Épisode suivant : S1 E7** (Next episode) | The episode after the last one you watched from StreamHub (TF1+, M6+) |
+| **Fiche du titre** (Title page) | The title's page opens on the platform (you still have to press Play) |
+| **Page de la série** (Series page) | The series page opens (Disney+, TF1+), with its "Resume" or "Play" button |
+| **Recherche sur la plateforme** (Search on the platform) | A search for the title opens on the platform |
+| **Accueil de la plateforme** (Platform home) | The platform opens on its home page (no more precise link exists) |
+| **Liens sur TMDB** (Links on TMDB) | TMDB's "Where to watch" page, which links to each platform |
 
-Pour une **série**, le bouton « Regarder sur… » **reprend où tu t'es arrêté** (épisode suivant), ou commence à
-l'épisode 1 si tu ne l'as jamais regardée ([détails](#reprendre-une-série)).
+For a **series**, the "Watch on…" button **resumes where you left off** (next episode), or starts at episode 1 if
+you never watched it ([details](#resuming-a-series)).
 
-Sous le résumé, la fiche a des **onglets** (aussi dans l'appli iPhone) :
+Below the summary, the page has **tabs** (also in the iPhone app):
 
-- **Épisodes** (séries, ouvert d'abord) : chaque saison se déplie pour afficher ses épisodes (résumé, date, durée),
-  avec un bouton pour lancer directement celui que tu veux quand la plateforme le permet. Quand TMDB propose d'autres
-  découpages (ex. « TF1+ » pour *Demain nous appartient* : 10 saisons au lieu de 3), le menu « Découpage » permet d'en
-  changer ; celui qui porte le nom d'une plateforme où se trouve la série est choisi d'office. Pour **Naruto**,
-  **Naruto Shippuden** et **Boruto**, le découpage **« Netflix - Sans filler »** est choisi d’office (9 saisons pour
-  Naruto ; 21 comme sur Netflix pour Shippuden et pour Boruto, avec les titres de saison de Netflix) : les
-  épisodes hors-série (fillers, d'après la liste d'animotaku.fr) sont en rouge avec l'étiquette « Filler », et une
-  saison qui n'a que des fillers est entièrement en rouge. Le menu « Découpage » permet de revenir à celui de TMDB.
-- **Suggestions** (ouvert d'abord pour un film, seul onglet) : des affiches à ouvrir, en trois rangées :
-  - **La saga** : les autres films de la saga, dans l'ordre de sortie (les 7 autres Harry Potter) ;
-  - **Dans le même univers** : les films et séries de la même franchise, que TMDB ne relie pas entre eux. Exemples :
-    Naruto → Naruto Shippuden, Boruto et les films Naruto ; un film Harry Potter → la série Harry Potter et Les
-    Animaux fantastiques ; Breaking Bad → Better Call Saul et El Camino. StreamHub les retrouve par le nom de la
-    franchise (même langue d'origine, un genre en commun, et une société de production commune quand le nom n'est pas
-    en tête du titre) et parmi les titres conseillés par TMDB (deux sociétés de production en commun et une suite ou
-    une série dérivée) ;
-  - **Dans le même genre** : les titres conseillés par TMDB, ceux de tes abonnements d'abord.
+- **Épisodes** (Episodes; series, opened first): each season expands to show its episodes (summary, date, runtime),
+  with a button to start the one you want directly when the platform allows it. When TMDB offers other season layouts
+  (e.g. "TF1+" for *Demain nous appartient*: 10 seasons instead of 3), the "Découpage" (Season layout) menu lets you
+  switch; the one named after a platform carrying the series is picked automatically. For **Naruto**, **Naruto
+  Shippuden** and **Boruto**, the **"Netflix - Sans filler"** (no filler) layout is picked automatically (9 seasons
+  for Naruto; 21 like Netflix for Shippuden and Boruto, with Netflix's season titles): filler episodes (according to
+  animotaku.fr's list) are red with a "Filler" tag, and a season made only of fillers is entirely red. The
+  "Découpage" menu lets you go back to TMDB's layout.
+- **Suggestions** (opened first for a movie, its only tab): posters to open, in three rows:
+  - **La saga** (The saga): the saga's other movies, in release order (the 7 other Harry Potter movies);
+  - **Dans le même univers** (Same universe): movies and series from the same franchise, which TMDB does not link
+    together. Examples: Naruto → Naruto Shippuden, Boruto and the Naruto movies; a Harry Potter movie → the Harry
+    Potter series and Fantastic Beasts; Breaking Bad → Better Call Saul and El Camino. StreamHub finds them by the
+    franchise name (same original language, a genre in common, and a production company in common when the name is
+    not at the start of the title) and among TMDB's recommendations (two production companies in common and a
+    sequel or spin-off);
+  - **Dans le même genre** (Same genre): titles recommended by TMDB, those on your subscriptions first.
 
-### Tes listes
+### Your lists
 
-- **Ma liste** : les titres mis de côté avec « + Ma liste » (dans la fiche ou sur l'affiche de l'accueil).
-- **J'aime** : les titres aimés avec « ♡ J'aime ». Pour une série, le J'aime porte sur la série entière.
-- **Historique** : les 30 derniers titres regardés depuis StreamHub, en une seule rangée (le plus récent à gauche).
-  La croix en haut à droite d'une affiche retire ce titre ; **Supprimer l'historique** (avec confirmation) vide la
-  liste. Avec un compte, ces retraits partent aussi sur tes autres appareils.
-- **Téléchargements** : un rappel des titres téléchargés dans les applis des plateformes (voir plus bas).
+- **Ma liste** (My list): titles saved with "+ Ma liste" (on their page or on the home page poster).
+- **J'aime** (Likes): titles liked with "♡ J'aime". For a series, the like covers the whole series.
+- **Historique** (History): the last 30 titles watched from StreamHub, in a single row (most recent on the left). The
+  cross in a poster's top-right corner removes that title; **Supprimer l'historique** (Clear history, with
+  confirmation) empties the list. With an account, these removals also reach your other devices.
+- **Téléchargements** (Downloads): a reminder of titles downloaded in the platforms' apps (see below).
 
-Un film ou un épisode lancé depuis StreamHub entre tout de suite dans l'historique, sans question. Pour une série,
-on enchaîne souvent plusieurs épisodes sur la plateforme : en revenant dans StreamHub (au moins 3 minutes après), une
-seule fenêtre demande « Où en es-tu de *Naruto* ? » avec la saison et le dernier épisode regardé (l'épisode lancé est
-déjà choisi) ; « Enregistrer » met l'historique à jour, « Ignorer » garde l'épisode lancé. La même fenêtre propose
-« J'aime la série ». Un titre à télécharger entre tout de suite
-dans les téléchargements, sans question au retour.
+A movie or episode started from StreamHub goes straight into the history, without asking. For a series, people often
+watch several episodes in a row on the platform: when you come back to StreamHub (at least 3 minutes later), a single
+window asks "Où en es-tu de *Naruto* ?" (Where are you in *Naruto*?) with the season and the last episode watched
+(the episode you started is preselected); "Enregistrer" (Save) updates the history, "Ignorer" (Ignore) keeps the
+episode you started. The same window offers "J'aime la série" (I like this series). A title you download goes
+straight into Downloads, without a question when you come back.
 
-### Liker sur la plateforme
+### Liking on the platform
 
-Aucune plateforme ne permet de liker un titre à distance : le J'aime de StreamHub reste dans StreamHub (depuis la
-version 2.5.0, plus de notification « Liker aussi sur… » ni de question « Tu as liké… ? », comme dans l'appli iPhone).
+No platform lets another site like a title for you: StreamHub's like stays in StreamHub (since version 2.5.0 there is
+no "Liker aussi sur…" (Also like on…) notification or "Tu as liké… ?" (Did you like…?) question any more, as in the
+iPhone app).
 
-### Télécharger pour regarder hors ligne
+### Downloading to watch offline
 
-Seules les applis mobiles des plateformes savent télécharger, et elles ne permettent pas de le faire à distance. Le
-bouton **« ⬇ Télécharger »** ouvre donc le titre dans l'appli de la plateforme, où tu appuies sur son bouton de
-téléchargement, et le note dans Téléchargements (Mon espace → Téléchargés sur téléphone), qui sert de rappel. Il
-n'apparaît que sur iPhone, iPad et Android, et dans l'appli iPhone (version 2.4.0 : bouton sous « Regarder sur… »
-pour un film, ⬇ à côté de chaque épisode) : sur ordinateur et TV, les plateformes ne permettent pas de télécharger.
-Le titre entre dans la liste dès l'appui, sans question au retour (version 2.4.1). Un appui sur un titre téléchargé l'ouvre dans
-l'appli de la plateforme ; sa croix le retire de la liste (le fichier reste dans l'appli de la plateforme).
+Only the platforms' mobile apps can download, and they cannot be told to do it remotely. The **"⬇ Télécharger"**
+(Download) button therefore opens the title in the platform's app, where you press its download button, and records
+it in Downloads (My space → Téléchargés on a phone) as a reminder. It only appears on iPhone, iPad and Android, and in
+the iPhone app (version 2.4.0: a button under "Watch on…" for a movie, ⬇ next to each episode): on computers and TVs,
+platforms do not allow downloads. The title enters the list as soon as you tap, without a question when you come back
+(version 2.4.1). Tapping a downloaded title opens it in the platform's app; its cross removes it from the list (the
+file stays in the platform's app).
 
-### Et aussi
+### And also
 
-- **Compte StreamHub** (facultatif) : réglages, clés et listes chiffrés et synchronisés entre tous tes appareils
-  ([partie 6](#6-ton-compte-et-la-synchronisation)). Sans compte, en invité, tout reste sur l'appareil.
-- **Effet verre**, inspiré de Liquid Glass, pour les barres, boutons et fenêtres, réglable sur chaque appareil.
-- **Navigation au clavier et à la télécommande** : flèches, OK (Entrée) et Retour (Échap).
-- **Hors ligne** : l'interface s'ouvre sans connexion (le catalogue, lui, demande Internet).
-- **Mises à jour automatiques** : à chaque retour sur StreamHub, la nouvelle version est installée et la page se
-  recharge (après la fermeture de la fiche ou des réglages si l'une est ouverte).
+- **StreamHub account** (optional): settings, keys and lists encrypted and synced across all your devices
+  ([part 6](#6-your-account-and-sync)). Without an account, as a guest, everything stays on the device.
+- **Glass effect**, inspired by Liquid Glass, for bars, buttons and windows, adjustable on each device.
+- **Keyboard and remote navigation**: arrows, OK (Enter) and Back (Escape).
+- **Offline**: the interface opens without a connection (the catalog itself needs the Internet).
+- **Automatic updates**: each time you come back to StreamHub, the new version is installed and the page reloads
+  (after the title page or settings are closed, if one is open).
 
 ---
 
-## 2. Installer StreamHub sur chaque appareil
+## 2. Installing StreamHub on each device
 
-StreamHub s'utilise directement dans le navigateur, sur n'importe quel appareil. L'installer en appli (une icône sur
-l'écran d'accueil, dans le Dock ou dans le menu Démarrer) est facultatif, mais plus pratique : il s'ouvre dans sa
-propre fenêtre, sans barre d'adresse.
+StreamHub works straight in the browser, on any device. Installing it as an app (an icon on the home screen, in the
+Dock or in the Start menu) is optional but handier: it opens in its own window, without an address bar.
 
-### iPhone et iPad
+### iPhone and iPad
 
-1. Ouvre **https://arthursavournin.github.io/streamhub/** dans **Safari**.
-2. Appuie sur le bouton **Partager** (le carré avec une flèche), puis sur **« Sur l'écran d'accueil »**.
-3. Laisse **« Ouvrir comme app web »** activé, puis appuie sur **Ajouter**.
-4. Ouvre StreamHub depuis sa nouvelle icône.
+1. Open **https://arthursavournin.github.io/streamhub/** in **Safari**.
+2. Tap the **Share** button (the square with an arrow), then **"Add to Home Screen"**.
+3. Leave **"Open as Web App"** on, then tap **Add**.
+4. Open StreamHub from its new icon.
 
-L'appli de l'écran d'accueil a son propre stockage, séparé de Safari : au premier lancement, connecte-toi à ton
-compte (ou colle tes clés). C'est depuis cette icône que les boutons « Regarder sur… » ouvrent directement les
-applis des plateformes ([partie 7](#sur-iphone-et-ipad)). Sur iPhone et iPad, toutes les applis de navigation
-(Chrome, Firefox, Edge…) utilisent le moteur de Safari : StreamHub s'y comporte comme dans Safari.
+The home screen app has its own storage, separate from Safari: on first launch, sign in to your account (or paste
+your keys). It is from this icon that the "Watch on…" buttons open the platforms' apps directly
+([part 7](#on-iphone-and-ipad)). On iPhone and iPad, every browser app (Chrome, Firefox, Edge…) uses Safari's engine:
+StreamHub behaves there as in Safari.
 
 ### Android
 
-1. Ouvre **https://arthursavournin.github.io/streamhub/** dans **Chrome** (ou Samsung Internet, Edge…).
-2. Menu **⋮** → **« Installer l'application »** (ou « Ajouter à l'écran d'accueil »).
-3. Ouvre StreamHub depuis son icône.
+1. Open **https://arthursavournin.github.io/streamhub/** in **Chrome** (or Samsung Internet, Edge…).
+2. Menu **⋮** → **"Install app"** (or "Add to Home screen").
+3. Open StreamHub from its icon.
 
 ### Mac
 
-- **Safari** (macOS Sonoma ou plus récent) : ouvre l'adresse, puis menu **Fichier → Ajouter au Dock**. StreamHub
-  apparaît dans le Dock et le Launchpad comme une appli.
-- **Chrome** : menu **⋮ → Caster, enregistrer et partager → Installer la page en tant qu'appli** (ou **Installer StreamHub…** s'il apparaît) (ou l'icône
-  d'installation à droite de la barre d'adresse).
-- **Edge** : menu **… → Applications → Installer ce site en tant qu'application**.
-- **Firefox** : en général pas d'installation en appli ; ajoute StreamHub à tes favoris.
+- **Safari** (macOS Sonoma or later): open the address, then **File → Add to Dock**. StreamHub appears in the Dock and
+  Launchpad like an app.
+- **Chrome**: menu **⋮ → Cast, save and share → Install page as app** (or **Install StreamHub…** if it appears), or
+  the install icon on the right of the address bar.
+- **Edge**: menu **… → Apps → Install this site as an app**.
+- **Firefox**: usually no app installation; add StreamHub to your bookmarks.
 
 ### Windows
 
-- **Edge** (installé avec Windows) : menu **… → Applications → Installer ce site en tant qu'application**. StreamHub
-  apparaît dans le menu Démarrer ; tu peux l'épingler à la barre des tâches.
-- **Chrome** : menu **⋮ → Caster, enregistrer et partager → Installer la page en tant qu'appli** (ou **Installer StreamHub…** s'il apparaît).
-- **Firefox** : en général pas d'installation en appli ; ajoute StreamHub à tes favoris ou épingle l'onglet.
+- **Edge** (comes with Windows): menu **… → Apps → Install this site as an app**. StreamHub appears in the Start menu;
+  you can pin it to the taskbar.
+- **Chrome**: menu **⋮ → Cast, save and share → Install page as app** (or **Install StreamHub…** if it appears).
+- **Firefox**: usually no app installation; add StreamHub to your bookmarks or pin the tab.
 
 ### Linux
 
-Avec **Chrome**, **Chromium**, **Brave** ou **Edge**, comme sous Windows. Avec **Firefox**, ajoute StreamHub à tes
-favoris.
+With **Chrome**, **Chromium**, **Brave** or **Edge**, as on Windows. With **Firefox**, add StreamHub to your
+bookmarks.
 
 ### TV
 
-🚧 **En développement.** En attendant, StreamHub peut s'ouvrir dans le navigateur d'une TV connectée (Samsung, LG,
-Android TV…) : l'interface se pilote déjà avec les flèches, OK et Retour de la télécommande. Pistes pour une vraie
-appli TV :
+🚧 **In development.** In the meantime, StreamHub can open in a smart TV's browser (Samsung, LG, Android TV…): the
+interface can already be driven with the remote's arrows, OK and Back. Ideas for a real TV app:
 
-- **Android TV / Google TV** : emballer l'appli web dans une appli Android (Bubblewrap/TWA ou Capacitor) ; les liens
-  ouvriront les applis TV des plateformes.
-- **Samsung (Tizen) / LG (webOS)** : ce sont des TV web, l'appli s'y empaquette presque telle quelle.
-- **Apple TV** : pas de navigateur, il faudrait une appli native tvOS.
-
----
-
-## 3. Premier lancement
-
-1. Ouvre StreamHub : au premier lancement, seule la page de connexion s'affiche.
-2. **Connecte-toi ou crée un compte** (e-mail et mot de passe, Google ou GitHub) : si tu utilises déjà StreamHub
-   ailleurs, clés, abonnements et listes reviennent, et c'est fini. Tu peux aussi choisir **Continuer sans compte**
-   (invité) : tout reste alors sur cet appareil ([partie 6](#6-ton-compte-et-la-synchronisation)).
-3. Sinon, StreamHub te demande ta **clé TMDB** ([partie 4](#4-les-clés-api)). C'est la seule clé obligatoire.
-4. Coche tes **abonnements** dans « Mes abonnements ».
-5. Appuie sur **Enregistrer**.
-
-Facultatif, mais recommandé : une clé **Streaming Availability** pour des liens qui lancent directement la vidéo ou
-l'épisode, et, sur ordinateur, le **script « reprise après connexion »** ([partie 8](#8-le-script--reprise-après-connexion-)).
-
-**Partager StreamHub avec tes proches** : envoie-leur simplement l'adresse. Chacun colle **ses propres clés**, coche
-ses abonnements et crée, s'il le veut, **son propre compte**. Les données de chacun sont chiffrées avec sa propre clé :
-personne ne voit les clés, abonnements ou listes des autres.
+- **Android TV / Google TV**: wrap the web app in an Android app (Bubblewrap/TWA or Capacitor); links would open the
+  platforms' TV apps.
+- **Samsung (Tizen) / LG (webOS)**: these are web-based TVs, the app can be packaged almost as is.
+- **Apple TV**: no browser, a native tvOS app would be needed.
 
 ---
 
-## 4. Les clés API
+## 3. First launch
 
-StreamHub n'a pas de serveur qui stocke tes données : il interroge directement des services publics avec **tes**
-clés. Elles se gèrent dans **Réglages → Clés API**, avec un bouton **Tester** pour chacune.
+1. Open StreamHub: on first launch, only the sign-in page is shown.
+2. **Sign in or create an account** (email and password, Google or GitHub): if you already use StreamHub elsewhere,
+   your keys, subscriptions and lists come back, and you are done. You can also choose **Continuer sans compte**
+   (Continue without an account, as a guest): everything then stays on this device
+   ([part 6](#6-your-account-and-sync)).
+3. Otherwise, StreamHub asks for your **TMDB key** ([part 4](#4-api-keys)). It is the only required key.
+4. Tick your **subscriptions** in "Mes abonnements" (My subscriptions).
+5. Tap **Enregistrer** (Save).
 
-| Clé | Obligatoire ? | À quoi elle sert |
+Optional but recommended: a **Streaming Availability** key for links that start the video or episode directly, and,
+on a computer, the **"resume after sign-in" script** ([part 8](#8-the-resume-after-sign-in-script)).
+
+**Sharing StreamHub with family and friends**: just send them the address. Each person pastes **their own keys**,
+ticks their subscriptions and, if they want, creates **their own account**. Everyone's data is encrypted with their
+own key: nobody sees anyone else's keys, subscriptions or lists.
+
+---
+
+## 4. API keys
+
+StreamHub has no server storing your data: it queries public services directly with **your** keys. They are managed
+in **Settings → Clés API** (API keys), with a **Tester** (Test) button for each.
+
+| Key | Required? | What it is for |
 |---|---|---|
-| **TMDB** | Oui (gratuite) | Catalogue des films et séries, fiches, plateformes disponibles par pays |
-| **Streaming Availability** | Non (offre gratuite) | Liens directs qui lancent la vidéo, la série ou l'épisode |
+| **TMDB** | Yes (free) | Movie and series catalog, title pages, platforms available per country |
+| **Streaming Availability** | No (free plan) | Direct links that start the video, series or episode |
 
-### Obtenir la clé TMDB (gratuite)
+### Getting the TMDB key (free)
 
-1. Crée un compte sur **https://www.themoviedb.org**.
-2. Va dans ton profil → **Paramètres** → **API** (https://www.themoviedb.org/settings/api).
-3. Demande une clé API pour un usage personnel, en remplissant le court formulaire.
-4. Copie la **Clé d'API (v3)** ou le **Jeton d'accès en lecture (v4)** : les deux fonctionnent.
-5. Colle-la dans StreamHub → Réglages → Clés API → **Clé API TMDB**, puis appuie sur **Tester**.
+1. Create an account on **https://www.themoviedb.org**.
+2. Go to your profile → **Settings** → **API** (https://www.themoviedb.org/settings/api).
+3. Request an API key for personal use by filling in the short form.
+4. Copy the **API Key (v3)** or the **API Read Access Token (v4)**: both work.
+5. Paste it into StreamHub → Settings → Clés API → **Clé API TMDB**, then tap **Tester**.
 
-### Obtenir la clé Streaming Availability (facultative, gratuite)
+### Getting the Streaming Availability key (optional, free)
 
-1. Crée un compte sur **https://rapidapi.com**.
-2. Cherche l'API **« Streaming Availability »** et abonne-toi à l'offre **Basic** (gratuite).
-3. Copie ta clé (**X-RapidAPI-Key**), visible dans l'onglet de test de l'API.
-4. Colle-la dans StreamHub → Réglages → Clés API → **Clé Streaming Availability**, puis appuie sur **Tester**.
+1. Create an account on **https://rapidapi.com**.
+2. Look for the **"Streaming Availability"** API and subscribe to the **Basic** (free) plan.
+3. Copy your key (**X-RapidAPI-Key**), shown in the API's test tab.
+4. Paste it into StreamHub → Settings → Clés API → **Clé Streaming Availability**, then tap **Tester**.
 
-L'offre gratuite est limitée en nombre de requêtes par jour : StreamHub ne fait une requête qu'à l'ouverture d'une
-fiche et garde chaque réponse **3 jours** en mémoire. Sans cette clé, StreamHub utilise les liens de JustWatch (via
-le relais), sinon une recherche du titre sur la plateforme.
+The free plan limits the number of requests per day: StreamHub only makes a request when a title page opens and keeps
+each answer for **3 days**. Without this key, StreamHub uses JustWatch links (through the relay), or else a search for
+the title on the platform.
 
-**Tes clés ne sont jamais publiées** : elles ne sont pas dans le code, restent dans ton navigateur ou dans le
-trousseau de l'iPhone pour l'appli (et, chiffrées, dans ton compte), et ne sont envoyées qu'à TMDB et RapidAPI.
+**Your keys are never published**: they are not in the code, they stay in your browser, or in the iPhone keychain for
+the app (and, encrypted, in your account), and are only sent to TMDB and RapidAPI.
 
 ---
 
-## 5. Les réglages
+## 5. Settings
 
-La roue dentée en haut à droite ouvre la page des réglages : les sections dans la barre de gauche (Compte en premier),
-le contenu de la section choisie à droite. Sur téléphone, la liste des sections, puis la section touchée. L'appli
-iPhone a les mêmes sections, dans le même ordre et le même dessin. **Enregistrer** (en haut) garde les changements ;
-les actions du compte, elles, s'appliquent tout de suite.
+The gear at the top right opens the settings page: the sections in the left sidebar (Account first), the content of
+the chosen section on the right. On a phone: the list of sections, then the section you tap. The iPhone app has the
+same sections, in the same order and with the same design. **Enregistrer** (Save, at the top) keeps your changes;
+account actions apply immediately.
 
-| Section | Contenu |
+| Section | Content |
 |---|---|
-| **Compte** | Créer un compte, se connecter (e-mail, Google, GitHub), mot de passe oublié, changer de mot de passe, clé de secours, se déconnecter, supprimer le compte. En invité : la page de connexion, avec les boutons Google et GitHub. |
-| **Mes abonnements** | Les plateformes auxquelles tu es abonné, avec un champ pour filtrer la liste. Cocher Prime Video coche aussi les chaînes incluses avec Prime. Les options payantes vendues sur une autre plateforme sont des « chaînes » à cocher à part, par exemple **HBO Max Amazon Channel** (HBO Max sur Prime Video) ou les chaînes de Canal+ (France) **HBO Max Canal+ Channel**, **Apple TV Canal+ Channel** et **Paramount Plus Canal+ Channel**, pour regarder ces catalogues sur Canal+. Cocher **Canal+ Ciné Séries** coche aussi les plateformes de l'offre : Canal+, Canal+ Séries, Netflix et les chaînes HBO Max, Apple TV et Paramount+ de Canal+ ; Ciné+ OCS est référencé sous Canal+. Netflix reste un compte à part (activé depuis ton espace Canal+) et s'ouvre dans l'appli Netflix. |
-| **Clés API** | Clé TMDB, clé Streaming Availability, avec un bouton Tester pour chacune. (Le relais StreamHub, pour les liens JustWatch, n'a pas de réglage : son adresse est fixe depuis la version 2.3.4.) |
-| **Accueil** | Rangées affichées sur l'accueil, leur ordre, et le titre à l'affiche. |
-| **Apparence** | Effet verre : Automatique, Transparent ou Teinté (propre à chaque appareil). |
-| **Pays et lecture** | Pays du catalogue (France, Belgique, Suisse, Luxembourg, Canada, Royaume-Uni, États-Unis, Allemagne, Espagne, Italie) et, sur ordinateur, **Ouvrir les titres**. |
-| **À propos** | Version, mentions légales, politique de confidentialité, conditions d'utilisation, code source. |
+| **Compte** (Account) | Create an account, sign in (email, Google, GitHub), forgot password, change password, recovery key, sign out, delete the account. As a guest: the sign-in page, with the Google and GitHub buttons. |
+| **Mes abonnements** (My subscriptions) | The platforms you subscribe to, with a field to filter the list. Ticking Prime Video also ticks the channels included with Prime. Paid add-ons sold on another platform are "channels" ticked separately, e.g. **HBO Max Amazon Channel** (HBO Max on Prime Video) or Canal+'s channels (France) **HBO Max Canal+ Channel**, **Apple TV Canal+ Channel** and **Paramount Plus Canal+ Channel**, to watch those catalogs on Canal+. Ticking **Canal+ Ciné Séries** also ticks the bundle's platforms: Canal+, Canal+ Séries, Netflix and Canal+'s HBO Max, Apple TV and Paramount+ channels; Ciné+ OCS is listed under Canal+. Netflix remains a separate account (activated from your Canal+ space) and opens in the Netflix app. |
+| **Clés API** (API keys) | TMDB key, Streaming Availability key, with a Test button for each. (The StreamHub relay, for JustWatch links, has no setting: its address is fixed since version 2.3.4.) |
+| **Accueil** (Home) | Rows shown on the home page, their order, and the featured title. |
+| **Apparence** (Appearance) | Glass effect: Automatic, Transparent or Tinted (per device). |
+| **Pays et lecture** (Country and playback) | Catalog country (France, Belgium, Switzerland, Luxembourg, Canada, United Kingdom, United States, Germany, Spain, Italy) and, on a computer, **Ouvrir les titres** (Open titles). |
+| **À propos** (About) | Version, legal notice, privacy policy, terms of use, source code. |
 
-### Ouvrir les titres (ordinateur)
+### Open titles (computer)
 
-Réglage propre à chaque appareil :
+A per-device setting:
 
-- **Sur le site internet** : les titres s'ouvrent dans un onglet du navigateur.
-- **Dans l'appli de l'ordinateur** : les titres Prime Video s'ouvrent dans l'appli **Prime Video** installée sur le
-  Mac ou le PC, et la lecture démarre. Les autres plateformes n'ont pas d'appli Mac ; sous Windows, leurs applis ne
-  sont pas encore prises en charge. Le navigateur peut demander l'autorisation d'ouvrir l'appli la première fois.
+- **Sur le site internet** (On the website): titles open in a browser tab.
+- **Dans l'appli de l'ordinateur** (In the computer's app): Prime Video titles open in the **Prime Video** app
+  installed on the Mac or PC, and playback starts. Other platforms have no Mac app; on Windows, their apps are not
+  supported yet. The browser may ask for permission to open the app the first time.
 
-### Effet verre
+### Glass effect
 
-Une page web ne peut pas lire le réglage Liquid Glass d'iOS ou de macOS. En mode **Automatique**, StreamHub suit
-« Augmenter le contraste » (et « Réduire la transparence » dans Chrome et Edge) ; sinon, choisis toi-même
-**Transparent** ou **Teinté**.
-
----
-
-## 6. Ton compte et la synchronisation
-
-Chaque navigateur garde ses propres données : sans compte, StreamHub ouvert dans Chrome ne connaît ni les clés ni les
-listes enregistrées dans Safari, et l'appli de l'écran d'accueil de l'iPhone ne connaît pas celles de Safari. Un
-**compte StreamHub** (gratuit, facultatif) les garde partout. Sans compte, tu restes **en invité** : tout reste sur
-l'appareil, rien n'est envoyé.
-
-### Créer un compte ou se connecter
-
-**Réglages → Compte**, puis au choix :
-
-- **Avec ton e-mail** : onglet **Créer un compte**, adresse et mot de passe (12 caractères au moins), puis ouvre le lien
-  reçu par e-mail (regarde aussi dans les indésirables). Sur tes autres appareils : **Se connecter** avec la même
-  adresse et le même mot de passe.
-- **Avec Google ou GitHub** (boutons affichés quand ils sont activés) : à la première connexion, StreamHub te demande
-  de choisir un **mot de passe du coffre**. Il chiffre tes données ; il est propre à StreamHub, sans rapport avec ton
-  compte Google ou GitHub. Tu le tapes une fois sur chaque nouvel appareil.
-
-À la création, StreamHub affiche ta **clé de secours** (20 caractères, par exemple `ABCD-EFGH-JKLM-NPQR-STUV`) :
-note-la dans ton gestionnaire de mots de passe. Elle seule permet de retrouver tes données si tu oublies ton mot de
-passe. **Nouvelle clé de secours** en crée une autre (l'ancienne ne marche plus) : StreamHub redemande alors ton mot
-de passe (ou ton mot de passe du coffre).
-
-Un nouveau mot de passe (inscription, changement, oubli, mot de passe du coffre) doit faire **12 caractères au
-moins** et ne pas figurer dans des fuites de données connues. Cette vérification se fait sur ton appareil, avant
-l'envoi, auprès du service Have I Been Pwned : seuls les 5 premiers caractères d'une empreinte du mot de passe partent,
-jamais le mot de passe. Un mot de passe choisi avant la version 2.3.4 marche toujours.
-
-Dans l'appli iPhone : **Réglages → Compte**, avec le même compte (e-mail et mot de passe, Google ou GitHub : la
-fenêtre de connexion d'Apple s'ouvre, puis revient dans l'appli). Les liens des e-mails (confirmation, mot de passe oublié) s'ouvrent sur le site : après la confirmation,
-reviens dans l'appli et touche **J'ai confirmé mon adresse**.
-
-Ensuite, chaque modification part toute seule quelques secondes après, et arrive sur les autres appareils à leur
-ouverture ou quand tu reviens sur StreamHub. Deux appareils modifiés en même temps : les listes sont réunies, rien
-n'est perdu. Un titre retiré d'une liste (ou l'historique supprimé) sur un appareil ne revient pas depuis un autre,
-sauf s'il y est de nouveau ajouté ou regardé après le retrait.
-
-- **Synchronisés** : clés, pays, abonnements, accueil, Ma liste, J'aime, historique, likes sur les plateformes.
-- **Propres à chaque appareil** : téléchargements (ils sont sur l'appareil), questions en attente, effet verre,
-  réglage « Ouvrir les titres ».
-- **Toujours aussi gardés sur l'appareil** : StreamHub marche hors ligne, et rien n'est effacé à la déconnexion.
-
-### Mot de passe oublié, changer de mot de passe, supprimer le compte
-
-- **Mot de passe oublié ?** (sous **Se connecter**) : un e-mail t'envoie un lien ; il ouvre StreamHub, où tu choisis
-  un nouveau mot de passe et entres ta **clé de secours**. Mot de passe du coffre oublié (Google, GitHub) : même
-  chose, avec **Mot de passe du coffre oublié ?** une fois connecté.
-- **« Ce lien est-il pour toi ? »** : un lien d'e-mail (confirmation, mot de passe oublié) ouvert sur un autre
-  appareil ou navigateur que celui de la demande affiche d'abord l'adresse du compte. Continue seulement si c'est la
-  tienne : un lien piégé ne peut pas te connecter à son insu au compte de quelqu'un d'autre.
-- **Changer de mot de passe** : l'actuel, puis le nouveau. Les autres appareils sont déconnectés (au plus tard une
-  heure après) : reconnecte-les avec le nouveau mot de passe, leurs données restent.
-- **Se déconnecter** : les données restent sur cet appareil, elles ne suivent simplement plus.
-- **Supprimer mon compte** : StreamHub redemande ton mot de passe (ou ton mot de passe du coffre), puis efface ton
-  compte, ton coffre et tes données synchronisées. Ce qui est sur l'appareil reste.
-
-### Chiffrement de bout en bout
-
-Les comptes sont gérés par **Supabase** (hébergeur de base de données). Tes données y sont **chiffrées dans ton
-navigateur** (AES-256-GCM) avant l'envoi, avec une **clé de coffre** tirée au hasard. Cette clé est elle-même gardée
-deux fois, fermée à clé : par une clé tirée de ton mot de passe (PBKDF2, 600 000 tours) et par une clé tirée de ta
-clé de secours. Ton vrai mot de passe ne quitte jamais l'appareil : Supabase reçoit un autre secret qui en est tiré.
-Supabase ne voit donc que ton adresse e-mail, des données illisibles, leur taille et la date de la dernière
-modification : ni lui ni personne ne peut lire tes clés ou tes listes sans ton mot de passe ou ta clé de secours.
-C'est aussi pourquoi un mot de passe oublié **sans** clé de secours fait perdre les données synchronisées (celles
-encore sur un appareil restent, et repartent dans un nouveau compte).
-
-Sur chaque appareil, la clé du coffre est gardée par le navigateur sous une forme **non extractible** (IndexedDB) :
-StreamHub peut s'en servir, mais personne ne peut la copier, même un code qui se serait glissé dans la page (version
-2.3.4 ; dans l'appli iPhone : trousseau d'Apple). La page ne peut en outre contacter que les serveurs dont StreamHub a
-besoin (règles de sécurité, « Content-Security-Policy », dans `index.html`).
-
-### Avant les comptes : le code de synchronisation
-
-Jusqu'à la version 2.0.0, la synchronisation passait par un **code de 20 caractères**. Il n'existe plus depuis la
-version 2.1.0 : c'est le compte, ou rien (invité). Rien n'est perdu : chaque appareil a gardé ses données. Crée ton
-compte sur l'un d'eux, puis connecte-toi sur les autres : leurs listes sont réunies dans le compte.
+A web page cannot read the Liquid Glass setting of iOS or macOS. In **Automatic** mode, StreamHub follows "Increase
+contrast" (and "Reduce transparency" in Chrome and Edge); otherwise, choose **Transparent** or **Tinted** yourself.
 
 ---
 
-## 7. Comment StreamHub ouvre les titres
+## 6. Your account and sync
 
-Aucune plateforme ne fournit de lecteur utilisable par un autre site, et les vidéos sont protégées (DRM) : seules
-leurs applis et leurs sites officiels peuvent les lire. StreamHub ouvre donc le titre **sur la plateforme**, avec le
-lien le plus précis possible :
+Each browser keeps its own data: without an account, StreamHub opened in Chrome knows neither the keys nor the lists
+saved in Safari, and the iPhone home screen app does not know those of Safari. A **StreamHub account** (free,
+optional) keeps them everywhere. Without an account you stay a **guest**: everything stays on the device, nothing is
+sent.
 
-1. **Streaming Availability** (avec ta clé) : lien direct vers la vidéo, la série ou l'épisode.
-2. Sinon **JustWatch** (via le relais StreamHub) : lien vers le titre ou la lecture.
-3. Sinon une **recherche** du titre sur la plateforme, ou sa page d'accueil.
+### Creating an account or signing in
 
-Les deux premières sources sont interrogées en même temps à l'ouverture d'une fiche. Si tu cliques sur « Regarder
-sur… » avant leur réponse, StreamHub attend le bon lien (4 secondes au plus) au lieu d'ouvrir la recherche.
+**Settings → Compte**, then either:
 
-Par sécurité, seuls des liens web (`https://`, `http://`) reçus de ces services sont gardés : une adresse d'un autre
-type (`javascript:`…) est ignorée et n'est jamais ouverte (version 2.3.3, site et appli iPhone).
+- **With your email**: **Créer un compte** (Create an account) tab, address and password (at least 12 characters),
+  then open the link received by email (check your spam folder too). On your other devices: **Se connecter** (Sign in)
+  with the same address and password.
+- **With Google or GitHub** (buttons shown when enabled): on the first sign-in, StreamHub asks you to choose a **vault
+  password**. It encrypts your data; it is specific to StreamHub and unrelated to your Google or GitHub account. You
+  type it once on each new device.
 
-### Reprendre une série
+When the account is created, StreamHub shows your **recovery key** (20 characters, for example
+`ABCD-EFGH-JKLM-NPQR-STUV`): save it in your password manager. It is the only way to recover your data if you forget
+your password. **Nouvelle clé de secours** (New recovery key) creates another one (the old one stops working):
+StreamHub then asks for your password (or vault password) again.
 
-Pour une série, « Regarder sur… » lance l'**épisode suivant**, là où tu t'es arrêté, ou l'épisode 1 si tu ne l'as
-jamais regardée. StreamHub ne peut pas lire ta progression sur les plateformes (elles n'ont pas d'API publique, et
-ta progression est protégée par ta connexion) : il leur envoie le lien qu'elles savent reprendre elles-mêmes.
+A new password (sign-up, change, forgotten, vault password) must be **at least 12 characters** long and must not
+appear in known data breaches. This check runs on your device, before anything is sent, against the Have I Been Pwned
+service: only the first 5 characters of a hash of the password are sent, never the password. A password chosen before
+version 2.3.4 still works.
 
-| Plateforme | Comment la série reprend |
+In the iPhone app: **Settings → Compte**, with the same account (email and password, Google or GitHub: Apple's sign-in
+window opens, then returns to the app). Links in emails (confirmation, forgotten password) open on the site: after
+confirming, come back to the app and tap **J'ai confirmé mon adresse** (I've confirmed my address).
+
+After that, each change is sent automatically a few seconds later and reaches the other devices when they open or
+when you come back to StreamHub. If two devices are changed at the same time, the lists are merged: nothing is lost.
+A title removed from a list (or a cleared history) on one device does not come back from another, unless it is added
+or watched again there after the removal.
+
+- **Synced**: keys, country, subscriptions, home page, My list, Likes, history, likes on platforms.
+- **Per device**: downloads (they live on the device), pending questions, glass effect, "Open titles" setting.
+- **Always kept on the device too**: StreamHub works offline, and nothing is erased when you sign out.
+
+### Forgotten password, changing your password, deleting the account
+
+- **Mot de passe oublié ?** (Forgot password?, under **Se connecter**): an email sends you a link; it opens
+  StreamHub, where you choose a new password and enter your **recovery key**. Forgot your vault password (Google,
+  GitHub)? Same thing, with **Mot de passe du coffre oublié ?** once signed in.
+- **"Ce lien est-il pour toi ?"** (Is this link for you?): an email link (confirmation, forgotten password) opened on
+  a different device or browser than the one that requested it first shows the account's address. Only continue if
+  it is yours: a booby-trapped link cannot silently sign you in to someone else's account.
+- **Changer de mot de passe** (Change password): the current one, then the new one. Other devices are signed out
+  (within an hour at most): sign them in again with the new password, their data stays.
+- **Se déconnecter** (Sign out): the data stays on this device, it simply no longer syncs.
+- **Supprimer mon compte** (Delete my account): StreamHub asks for your password (or vault password) again, then
+  erases your account, your vault and your synced data. What is on the device stays.
+
+### End-to-end encryption
+
+Accounts are handled by **Supabase** (a database host). Your data is **encrypted in your browser** (AES-256-GCM)
+before being sent, with a randomly generated **vault key**. That key is itself stored twice, locked: by a key derived
+from your password (PBKDF2, 600,000 iterations) and by a key derived from your recovery key. Your real password never
+leaves the device: Supabase receives another secret derived from it. Supabase therefore only sees your email address,
+unreadable data, its size and the date of the last change: neither it nor anyone else can read your keys or lists
+without your password or recovery key. That is also why a forgotten password **without** a recovery key loses the
+synced data (data still on a device stays, and goes into a new account).
+
+On each device, the vault key is kept by the browser in a **non-extractable** form (IndexedDB): StreamHub can use it,
+but nobody can copy it, not even code that might have slipped into the page (version 2.3.4; in the iPhone app: Apple's
+keychain). The page can also only contact the servers StreamHub needs (security rules, "Content-Security-Policy", in
+`index.html`).
+
+### Before accounts: the sync code
+
+Up to version 2.0.0, sync used a **20-character code**. It no longer exists since version 2.1.0: it is an account or
+nothing (guest). Nothing is lost: each device kept its data. Create your account on one of them, then sign in on the
+others: their lists are merged into the account.
+
+---
+
+## 7. How StreamHub opens titles
+
+No platform provides a player another site can use, and videos are protected (DRM): only their apps and official
+sites can play them. StreamHub therefore opens the title **on the platform**, with the most precise link possible:
+
+1. **Streaming Availability** (with your key): a direct link to the video, series or episode.
+2. Otherwise **JustWatch** (through the StreamHub relay): a link to the title or to playback.
+3. Otherwise a **search** for the title on the platform, or its home page.
+
+The first two sources are queried at the same time when a title page opens. If you click "Watch on…" before they
+answer, StreamHub waits for the right link (4 seconds at most) instead of opening the search.
+
+For safety, only web links (`https://`, `http://`) received from these services are kept: an address of another type
+(`javascript:`…) is ignored and never opened (version 2.3.3, site and iPhone app).
+
+### Resuming a series
+
+For a series, "Watch on…" starts the **next episode**, where you left off, or episode 1 if you never watched it.
+StreamHub cannot read your progress on the platforms (they have no public API, and your progress is behind your
+sign-in): it sends them the link they know how to resume themselves.
+
+| Platform | How the series resumes |
 |---|---|
-| **Netflix** | Lien vers la série (et non vers l'épisode 1) : Netflix lance l'épisode suivant |
-| **Prime Video** | Lien de lecture de la série : Prime Video reprend où tu t'es arrêté (site et appli) |
-| **Canal+** | Fiche de la série avec lecture automatique : Canal+ lance son bouton « Reprendre » |
-| **Disney+** | Page de la série, qui affiche « Reprendre S1 E7 » (ou « Lecture ») ; sur ordinateur, le [script](#8-le-script--reprise-après-connexion-) appuie dessus à ta place, sur iPhone et iPad il reste un appui |
-| **TF1+**, **M6+** | Pas de reprise par lien : StreamHub lance l'épisode qui suit le dernier que tu as regardé **depuis StreamHub** (chaque épisode lancé y est noté), grâce à son index des épisodes |
+| **Netflix** | Link to the series (not to episode 1): Netflix starts the next episode |
+| **Prime Video** | Playback link for the series: Prime Video resumes where you left off (site and app) |
+| **Canal+** | Series page with autoplay: Canal+ triggers its "Reprendre" (Resume) button |
+| **Disney+** | Series page, which shows "Reprendre S1 E7" (or "Lecture"); on a computer, the [script](#8-the-resume-after-sign-in-script) presses it for you, on iPhone and iPad one tap remains |
+| **TF1+**, **M6+** | No resuming by link: StreamHub starts the episode after the last one you watched **from StreamHub** (each episode started is recorded there), thanks to its episode index |
 
-### Sur ordinateur
+### On a computer
 
-Chaque plateforme s'ouvre dans son propre onglet (un seul onglet Netflix, un seul onglet Canal+…).
+Each platform opens in its own tab (a single Netflix tab, a single Canal+ tab…).
 
-| Plateforme | Ce qui se passe |
+| Platform | What happens |
 |---|---|
-| **Netflix**, **Disney+** | La page du titre ou la lecture, selon le lien disponible |
-| **Prime Video** | La lecture démarre, sur le site ou dans l'appli Prime Video selon le réglage « Ouvrir les titres » |
-| **Canal+** | La fiche du titre s'ouvre et lance la lecture (son coupé au départ) |
-| **TF1+**, **M6+** | La vidéo ou la page du programme ; pour les épisodes, StreamHub retrouve leur lien grâce à son index ([partie 11](#publication-et-index-tf1-m6-chaînes-de-canal)) |
-| **Autres** | La page du titre, une recherche ou l'accueil de la plateforme |
+| **Netflix**, **Disney+** | The title page or playback, depending on the available link |
+| **Prime Video** | Playback starts, on the site or in the Prime Video app depending on the "Open titles" setting |
+| **Canal+** | The title page opens and starts playback (muted at first) |
+| **TF1+**, **M6+** | The video or the program page; for episodes, StreamHub finds their link thanks to its index ([part 11](#publishing-and-indexes-tf1-m6-canal-channels-top-titles)) |
+| **Others** | The title page, a search, or the platform's home page |
 
-Un site qui n'est pas celui d'une plateforme connue (lien d'une plateforme moins courante, TMDB…) s'ouvre dans un
-onglet indépendant de StreamHub : il ne peut pas modifier l'onglet StreamHub.
+A site that is not a known platform's (a less common platform's link, TMDB…) opens in a tab independent from
+StreamHub: it cannot change the StreamHub tab.
 
-Si la plateforme te demande de te connecter ou de choisir un profil, elle oublie souvent le titre demandé : le
-**script « reprise après connexion »** le rouvre tout seul ([partie 8](#8-le-script--reprise-après-connexion-)).
-Sans lui, une barre **« ▶ Relancer »** permet de le rouvrir en un clic une fois connecté.
+If the platform asks you to sign in or choose a profile, it often forgets the requested title: the **"resume after
+sign-in" script** reopens it automatically ([part 8](#8-the-resume-after-sign-in-script)). Without it, a
+**"▶ Relancer"** (Relaunch) bar lets you reopen it in one click once signed in.
 
-### Sur iPhone et iPad
+### On iPhone and iPad
 
-Depuis l'appli de l'écran d'accueil, « Regarder sur… » ouvre **directement l'appli de la plateforme** si elle est
-installée, sinon son site sur la bonne page. StreamHub utilise les adresses que chaque plateforme a déclarées à
-Apple pour son appli :
+From the home screen app, "Watch on…" opens **the platform's app directly** if it is installed, otherwise its site on
+the right page. StreamHub uses the addresses each platform has declared to Apple for its app:
 
-- **Netflix**, **Prime Video**, **Disney+** et **Canal+** ouvrent leur appli sur le titre.
-- Les épisodes **M6+** s'ouvrent dans l'appli M6+ (avec retour au site si elle n'est pas installée).
-- Les applis **TF1+** et **M6+** n'ouvrent parfois que leur accueil ou la fiche du programme.
+- **Netflix**, **Prime Video**, **Disney+** and **Canal+** open their app on the title.
+- **M6+** episodes open in the M6+ app (falling back to the site if it is not installed).
+- The **TF1+** and **M6+** apps sometimes only open their home page or the program page.
 
-Astuce : un appui long sur un bouton « Regarder sur… » montre l'adresse et, quand iOS la reconnaît, propose
-« Ouvrir dans *l'appli* ».
+Tip: a long press on a "Watch on…" button shows the address and, when iOS recognizes it, offers "Open in *the app*".
 
-### Sur Android
+### On Android
 
-Les boutons ouvrent l'appli de la plateforme quand elle est installée, sinon son site.
+The buttons open the platform's app when it is installed, otherwise its site.
 
 ---
 
-## 8. Le script « reprise après connexion »
+## 8. The "resume after sign-in" script
 
-Quand tu lances un titre depuis StreamHub et que la plateforme te demande d'abord de te connecter ou de choisir ton
-profil (code PIN compris), elle t'envoie ensuite sur son accueil et oublie le titre. Ce petit script s'en souvient :
-une fois connecté et le profil choisi, il ouvre le titre demandé. Il sert surtout **sur ordinateur**.
+When you start a title from StreamHub and the platform first asks you to sign in or choose your profile (PIN code
+included), it then sends you to its home page and forgets the title. This small script remembers it: once you are
+signed in and the profile is chosen, it opens the requested title. It is mostly useful **on a computer**.
 
-Il fait aussi trois choses de plus :
-- il rouvre une fois le titre quand M6+ affiche son accueil, ou TF1+ la fiche du programme, au lieu de la vidéo ;
-- sur le site Prime Video, si la lecture a été demandée mais que la fiche reste affichée, il appuie une fois sur
-  « Reprendre » ou « Lecture » ;
-- sur Disney+, quand tu lances une série, il appuie sur « Reprendre » (ou « Lecture ») sur la page de la série :
-  la série reprend à l'épisode suivant.
+It also does three more things:
+- it reopens the title once when M6+ shows its home page, or TF1+ the program page, instead of the video;
+- on the Prime Video site, if playback was requested but the title page stays on screen, it presses "Reprendre" or
+  "Lecture" once;
+- on Disney+, when you start a series, it presses "Reprendre" (or "Lecture") on the series page: the series resumes
+  at the next episode.
 
-Il ne tourne que sur StreamHub et sur les sites des plateformes et de leur connexion (depuis la version 3.2 ; avant,
-sur tous les sites). Il n'agit que dans un parcours lancé depuis StreamHub (moins de 15 minutes, lien vers la
-plateforme du site ouvert), n'envoie rien sur Internet et ne garde, dans ton navigateur, que l'adresse du titre
-lancé. Une fois installé, la ligne « Script… installé » apparaît dans
-Réglages → Pays et lecture, et la barre « Relancer » ne s'affiche plus.
+It only runs on StreamHub and on the platforms' sites and their sign-in pages (since version 3.2; before, on every
+site). It only acts during a flow started from StreamHub (less than 15 minutes, a link to the platform of the open
+site), sends nothing over the Internet, and only keeps, in your browser, the address of the title you started. Once
+installed, the line "Script… installé" (Script… installed) appears in Settings → Pays et lecture, and the "Relaunch"
+bar is no longer shown.
 
-| Navigateur | Installation |
+| Browser | Installation |
 |---|---|
-| **Safari** (Mac, iPhone, iPad) | Appli gratuite **Userscripts** (App Store), activée dans les extensions de Safari, puis ouvrir le script |
-| **Chrome, Edge, Brave, Opera** (Windows, Mac, Linux) | Extension **Violentmonkey** ou **Tampermonkey**, puis ouvrir le script ; ou l'extension du dossier `extension/` |
-| **Firefox** (Windows, Mac, Linux) | Module **Violentmonkey** ou **Tampermonkey**, puis ouvrir le script |
+| **Safari** (Mac, iPhone, iPad) | Free **Userscripts** app (App Store), enabled in Safari's extensions, then open the script |
+| **Chrome, Edge, Brave, Opera** (Windows, Mac, Linux) | **Violentmonkey** or **Tampermonkey** extension, then open the script; or the extension in the `extension/` folder |
+| **Firefox** (Windows, Mac, Linux) | **Violentmonkey** or **Tampermonkey** add-on, then open the script |
 
-Adresse du script : **https://arthursavournin.github.io/streamhub/streamhub-reprise.user.js** (il se met ensuite à
-jour tout seul). Dans Chrome et Edge, il peut falloir activer **« Autoriser les scripts utilisateur »** dans les
-détails de l'extension Violentmonkey ou Tampermonkey.
+Script address: **https://arthursavournin.github.io/streamhub/streamhub-reprise.user.js** (it then updates itself).
+In Chrome and Edge, you may need to turn on **"Allow user scripts"** in the Violentmonkey or Tampermonkey extension
+details.
 
-Le pas à pas complet pour chaque navigateur est dans **[extension/README.md](extension/README.md)**.
-
----
-
-## 9. Tes données et ta vie privée
-
-Le détail est dans la **[politique de confidentialité](https://arthursavournin.github.io/streamhub/confidentialite.html)**
-(aussi : [mentions légales](https://arthursavournin.github.io/streamhub/mentions-legales.html) et
-[conditions d'utilisation](https://arthursavournin.github.io/streamhub/conditions.html), liens en bas des réglages).
-
-- **Compte facultatif** : en invité, tout est stocké dans ton navigateur (localStorage). Avec un compte, une copie
-  **chiffrée de bout en bout** est gardée chez Supabase ([partie 6](#chiffrement-de-bout-en-bout)).
-- **Ce qui sort de ton appareil** : les recherches et fiches demandées à TMDB et Streaming Availability (avec tes
-  clés), les demandes de liens au relais (identifiant TMDB et titre du film ou de la série), quand tu choisis un mot de
-  passe les 5 premiers caractères de son empreinte (Have I Been Pwned, [partie 6](#créer-un-compte-ou-se-connecter))
-  et, avec un compte, ton adresse e-mail et tes données synchronisées, chiffrées avant l'envoi.
-- **Aucune publicité, aucun pistage, aucune statistique.**
-- **Redémarrer ou fermer le navigateur ne fait rien perdre.** On perd les données d'un navigateur si on efface les
-  données des sites, en navigation privée, et dans Safari si StreamHub n'est pas ouvert pendant 7 jours d'utilisation
-  de Safari (protection anti-pistage d'Apple ; l'appli de l'écran d'accueil n'est pas concernée). Dans tous les cas,
-  ton compte remet tout en place : il suffit de te reconnecter.
+The full step-by-step guide for each browser is in **[extension/README.md](extension/README.md)** (in French).
 
 ---
 
-## 10. Dépannage
+## 9. Your data and privacy
 
-**Je n'ai pas la dernière version.**
-La version s'affiche en bas des réglages. StreamHub se met à jour quand tu reviens dessus : s'il trouve une nouvelle
-version, la page se recharge, après la fermeture des réglages ou de la fiche si l'une est ouverte. Sinon, recharge la
-page (⌘R sur Mac, Ctrl+R ou F5 sous Windows et Linux). Sur iPhone, ferme complètement l'appli de l'écran d'accueil
-(balaie-la vers le haut dans le sélecteur d'applis), puis rouvre-la.
+The details are in the **[privacy policy](https://arthursavournin.github.io/streamhub/confidentialite.html)** (also:
+[legal notice](https://arthursavournin.github.io/streamhub/mentions-legales.html) and
+[terms of use](https://arthursavournin.github.io/streamhub/conditions.html), linked at the bottom of the settings;
+these pages are in French).
 
-**« Clé TMDB invalide », ou aucun titre ne s'affiche.**
-Vérifie la clé dans Réglages → Clés API avec le bouton Tester. Les clés v3 (32 caractères) et les jetons v4 (longs,
-commençant par `eyJ`) fonctionnent.
-
-**Le bouton ouvre la fiche au lieu de lancer la vidéo.**
-Ça dépend du lien disponible (voir l'indication sous le bouton). Une clé Streaming Availability donne plus souvent
-la « Lecture directe ». TF1+ et M6+ ne permettent pas toujours de lancer une vidéo par un lien.
-
-**La plateforme me demande de me connecter, puis reste sur son accueil.**
-Installe le script « reprise après connexion », ou utilise la barre « ▶ Relancer » une fois connecté.
-
-**Sur iPhone, le site de la plateforme s'ouvre au lieu de son appli.**
-Ouvre StreamHub depuis son icône de l'écran d'accueil (pas dans Safari), et vérifie que l'appli de la plateforme est
-installée. Si iOS a été réglé pour ouvrir ce site dans Safari, fais un appui long sur le bouton et choisis
-« Ouvrir dans *l'appli* » : iOS s'en souviendra.
-
-**Sur ordinateur, Prime Video s'ouvre dans l'appli alors que je veux le site (ou l'inverse).**
-Choisis dans Réglages → Pays et lecture → Ouvrir les titres.
-
-**« … n'est disponible sur aucune plateforme de streaming dans ce pays », alors que le titre est sorti.**
-JustWatch ne l'a pas encore référencé dans ton pays. StreamHub le complète tout seul pour les séries des grandes
-plateformes et avec une clé Streaming Availability (voir [La fiche d’un titre](#la-fiche-dun-titre)) ; sinon,
-il apparaîtra quand JustWatch l'aura ajouté, en général sous quelques jours.
-
-**Un titre s'affiche avec un titre anglais.**
-TMDB n'a pas encore de titre français pour lui. Quand son titre d'origine est écrit dans un autre alphabet (hindi,
-coréen, japonais…), StreamHub affiche le titre, le résumé et l'affiche de la version anglaise, souvent ceux qu'utilise
-la plateforme en France (exemple : « Reporting Live » sur Netflix). Un titre d'origine en alphabet latin (espagnol,
-italien…) est gardé tel quel.
-
-**« Quota Streaming Availability atteint ».**
-L'offre gratuite est limitée par jour : StreamHub utilise les liens JustWatch en attendant le lendemain.
-
-**Mes listes ont disparu.**
-Les données du navigateur ont été effacées ([partie 9](#9-tes-données-et-ta-vie-privée)) : reconnecte-toi à ton
-compte.
-
-**Je ne reçois pas l'e-mail de confirmation ou de mot de passe oublié.**
-Regarde dans les indésirables, attends quelques minutes (le nombre d'e-mails par heure est limité), puis **Renvoyer
-l'e-mail**. Le lien ne sert qu'une fois et expire au bout d'une heure.
-
-**« Mot de passe trop court » ou « figure dans des fuites de données connues ».**
-Un nouveau mot de passe doit faire 12 caractères au moins et ne jamais avoir fuité ailleurs : une phrase de quelques
-mots, ou un mot de passe tiré au hasard par ton gestionnaire de mots de passe, convient.
-
-**« Ce lien est-il pour toi ? »**
-Le lien de l'e-mail a été ouvert ailleurs que là où il a été demandé. Vérifie l'adresse affichée : si c'est la tienne,
-continue ; sinon, ignore le lien.
-
-**« Connexion commencée dans un autre navigateur ».**
-La connexion Google / GitHub doit se terminer dans le navigateur où elle a commencé : recommence depuis celui-ci.
-
-**Le problème persiste ?**
-Ouvre un ticket sur GitHub : **[Issues → New issue](https://github.com/arthursavournin/streamhub/issues/new)**, en
-indiquant ton appareil, ton navigateur et la version de StreamHub.
+- **Optional account**: as a guest, everything is stored in your browser (localStorage). With an account, an
+  **end-to-end encrypted** copy is kept at Supabase ([part 6](#end-to-end-encryption)).
+- **What leaves your device**: searches and title pages requested from TMDB and Streaming Availability (with your
+  keys), link requests to the relay (TMDB identifier and title of the movie or series), when you choose a password the
+  first 5 characters of its hash (Have I Been Pwned, [part 6](#creating-an-account-or-signing-in)) and, with an
+  account, your email address and your synced data, encrypted before sending.
+- **No ads, no tracking, no analytics.**
+- **Restarting or closing the browser loses nothing.** A browser's data is lost if you clear site data, in private
+  browsing, and in Safari if StreamHub is not opened during 7 days of Safari use (Apple's anti-tracking protection; the
+  home screen app is not affected). In every case, your account puts everything back: just sign in again.
 
 ---
 
-## 11. Pour les développeurs
+## 10. Troubleshooting
 
-### Principe
+**I don't have the latest version.**
+The version is shown at the bottom of the settings. StreamHub updates itself when you come back to it: if it finds a
+new version, the page reloads, after the settings or title page are closed if one is open. Otherwise, reload the page
+(⌘R on Mac, Ctrl+R or F5 on Windows and Linux). On iPhone, fully close the home screen app (swipe it up in the app
+switcher), then reopen it.
 
-Pas de framework ni d'étape de compilation : du HTML, du CSS et des modules JavaScript servis tels quels. Le site est
-publié sur **GitHub Pages**, un petit **relais Cloudflare Workers** fournit les liens JustWatch, et **Supabase** gère
-les comptes (Auth et deux tables, chiffrées de bout en bout).
+**"Clé TMDB invalide" (Invalid TMDB key), or no title shows up.**
+Check the key in Settings → Clés API with the Test button. Both v3 keys (32 characters) and v4 tokens (long, starting
+with `eyJ`) work.
 
-### Lancer StreamHub sur ton ordinateur
+**The button opens the title page instead of starting the video.**
+It depends on the available link (see the hint under the button). A Streaming Availability key more often gives
+"Lecture directe". TF1+ and M6+ do not always allow starting a video from a link.
 
-Il suffit d'un serveur web local dans le dossier du projet. Python est installé d'office sur Mac et sur la plupart
-des Linux ; sous Windows, installe-le depuis https://www.python.org ou le Microsoft Store.
+**The platform asks me to sign in, then stays on its home page.**
+Install the "resume after sign-in" script, or use the "▶ Relancer" bar once signed in.
 
-- **Mac** : double-clique sur `lancer.command` (la première fois : clic droit → Ouvrir), ou dans le Terminal :
+**On iPhone, the platform's site opens instead of its app.**
+Open StreamHub from its home screen icon (not in Safari), and check that the platform's app is installed. If iOS was
+set to open this site in Safari, long-press the button and choose "Open in *the app*": iOS will remember it.
+
+**On a computer, Prime Video opens in the app when I want the site (or the other way round).**
+Choose in Settings → Pays et lecture → Ouvrir les titres.
+
+**"… n'est disponible sur aucune plateforme de streaming dans ce pays" (… is not available on any streaming platform
+in this country), although the title is out.**
+JustWatch has not listed it in your country yet. StreamHub fills it in automatically for the big platforms' series and
+with a Streaming Availability key (see [A title's page](#a-titles-page)); otherwise it will appear once JustWatch adds
+it, usually within a few days.
+
+**A title is shown with an English title.**
+TMDB has no French title for it yet. When its original title is written in another script (Hindi, Korean,
+Japanese…), StreamHub shows the title, summary and poster of the English version, often the ones the platform uses in
+France (example: "Reporting Live" on Netflix). An original title in the Latin alphabet (Spanish, Italian…) is kept as
+is.
+
+**"Quota Streaming Availability atteint" (Streaming Availability quota reached).**
+The free plan is limited per day: StreamHub uses JustWatch links until the next day.
+
+**My lists are gone.**
+The browser's data was cleared ([part 9](#9-your-data-and-privacy)): sign in to your account again.
+
+**I don't receive the confirmation or forgotten-password email.**
+Check your spam folder, wait a few minutes (the number of emails per hour is limited), then **Renvoyer l'e-mail**
+(Resend the email). The link only works once and expires after an hour.
+
+**"Mot de passe trop court" (Password too short) or "figure dans des fuites de données connues" (appears in known data
+breaches).**
+A new password must be at least 12 characters long and must never have leaked elsewhere: a phrase of a few words, or
+a password generated by your password manager, will do.
+
+**"Ce lien est-il pour toi ?" (Is this link for you?)**
+The email link was opened somewhere other than where it was requested. Check the address shown: if it is yours,
+continue; otherwise, ignore the link.
+
+**"Connexion commencée dans un autre navigateur" (Sign-in started in another browser).**
+Google / GitHub sign-in must finish in the browser where it started: start again from that one.
+
+**Still stuck?**
+Open an issue on GitHub: **[Issues → New issue](https://github.com/arthursavournin/streamhub/issues/new)**, with your
+device, browser and StreamHub version.
+
+---
+
+## 11. For developers
+
+### Principle
+
+No framework and no build step: HTML, CSS and JavaScript modules served as is. The site is published on **GitHub
+Pages**, a small **Cloudflare Workers relay** provides the JustWatch links, and **Supabase** handles accounts (Auth and
+two tables, end-to-end encrypted).
+
+### Running StreamHub on your computer
+
+All you need is a local web server in the project folder. Python comes preinstalled on Mac and most Linux
+distributions; on Windows, install it from https://www.python.org or the Microsoft Store.
+
+- **Mac**: double-click `lancer.command` (the first time: right-click → Open), or in Terminal:
   ```bash
   cd streamhub
   python3 -m http.server 8080
   ```
-- **Windows** (PowerShell ou Invite de commandes) :
+- **Windows** (PowerShell or Command Prompt):
   ```powershell
   cd streamhub
   py -m http.server 8080
   ```
-- **Linux** :
+- **Linux**:
   ```bash
   cd streamhub
   python3 -m http.server 8080
   ```
 
-Puis ouvre **http://localhost:8080**. Le relais accepte les appels venant de `localhost:8080`.
+Then open **http://localhost:8080**. The relay accepts calls coming from `localhost:8080`.
 
-### Organisation du code
+### Code layout
 
-| Fichier | Rôle |
+| File | Role |
 |---|---|
-| `index.html`, `styles.css` | Structure et styles de l'interface (effet verre à la fin de `styles.css`) |
-| `app.js` | Toute l'interface : pages, fiches, saisons, lancement sur les plateformes, listes, réglages |
-| `api.js` | Appels TMDB, Streaming Availability et relais ; tests des clés |
-| `providers.js` | Plateformes, liens de secours, forme des liens selon l'appareil (iPhone, appli de l'ordinateur, site) |
-| `library.js` | Ma liste, J'aime, historique, téléchargements, questions au retour |
-| `store.js` | Réglages, bibliothèque et cache dans le navigateur |
-| `sync.js` | Synchronisation chiffrée entre appareils par le compte : chiffrement, fusion, envoi conditionnel |
-| `account.js` | Comptes Supabase (Auth et base, appels HTTP directs) : inscription, connexion, coffre, clé de secours |
-| `account-ui.js` | Réglages → Compte |
-| `supabase/schema.sql` | Tables `vaults` et `sync_data`, règles d'accès (chacun sa ligne), `delete_my_account`, `keepalive`, droits par défaut fermés pour les futurs objets |
-| `mentions-legales.html`, `confidentialite.html`, `conditions.html`, `legal.css` | Pages légales (LCEN, RGPD, conditions d'utilisation demandées par Google pour la connexion) |
-| `supabase/menage.sql` | Ménage quotidien (pg_cron) : durées de conservation annoncées dans la politique |
-| `supabase/templates/` | E-mails en français (confirmation, mot de passe oublié), à coller dans Supabase : Authentication → Emails → Templates |
-| `episodes.js` | Liens directs vers les épisodes TF1+ et M6+ (index publié dans `data/`) |
-| `aliases.js` | Recherche par surnom ou sigle (liste intégrée + Wikidata) |
-| `search.js` | Correction des fautes de frappe, numéro de film, ordre des sagas |
-| `suggestions.js` | Onglet Suggestions de la fiche : saga, même univers (films et séries), même genre |
-| `nav.js` | Navigation aux flèches (clavier, télécommande) |
-| `sw.js`, `manifest.webmanifest`, icônes | Installation en appli (PWA), cache hors ligne et mises à jour |
-| `relay/worker.js` | Relais Cloudflare Workers (liens JustWatch) |
-| `extension/` | Script « reprise après connexion » et extension Chrome |
-| `scripts/` | Index des épisodes TF1+ / M6+, publication du relais |
+| `index.html`, `styles.css` | Interface structure and styles (glass effect at the end of `styles.css`) |
+| `app.js` | The whole interface: pages, title pages, seasons, launching on platforms, lists, settings |
+| `api.js` | TMDB, Streaming Availability and relay calls; key tests |
+| `providers.js` | Platforms, fallback links, link shape per device (iPhone, computer app, site) |
+| `library.js` | My list, Likes, history, downloads, questions on return |
+| `store.js` | Settings, library and cache in the browser |
+| `sync.js` | Encrypted sync between devices through the account: encryption, merging, conditional upload |
+| `account.js` | Supabase accounts (Auth and database, direct HTTP calls): sign-up, sign-in, vault, recovery key |
+| `account-ui.js` | Settings → Account |
+| `supabase/schema.sql` | `vaults` and `sync_data` tables, access rules (one row each), `delete_my_account`, `keepalive`, closed default privileges for future objects |
+| `mentions-legales.html`, `confidentialite.html`, `conditions.html`, `legal.css` | Legal pages (French law LCEN, GDPR, terms of use required by Google for sign-in) |
+| `supabase/menage.sql` | Daily cleanup (pg_cron): retention periods stated in the policy |
+| `supabase/templates/` | Emails in French (confirmation, forgotten password), to paste into Supabase: Authentication → Emails → Templates |
+| `episodes.js` | Direct links to TF1+ and M6+ episodes (index published in `data/`) |
+| `aliases.js` | Search by nickname or acronym (built-in list + Wikidata) |
+| `search.js` | Typo correction, movie number, saga order |
+| `suggestions.js` | The title page's Suggestions tab: saga, same universe (movies and series), same genre |
+| `nav.js` | Arrow navigation (keyboard, remote) |
+| `sw.js`, `manifest.webmanifest`, icons | App installation (PWA), offline cache and updates |
+| `relay/worker.js` | Cloudflare Workers relay (JustWatch links) |
+| `extension/` | "Resume after sign-in" script and Chrome extension |
+| `scripts/` | TF1+ / M6+ episode indexes, relay publishing |
 
-### Publication et index (TF1+, M6+, chaînes de Canal+, top du moment)
+### Publishing and indexes (TF1+, M6+, Canal+ channels, top titles)
 
-Le site est publié par `.github/workflows/pages.yml` à chaque modification de la branche `main` et **toutes les
-6 heures**. À chaque publication, `scripts/build_episode_index.py` lit les plans de site publics de TF1+ et M6+ et
-écrit `data/<plateforme>/<programme>.json` (numéro d'épisode, saison-épisode et date → lien de l'épisode) : les liens
-d'épisode de ces plateformes contiennent un identifiant interne impossible à deviner.
+The site is published by `.github/workflows/pages.yml` on every change to the `main` branch and **every 6 hours**. On
+each publication, `scripts/build_episode_index.py` reads the public sitemaps of TF1+ and M6+ and writes
+`data/<platform>/<program>.json` (episode number, season-episode and date → episode link): these platforms' episode
+links contain an internal identifier that cannot be guessed.
 
-Le même script écrit `data/canal/hbo.json`, `appletv.json` et `paramount.json` : le catalogue de chaque chaîne de
-Canal+ (titre simplifié → adresse de la fiche, films et séries à part), lu dans les grilles de sa page sur Canal+.
-Sur Canal+, la fiche d'un titre sur une chaîne a une adresse sans rapport avec sa fiche Canal VOD, et Canal+
-n'autorise pas les autres sites à utiliser sa recherche.
+The same script writes `data/canal/hbo.json`, `appletv.json` and `paramount.json`: the catalog of each Canal+ channel
+(simplified title → page address, movies and series separately), read from the grids of its page on Canal+. On
+Canal+, a title's page on a channel has an address unrelated to its Canal VOD page, and Canal+ does not let other
+sites use its search.
 
-Il écrit aussi `data/search/titles.json` : environ 28 000 titres populaires (exports quotidiens publics de TMDB et
-titres français de JustWatch), auxquels la recherche compare ce que tu tapes pour proposer une correction.
+It also writes `data/search/titles.json`: about 28,000 popular titles (TMDB's public daily exports and JustWatch's
+French titles), which search compares your query with to suggest a correction.
 
-Il écrit enfin `data/top/<pays>.json` : le classement « populaire » de JustWatch (environ 500 titres en streaming par
-abonnement ou gratuits, avec leurs plateformes) pour chaque pays des réglages. Le Top 50 du moment en garde les
-premiers titres disponibles sur tes abonnements.
+Finally it writes `data/top/<country>.json`: JustWatch's "popular" ranking (about 500 subscription or free streaming
+titles, with their platforms) for each country in the settings. The Top 50 right now keeps its first titles available
+on your subscriptions.
 
-GitHub met en pause les tâches planifiées d'un dépôt sans commit depuis 60 jours : le workflow la réactive à chaque
-passage, pour que l'index continue de se mettre à jour.
+GitHub pauses scheduled jobs in a repository with no commit for 60 days: the workflow re-enables it on every run so
+that the index keeps updating.
 
-Les actions du workflow sont épinglées par empreinte de commit (version en commentaire), et seul le travail de
-publication (`deploy`) a le droit d'écrire sur GitHub Pages. La branche `main` est protégée (règle « Protéger main » :
-ni suppression, ni réécriture de l'historique).
+The workflow's actions are pinned by commit hash (version in a comment), and only the publishing job (`deploy`) may
+write to GitHub Pages. The `main` branch is protected ("Protéger main" rule: no deletion, no history rewrite).
 
 ### Version
 
-Le numéro de version est dans `app.js` (`APP_VERSION`) et `sw.js` (`SHELL_CACHE`) : les deux changent ensemble à
-chaque publication, ce qui déclenche la mise à jour chez les utilisateurs. Numérotation : 1.0.1, 1.0.2… pour une
-correction, 1.1.0 pour une nouvelle fonction. Le script « reprise après connexion » a son propre numéro
-(`@version` et `extension/manifest.json`), qui ne doit jamais redescendre : les gestionnaires de scripts ne mettent
-à jour que vers un numéro plus grand.
+The version number is in `app.js` (`APP_VERSION`) and `sw.js` (`SHELL_CACHE`): both change together on each
+publication, which triggers the update for users. Numbering: 1.0.1, 1.0.2… for a fix, 1.1.0 for a new feature. The
+"resume after sign-in" script has its own number (`@version` and `extension/manifest.json`), which must never go down:
+script managers only update to a higher number.
 
-### Le relais (Cloudflare Workers)
+### The relay (Cloudflare Workers)
 
-`relay/worker.js` est publié sur https://streamhub-relay.arthursavournin.workers.dev (offre gratuite Cloudflare :
-100 000 requêtes par jour). Il donne les **liens JustWatch** (`/offers`) : JustWatch refuse les appels venant
-d'autres sites, le relais l'interroge à la place du navigateur. Seules les réponses trouvées sont gardées 6 heures
-(un titre faux ne peut pas cacher les liens d'un film). Il limite chaque adresse IP à 30 questions à JustWatch par
-minute (liaison `LIMITER`, limite de débit de Cloudflare). Il ne stocke rien (son ancienne route `/sync/<id>`, pour le
-code de synchronisation d'avant la version 2.1.0, a été supprimée en version 2.3.3, avec son espace Workers KV).
+`relay/worker.js` is published at https://streamhub-relay.arthursavournin.workers.dev (Cloudflare free plan: 100,000
+requests per day). It provides **JustWatch links** (`/offers`): JustWatch refuses calls coming from other sites, so the
+relay queries it instead of the browser. Only answers that found something are kept for 6 hours (a wrong title cannot
+hide a movie's links). It limits each IP address to 30 JustWatch questions per minute (`LIMITER` binding, Cloudflare
+rate limiting). It stores nothing (its former `/sync/<id>` route, for the sync code used before version 2.1.0, was
+removed in version 2.3.3, along with its Workers KV namespace).
 
-Il n'accepte que les appels venant de l'adresse de StreamHub et de `localhost:8080`. Une copie de StreamHub publiée
-ailleurs doit publier son propre relais, avec son compte Cloudflare, puis mettre son adresse dans `store.js`
-(`DEFAULT_RELAY`), dans la Content-Security-Policy d'`index.html` et dans l'appli (`Store.swift`, `defaultRelay`).
+It only accepts calls coming from StreamHub's address and from `localhost:8080`. A copy of StreamHub published
+elsewhere must publish its own relay with its own Cloudflare account, then put its address in `store.js`
+(`DEFAULT_RELAY`), in `index.html`'s Content-Security-Policy and in the app (`Store.swift`, `defaultRelay`).
 
-Pour le publier, il faut un jeton Cloudflare (droit « Edit Cloudflare Workers ») et l'identifiant du compte. Rien de
-tout cela n'est enregistré dans le projet.
+To publish it, you need a Cloudflare token ("Edit Cloudflare Workers" permission) and the account ID. None of this is
+saved in the project.
 
-- **Mac, Linux** :
+- **Mac, Linux**:
   ```bash
   CF_API_TOKEN=… CF_ACCOUNT_ID=… scripts/deploy_relay.sh
   ```
-- **Windows** (avec Git Bash, installé avec Git pour Windows, ou WSL) :
+- **Windows** (with Git Bash, installed with Git for Windows, or WSL):
   ```bash
   CF_API_TOKEN=… CF_ACCOUNT_ID=… bash scripts/deploy_relay.sh
   ```
 
-### Sécurité
+### Security
 
-Résultat de l'audit de sécurité d'octobre 2026, à garder en tête en modifiant le code :
+Outcome of the October 2026 security audit, to keep in mind when changing the code:
 
-- **Liens** : toute adresse venue d'un service passe par `webLink` / `safeLink` (`providers.js`) ; un clic sur un
-  lien d'un autre type (`javascript:`…) est bloqué dans `app.js`. Les sites hors plateformes connues
-  (`isPlatformLink`) s'ouvrent avec `noopener`.
-- **Texte et attributs** : tout ce qui vient d'un service passe par `esc` avant `innerHTML` ; les chemins d'images
-  passent par `img` (`api.js`), qui refuse ce qui n'est pas une image TMDB ou un logo de StreamHub.
-- **Content-Security-Policy** (`<meta>` d'`index.html`) : un nouveau serveur appelé par le site doit y être ajouté.
-- **Clés** : la clé du coffre est une `CryptoKey` non extractible dans IndexedDB ; dans l'appli, session, clé du
-  coffre et clés API sont dans le trousseau.
-- **Base** : chaque nouvelle table reçoit RLS et des droits explicites (rien n'est ouvert par défaut).
+- **Links**: any address coming from a service goes through `webLink` / `safeLink` (`providers.js`); a click on a link
+  of another type (`javascript:`…) is blocked in `app.js`. Sites outside known platforms (`isPlatformLink`) open with
+  `noopener`.
+- **Text and attributes**: everything coming from a service goes through `esc` before `innerHTML`; image paths go
+  through `img` (`api.js`), which rejects anything that is not a TMDB image or a StreamHub logo.
+- **Content-Security-Policy** (`<meta>` in `index.html`): a new server called by the site must be added there.
+- **Keys**: the vault key is a non-extractable `CryptoKey` in IndexedDB; in the app, session, vault key and API keys
+  are in the keychain.
+- **Database**: every new table gets RLS and explicit privileges (nothing is open by default).
 
-### Hébergement
+### Hosting
 
-GitHub Pages est gratuit, en HTTPS, et suffit largement (fichiers statiques, 100 Go de trafic par mois) tant que le
-dépôt est public. Pour ne plus dépendre de l'hébergeur, la meilleure amélioration serait un **nom de domaine**
-(une dizaine d'euros par an) pointé vers GitHub Pages ou Cloudflare Pages : l'adresse ne changerait plus jamais.
-Changer d'adresse fait repartir les navigateurs de zéro (le stockage est propre à chaque adresse), mais le compte
-récupère tout (ajouter la nouvelle adresse aux adresses autorisées de Supabase : Authentication → URL Configuration).
+GitHub Pages is free, served over HTTPS, and more than enough (static files, 100 GB of traffic per month) as long as
+the repository is public. To stop depending on the host, the best improvement would be a **domain name** (around ten
+euros a year) pointed at GitHub Pages or Cloudflare Pages: the address would never change again. Changing the address
+makes browsers start from scratch (storage is per address), but the account restores everything (add the new address
+to Supabase's allowed URLs: Authentication → URL Configuration).
 
-### Compatibilité
+### Compatibility
 
-Pensé d'abord pour Safari (Mac, iPhone, iPad), StreamHub fonctionne aussi dans Chrome, Edge et Firefox, sur Mac,
-Windows et Linux. Quelques ajustements ne s'appliquent qu'à ces navigateurs (par exemple des barres de défilement
-fines sous Windows), jamais à Safari : `app.js` pose l'attribut `data-engine` sur la page pour Chrome, Edge et
-Firefox, et les règles correspondantes sont à la fin de `styles.css`.
+Designed first for Safari (Mac, iPhone, iPad), StreamHub also works in Chrome, Edge and Firefox, on Mac, Windows and
+Linux. A few tweaks only apply to those browsers (for example thin scrollbars on Windows), never to Safari: `app.js`
+sets the `data-engine` attribute on the page for Chrome, Edge and Firefox, and the matching rules are at the end of
+`styles.css`.

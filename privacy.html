@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070d1a">
+  <title>Privacy policy · StreamHub</title>
+  <link rel="icon" href="icon.svg?v=3" type="image/svg+xml">
+  <link rel="stylesheet" href="legal.css">
+</head>
+<body>
+  <main class="legal">
+    <div class="legal-top">
+      <a class="brand" href="./"><img src="icon.svg?v=3" alt="" width="32" height="32">StreamHub</a>
+      <nav class="legal-nav" aria-label="Legal pages">
+        <a href="legal-notice.html">Legal notice</a>
+        <a href="privacy.html" aria-current="page">Privacy</a>
+        <a href="terms.html">Terms of use</a>
+        <a href="confidentialite.html" lang="fr">Français</a>
+      </nav>
+    </div>
+
+    <h1>Privacy policy</h1>
+    <p class="updated">Last updated: 22 October 2026 · English translation; the <a href="confidentialite.html">French version</a> prevails.</p>
+
+    <div class="card summary">
+      <p><strong>In short</strong></p>
+      <ul>
+        <li><strong>Without an account (guest)</strong>, StreamHub collects no personal data: everything stays in your
+          browser or on your device.</li>
+        <li><strong>With an account</strong>, StreamHub keeps your email address and a copy of your settings and lists,
+          <strong>end-to-end encrypted</strong>: neither the publisher nor the host can read it.</li>
+        <li>No ads, no tracking, no audience measurement, no selling of data.</li>
+        <li>You can delete your account and its data at any time: Settings → Account → Delete my account.</li>
+      </ul>
+    </div>
+
+    <h2>1. Data controller</h2>
+    <p><strong>Arthur Savournin</strong>, publisher of StreamHub on a non-professional basis.<br>
+      Contact for any question about your data: <a href="mailto:streamhub.projet@gmail.com">streamhub.projet@gmail.com</a>.</p>
+
+    <h2>2. Without an account: nothing leaves your device</h2>
+    <p>Settings, API keys, subscriptions, Likes, My list, history and downloads are saved in your browser’s local
+      storage (<em>localStorage</em>) or in the app. The publisher has no access to them. This storage is strictly
+      necessary for the service you request, so it does not require consent (article 82 of the French Data Protection
+      Act). StreamHub uses no advertising or audience-measurement cookies. You can erase everything by deleting the
+      site’s data in your browser.</p>
+
+    <h2>3. With an account</h2>
+    <h3>Data processed</h3>
+    <ul>
+      <li><strong>Email address</strong>, account creation and last sign-in dates.</li>
+      <li><strong>Password</strong>: your real password never leaves your device. StreamHub derives another secret from
+        it, which Supabase keeps as a (non-reversible) hash.</li>
+      <li><strong>Sessions</strong>: IP address, browser or device type and dates, to keep you signed in and protect your
+        session.</li>
+      <li><strong>Vault and synced data</strong>: settings, API keys, subscriptions, home page, Likes, My list, history
+        and likes on platforms, <strong>encrypted on your device</strong> (AES-256-GCM) with a key that only your
+        password and your recovery key can open. The host only sees unreadable content, its size and the date of its
+        last change.</li>
+    </ul>
+    <h3>Why and on what basis</h3>
+    <p>To create your account, sign you in and sync your data across your devices, i.e. to provide the service set out
+      in the <a href="terms.html">terms of use</a> (performance of a contract, article 6.1.b GDPR). Session information is
+      also used for the security of the service (legitimate interest, article 6.1.f).</p>
+    <h3>How long</h3>
+    <ul>
+      <li>Account and synced data: until you delete your account. An account with no activity at all (sign-in or sync)
+        for <strong>3 years</strong> is deleted automatically.</li>
+      <li>Sign-up never confirmed: deleted after <strong>7 days</strong>.</li>
+      <li>Sessions: until sign-out, and at most <strong>90 days</strong> after their last use.</li>
+      <li>Supabase technical logs (requests, IP addresses): 1 day.</li>
+    </ul>
+
+    <h2>4. Emails</h2>
+    <p>Your email address is only used to send you the messages the account needs: address confirmation and forgotten
+      password. They are sent through <strong>Mailjet</strong> (Sinch group). No newsletter, no commercial messages.</p>
+
+    <h2>5. Signing in with Google or GitHub</h2>
+    <p>If you choose “Continue with Google” or “Continue with GitHub”, that service sends StreamHub your
+      <strong>email address</strong>, your <strong>name</strong> and the address of your <strong>profile picture</strong>.
+      StreamHub only uses the email address, to identify your account; the name and picture are kept as sent by the
+      sign-in service but are not shown, used or shared. StreamHub does not request access to any other data of your
+      Google or GitHub account (no emails, contacts or files), publishes nothing on your behalf and passes this
+      information to no one. Your synced data stays encrypted with your vault password, which Google and GitHub do not
+      know.</p>
+
+    <h2>6. How the site works</h2>
+    <ul>
+      <li><strong>Site hosting</strong>: GitHub Pages records visitors’ IP addresses for the security of its service.</li>
+      <li><strong>StreamHub relay</strong> (Cloudflare): to find links to platforms, your browser sends it the identifier
+        and title of the movie or series. The relay only keeps these answers (a few hours), with no link to you.</li>
+      <li><strong>Services called directly by your browser</strong>: TMDB (catalog and images), Streaming Availability
+        (with your key, if you entered one), Wikidata (search by nickname) and, when you choose to go there, the
+        streaming platforms’ websites. They receive your IP address and what you request, and apply their own privacy
+        rules. Your API keys are only sent to the service concerned.</li>
+      <li><strong>Password check</strong>: when you choose a password, your device checks that it does not appear in known
+        data breaches (Have I Been Pwned service). Only the first 5 characters of a hash of the password are sent, never
+        the password itself or your email address.</li>
+      <li><strong>“Resume after sign-in” script</strong> (optional): it keeps the title’s link in your browser, on the
+        platform’s site, while you sign in. It sends nothing to StreamHub.</li>
+    </ul>
+
+    <h2>7. Recipients and storage locations</h2>
+    <p>The publisher does not sell, rent or share your data with anyone. Only technical providers process it, on his
+      behalf:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Provider</th><th>Role</th><th>Location</th></tr></thead>
+        <tbody>
+          <tr><td>Supabase</td><td>Accounts, synced data (encrypted)</td><td>London (United Kingdom)</td></tr>
+          <tr><td>Mailjet (Sinch)</td><td>Sending account emails</td><td>European Union</td></tr>
+          <tr><td>GitHub</td><td>Site hosting</td><td>United States</td></tr>
+          <tr><td>Cloudflare</td><td>Relay for links to platforms</td><td>Worldwide network</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The United Kingdom benefits from an adequacy decision of the European Commission. Transfers to other countries
+      outside the European Union are covered by the safeguards provided by the GDPR (EU–US Data Privacy Framework or the
+      European Commission’s standard contractual clauses).</p>
+
+    <h2>8. Security</h2>
+    <p>Encrypted connections (HTTPS), end-to-end encrypted synced data, access rules that limit each account to its own
+      data. Keep your password and recovery key to yourself: without them, nobody, not even the publisher, can reopen
+      your synced data.</p>
+
+    <h2>9. Your rights</h2>
+    <p>You can ask to access your data, correct it, erase it, restrict or object to its processing, and get your data
+      back (portability). The simplest way:</p>
+    <ul>
+      <li><strong>Erase</strong>: Settings → Account → Delete my account (immediate erasure of the account, the vault and
+        the synced data).</li>
+      <li><strong>View or get back</strong>: your data can be read in StreamHub on your devices; since it is encrypted,
+        the publisher cannot read it for you.</li>
+      <li>For any other request: <a href="mailto:streamhub.projet@gmail.com">streamhub.projet@gmail.com</a>. Answer within
+        one month at most.</li>
+    </ul>
+    <p>If you believe your rights are not respected, you can file a complaint with the CNIL, the French data protection
+      authority (<a href="https://www.cnil.fr" rel="noopener">cnil.fr</a>, 3 place de Fontenoy, TSA 80715, 75334 Paris
+      Cedex 07, France).</p>
+
+    <h2>10. Minors</h2>
+    <p>You must be at least 15 years old to create an account, or have a parent’s consent under 15 (article 45 of the
+      French Data Protection Act).</p>
+
+    <h2>11. Changes</h2>
+    <p>This policy may change along with StreamHub. The date of the last update is shown at the top of the page; in case
+      of a significant change, StreamHub will let you know.</p>
+
+    <p class="legal-foot"><a href="./">← Back to StreamHub</a> · <a href="legal-notice.html">Legal notice</a> ·
+      <a href="terms.html">Terms of use</a></p>
+  </main>
+</body>
+</html>

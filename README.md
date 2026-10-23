@@ -22,7 +22,7 @@ Disney+, Canal+, TF1+, M6+, france.tv, Arte, Apple TV, Max, Paramount+…
 - Free, no ads, no tracking.
 
 Works on iPhone, iPad, Android, Mac, Windows and Linux, in Safari, Chrome, Edge and Firefox. The interface is in
-French.
+French or English (Settings → Country, language and playback).
 
 ### Installation
 
@@ -59,7 +59,7 @@ platforms' sites, and sends nothing over the Internet.
 | **Chrome, Edge, Brave, Opera** | 1. Install the **Violentmonkey** or **Tampermonkey** extension (the browser's extension store).<br>2. If the extension asks, turn on **"Allow user scripts"** in its details (`chrome://extensions`).<br>3. Open the **[script](https://arthursavournin.github.io/streamhub/streamhub-reprise.user.js)** → **Install**. |
 | **Firefox** | 1. Install the **Violentmonkey** or **Tampermonkey** add-on.<br>2. Open the **[script](https://arthursavournin.github.io/streamhub/streamhub-reprise.user.js)** → **Install**. |
 
-The script then updates itself. To check: reload StreamHub, then **Settings → Pays et lecture** (Country and
+The script then updates itself. To check: reload StreamHub, then **Settings → Pays, langue et lecture** (Country, language and
 playback): the line **"✓ Script « reprise après connexion » installé"** appears. In the iPhone home screen app it is
 not needed: titles open in the platform's app. Details and the Chrome extension without a script manager:
 **[extension/README.md](extension/README.md)** (in French).
@@ -93,7 +93,7 @@ Prime Video, Disney+, Canal+, TF1+, M6+, france.tv, Arte, Apple TV, Max, Paramou
   tous tes appareils. Ou en invité : tout reste dans ton navigateur.
 - Gratuit, sans publicité, sans pistage.
 
-Fonctionne sur iPhone, iPad, Android, Mac, Windows et Linux, dans Safari, Chrome, Edge et Firefox.
+Fonctionne sur iPhone, iPad, Android, Mac, Windows et Linux, dans Safari, Chrome, Edge et Firefox. Interface en français ou en anglais (Réglages → Pays, langue et lecture).
 
 ---
 
@@ -134,7 +134,7 @@ StreamHub et sur les sites des plateformes, et n'envoie rien sur Internet.
 | **Chrome, Edge, Brave, Opera** | 1. Installe l'extension **Violentmonkey** ou **Tampermonkey** (boutique d'extensions du navigateur).<br>2. Si l'extension le demande, active **« Autoriser les scripts utilisateur »** dans ses détails (`chrome://extensions`).<br>3. Ouvre le **[script](https://arthursavournin.github.io/streamhub/streamhub-reprise.user.js)** → **Installer**. |
 | **Firefox** | 1. Installe le module **Violentmonkey** ou **Tampermonkey**.<br>2. Ouvre le **[script](https://arthursavournin.github.io/streamhub/streamhub-reprise.user.js)** → **Installer**. |
 
-Le script se met ensuite à jour tout seul. Pour vérifier : recharge StreamHub, puis **Réglages → Pays et lecture** :
+Le script se met ensuite à jour tout seul. Pour vérifier : recharge StreamHub, puis **Réglages → Pays, langue et lecture** :
 la ligne **« ✓ Script « reprise après connexion » installé »** apparaît. Dans l'appli de l'écran d'accueil de
 l'iPhone, il n'est pas utile : les titres s'ouvrent dans l'appli de la plateforme. Détails et extension Chrome sans
 gestionnaire : **[extension/README.md](extension/README.md)**.

@@ -321,7 +321,7 @@ les actions du compte, elles, s'appliquent tout de suite.
 | **Clés API** | Clé TMDB, clé Streaming Availability, avec un bouton Tester pour chacune. (Le relais StreamHub, pour les liens JustWatch, n'a pas de réglage : son adresse est fixe depuis la version 2.3.4.) |
 | **Accueil** | Rangées affichées sur l'accueil, leur ordre, et le titre à l'affiche. |
 | **Apparence** | Effet verre : Automatique, Transparent ou Teinté (propre à chaque appareil). |
-| **Pays et lecture** | Pays du catalogue (France, Belgique, Suisse, Luxembourg, Canada, Royaume-Uni, États-Unis, Allemagne, Espagne, Italie) et, sur ordinateur, **Ouvrir les titres**. |
+| **Pays, langue et lecture** | Pays du catalogue (France, Belgique, Suisse, Luxembourg, Canada, Royaume-Uni, États-Unis, Allemagne, Espagne, Italie), **langue de l’appli** (français ou anglais, sur cet appareil : toute l’interface, les pages légales, et les titres, résumés et genres venus de TMDB ; changer de langue recharge la page) et, sur ordinateur, **Ouvrir les titres**. |
 | **À propos** | Version, mentions légales, politique de confidentialité, conditions d'utilisation, code source. |
 
 ### Ouvrir les titres (ordinateur)
@@ -506,7 +506,7 @@ Il ne tourne que sur StreamHub et sur les sites des plateformes et de leur conne
 sur tous les sites). Il n'agit que dans un parcours lancé depuis StreamHub (moins de 15 minutes, lien vers la
 plateforme du site ouvert), n'envoie rien sur Internet et ne garde, dans ton navigateur, que l'adresse du titre
 lancé. Une fois installé, la ligne « Script… installé » apparaît dans
-Réglages → Pays et lecture, et la barre « Relancer » ne s'affiche plus.
+Réglages → Pays, langue et lecture, et la barre « Relancer » ne s'affiche plus.
 
 | Navigateur | Installation |
 |---|---|
@@ -567,7 +567,7 @@ installée. Si iOS a été réglé pour ouvrir ce site dans Safari, fais un appu
 « Ouvrir dans *l'appli* » : iOS s'en souviendra.
 
 **Sur ordinateur, Prime Video s'ouvre dans l'appli alors que je veux le site (ou l'inverse).**
-Choisis dans Réglages → Pays et lecture → Ouvrir les titres.
+Choisis dans Réglages → Pays, langue et lecture → Ouvrir les titres.
 
 **« … n'est disponible sur aucune plateforme de streaming dans ce pays », alors que le titre est sorti.**
 JustWatch ne l'a pas encore référencé dans ton pays. StreamHub le complète tout seul pour les séries des grandes

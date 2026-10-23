@@ -1,3 +1,4 @@
+import { LANG, LOCALE, t, startTranslation } from './i18n.js';
 import { loadSettings, saveSettings, HISTORY_MAX } from './store.js';
 import { makeApi, img, testTmdbKey, testSaKey, clearMemo } from './api.js';
 import { syncNow, startAutoSync } from './sync.js';
@@ -11,8 +12,12 @@ import { sagaTitles, universeTitles, genreTitles } from './suggestions.js';
 import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
+// Interface en anglais si choisi (Réglages → Pays, langue et lecture) : traduit la page dès maintenant et tout ce qui
+// s'y ajoutera (voir i18n.js). En français, ne fait rien.
+startTranslation();
+
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.6.3';
+const APP_VERSION = '2.7.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -88,8 +93,8 @@ const dateOf = (item) => item.release_date ?? item.first_air_date ?? '';
 function releaseDate(date, long = false) {
   if (!/^\d{4}-\d{2}-\d{2}/.test(date ?? '')) return year(date);
   const d = new Date(`${date.slice(0, 10)}T12:00:00`);
-  const text = d.toLocaleDateString('fr-FR', { day: 'numeric', month: long ? 'long' : 'short', year: 'numeric' });
-  return d.getDate() === 1 ? text.replace(/^1 /, '1er ') : text;
+  const text = d.toLocaleDateString(LOCALE, { day: 'numeric', month: long ? 'long' : 'short', year: 'numeric' });
+  return d.getDate() === 1 && LANG === 'fr' ? text.replace(/^1 /, '1er ') : text;
 }
 // Les plateformes ne permettent de télécharger que dans leurs applis pour téléphone et tablette
 // (iPhone, iPad, Android) : ni sur ordinateur, ni sur TV.
@@ -218,7 +223,7 @@ function renderTypeSwitch() {
 const measureCanvas = document.createElement('canvas').getContext('2d');
 function fitSelects() {
   for (const sel of document.querySelectorAll('.selects select')) {
-    const text = sel.selectedOptions[0]?.textContent ?? '';
+    const text = t(sel.selectedOptions[0]?.textContent ?? ''); // texte affiché (traduit en anglais)
     const css = getComputedStyle(sel);
     measureCanvas.font = `${css.fontWeight} ${css.fontSize} ${css.fontFamily}`;
     const extra = ['paddingLeft', 'paddingRight', 'borderLeftWidth', 'borderRightWidth'].reduce((sum, k) => sum + parseFloat(css[k]), 0);
@@ -503,7 +508,7 @@ const LIBRARY_TEXT = {
 
 const episodeLabel = (e) => (e.season != null && e.episode != null ? `S${e.season} E${e.episode}` : '');
 
-const relativeTime = new Intl.RelativeTimeFormat('fr', { numeric: 'auto' });
+const relativeTime = new Intl.RelativeTimeFormat(LOCALE, { numeric: 'auto' });
 function ago(timestamp) {
   const minutes = Math.round((timestamp - Date.now()) / 60000);
   if (minutes === 0) return 'à l’instant';
@@ -983,7 +988,7 @@ async function fetchUnlisted(row, types) {
 function latestEpisodeMeta(m) {
   const e = m.latest_episode;
   if (!e?.air_date) return undefined;
-  const day = new Date(`${e.air_date}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  const day = new Date(`${e.air_date}T12:00:00`).toLocaleDateString(LOCALE, { day: 'numeric', month: 'short' });
   return esc(`S${e.season_number} E${e.episode_number} · ${day}`);
 }
 
@@ -1474,7 +1479,7 @@ function seasonsHtml() {
 }
 
 const frDate = (date) =>
-  date ? new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  date ? new Date(`${date}T12:00:00`).toLocaleDateString(LOCALE, { day: 'numeric', month: 'long', year: 'numeric' }) : '';
 
 function episodeHtml(ep) {
   const upcoming = ep.air_date && ep.air_date > new Date().toISOString().slice(0, 10);
@@ -2435,6 +2440,7 @@ function fillSettings() {
   f.region.value = settings.region;
   f.openIn.value = settings.desktopApps ?? settings.primeApp ? 'app' : 'web';
   f.glass.value = settings.glass || 'auto';
+  f.uiLang.value = LANG;
   for (const status of el.settings.querySelectorAll('[data-key-status]')) {
     status.className = 'key-status';
     status.innerHTML = status.dataset.default;
@@ -2480,7 +2486,7 @@ function renderSettingsSummaries() {
   const shown = draftHome.rows.filter((r) => r.on).length;
   summary('home', `${shown} rangée${shown > 1 ? 's' : ''} sur ${draftHome.rows.length} · ${draftHome.hero ? `à l’affiche : ${draftHome.hero.title}` : 'affiche automatique'}`);
   const openIn = !CAN_DOWNLOAD && f.openIn.value === 'app' ? ' · titres dans l’appli' : '';
-  summary('device', `${f.region.selectedOptions[0]?.textContent ?? f.region.value}${openIn}${hasResumeExtension() ? ' · script de reprise installé' : ''}`);
+  summary('device', `${f.region.selectedOptions[0]?.textContent ?? f.region.value} · ${f.uiLang.selectedOptions[0]?.textContent ?? ''}${openIn}${hasResumeExtension() ? ' · script de reprise installé' : ''}`);
 }
 
 // Ouvre la section des réglages qui contient un champ (erreur à corriger, premier lancement…)
@@ -2664,7 +2670,7 @@ function syncedWhen(t) {
   const minutes = Math.round((Date.now() - t) / 60000);
   if (minutes < 1) return 'à l’instant';
   if (minutes < 60) return `il y a ${minutes} min`;
-  return `le ${new Date(t).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}`;
+  return `le ${new Date(t).toLocaleString(LOCALE, { dateStyle: 'short', timeStyle: 'short' })}`;
 }
 
 // Des données sont arrivées d'un autre appareil : on repart des réglages et de la bibliothèque à jour
@@ -2799,10 +2805,13 @@ el.settingsForm.addEventListener('submit', (e) => {
     region: f.region.value,
     desktopApps: f.openIn.value === 'app',
     glass: f.glass.value,
+    uiLang: f.uiLang.value,
     providers: [...draftProviders.values()],
     home: { rows: draftHome.rows, hero: draftHome.hero },
   };
   saveSettings(settings);
+  // Autre langue : la page se recharge dans cette langue
+  if (settings.uiLang !== LANG) return location.reload();
   applyGlass();
   api = makeApi(settings);
   state.filter = defaultFilter();

@@ -3,6 +3,7 @@
 // - Streaming Availability (RapidAPI) : liens directs vers le film ou la série sur chaque plateforme
 // `type` vaut 'movie' (film) ou 'tv' (série), comme dans les URL de TMDB.
 import { cacheGet, cacheSet, relayUrl } from './store.js';
+import { TMDB_LANGUAGE } from './i18n.js';
 import { autoplayLink, providerLogo, webLink, withLogos, withOriginals, withVirtualChannels, withVirtualProviders } from './providers.js';
 
 const TMDB = 'https://api.themoviedb.org/3';
@@ -44,7 +45,7 @@ export const clearMemo = () => memo.clear();
 
 export function makeApi(settings) {
   const region = settings.region;
-  const language = settings.language;
+  const language = TMDB_LANGUAGE ?? settings.language; // interface en anglais : fiches en anglais
 
   function tmdb(path, params = {}) {
     const key = settings.tmdbKey.trim();

@@ -24,7 +24,7 @@ final class AppModel {
     // ou se connecter
     static let progressDelay: TimeInterval = 3 * 60
 
-    // Langue de l'interface (Réglages → Pays, langue et lecture), propre à l'appareil ; change toute l'appli tout de suite
+    // Langue de l'interface (Réglages → Pays et langue), propre à l'appareil ; change toute l'appli tout de suite
     var uiLang = "fr"
 
     init() {

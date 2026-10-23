@@ -2,7 +2,7 @@ import Foundation
 
 // Langue de l'interface (version 2.9.0, comme le site 2.7.0) : français (langue du code) ou anglais.
 // Le français reste écrit dans le code ; chaque texte affiché passe par loc(), qui rend sa traduction anglaise quand
-// l'anglais est choisi (Réglages → Pays, langue et lecture). Textes entiers dans `en`, phrases à trous (nombre, titre,
+// l'anglais est choisi (Réglages → Pays et langue). Textes entiers dans `en`, phrases à trous (nombre, titre,
 // plateforme) dans `patterns` ; un texte « a · b · c » sans traduction entière est traduit morceau par morceau.
 // Tout nouveau texte affiché par l'appli doit être ajouté ici. Réglage propre à l'appareil (settings.uiLang).
 nonisolated enum L10n {
@@ -102,11 +102,15 @@ nonisolated enum L10n {
         "Dernier épisode regardé": "Last episode watched", "Saison": "Season", "Épisode": "Episode", "Enregistrer": "Save",
         "Ignorer": "Ignore", "Tu aimes la série": "You like this series", "J’aime la série": "I like this series",
         // Réglages
-        "Compte": "Account", "Mes abonnements": "My subscriptions", "Clés API": "API keys", "Pays, langue et lecture": "Country, language and playback",
+        "Compte": "Account", "Mes abonnements": "My subscriptions", "Clés API": "API keys", "Pays et langue": "Country and language",
         "À propos": "About", "Tes réglages et tes listes sur tous tes appareils, chiffrés de bout en bout.": "Your settings and lists on all your devices, end-to-end encrypted.",
         "Les clés qui donnent le catalogue et les liens directs vers les vidéos.": "The keys that provide the catalog and the direct links to videos.",
-        "Pays du catalogue, langue de l’appli et ouverture des titres. Le pays suit celui de ta connexion (wifi, VPN, voyage) ; tu peux le changer à la main.":
-            "Catalog country, app language and how titles open. The country follows the one of your connection (Wi-Fi, VPN, travel); you can change it by hand.",
+        "Pays du catalogue et langue de l’appli.": "Catalog country and app language.",
+        "catalogue et plateformes ; suit le pays de ta connexion (wifi, VPN, voyage), modifiable à la main":
+            "catalog and platforms; follows the country of your connection (Wi-Fi, VPN, travel), can be changed by hand",
+        "de l’appli et des fiches, sur cet appareil": "of the app and title pages, on this device",
+        "Les titres s’ouvrent dans l’appli de la plateforme si elle est installée, sinon sur son site.":
+            "Titles open in the platform’s app if it is installed, otherwise on its website.",
         "Version, mentions légales et confidentialité.": "Version, legal notice and privacy.", "Adresse à confirmer": "Address to confirm",
         "Invité : données sur cet iPhone": "Guest: data on this iPhone", "Aucune plateforme cochée": "No platform ticked",
         "TMDB manquante": "TMDB missing", "TMDB ✓": "TMDB ✓", "affiche automatique": "automatic feature",

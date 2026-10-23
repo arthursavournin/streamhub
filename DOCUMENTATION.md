@@ -7,8 +7,7 @@ For a quick overview, see the [README](README.md).
 
 👉 **https://arthursavournin.github.io/streamhub/**
 
-> StreamHub's interface is in French or English: choose in Settings → Pays, langue et lecture (Country, language and
-> playback) → Langue (Language). This documentation quotes the French labels with their English translation the first
+> StreamHub's interface is in French or English: choose in Settings → Pays et langue (Country and language) → Langue (Language). This documentation quotes the French labels with their English translation the first
 > time they come up; in English, the buttons show the English names.
 
 ---
@@ -325,7 +324,7 @@ account actions apply immediately.
 | **Clés API** (API keys) | TMDB key, Streaming Availability key, with a Test button for each. (The StreamHub relay, for JustWatch links, has no setting: its address is fixed since version 2.3.4.) |
 | **Accueil** (Home) | Rows shown on the home page, their order, and the featured title. |
 | **Apparence** (Appearance) | Glass effect: Automatic, Transparent or Tinted (per device). |
-| **Pays, langue et lecture** (Country, language and playback) | Catalog country: every country where TMDB knows the platforms (over a hundred). By default, **the country of your connection** (Wi-Fi, mobile network or VPN, as seen by the StreamHub relay): when it changes (travel, VPN on or off), StreamHub selects that country on opening, even if you had picked another one, and says so in a short message; as long as it doesn't change, your manual choice stays. Per device. JustWatch Top 50 for France, Belgium, Switzerland, Luxembourg, Canada, United Kingdom, United States, Germany, Spain and Italy (elsewhere, ranked by TMDB popularity). Then **app language** (French or English, on this device: the whole interface, the legal pages, and the titles, summaries and genres from TMDB; changing it reloads the page; the iPhone app has the same choice since version 2.9.0, applied at once) and, on a computer, **Ouvrir les titres** (Open titles). |
+| **Pays et langue** (Country and language) | Catalog country: every country where TMDB knows the platforms (over a hundred). By default, **the country of your connection** (Wi-Fi, mobile network or VPN, as seen by the StreamHub relay): when it changes (travel, VPN on or off), StreamHub selects that country on opening, even if you had picked another one, and says so in a short message; as long as it doesn't change, your manual choice stays. Per device. JustWatch Top 50 for France, Belgium, Switzerland, Luxembourg, Canada, United Kingdom, United States, Germany, Spain and Italy (elsewhere, ranked by TMDB popularity). Then **app language** (French or English, on this device: the whole interface, the legal pages, and the titles, summaries and genres from TMDB; changing it reloads the page; the iPhone app has the same choice since version 2.9.0, applied at once) and, on a computer only, **Ouvrir les titres** (Open titles; not shown on iPhone, iPad or in the iPhone app, where titles open in the platform’s app if it is installed). |
 | **À propos** (About) | Version, legal notice, privacy policy, terms of use, source code. |
 
 ### Open titles (computer)
@@ -503,7 +502,7 @@ It also does three more things:
 It only runs on StreamHub and on the platforms' sites and their sign-in pages (since version 3.2; before, on every
 site). It only acts during a flow started from StreamHub (less than 15 minutes, a link to the platform of the open
 site), sends nothing over the Internet, and only keeps, in your browser, the address of the title you started. Once
-installed, the line "Script… installé" (Script… installed) appears in Settings → Pays, langue et lecture, and the "Relaunch"
+installed, the line "Script… installé" (Script… installed) appears in Settings → Pays et langue, and the "Relaunch"
 bar is no longer shown.
 
 | Browser | Installation |
@@ -564,7 +563,7 @@ Open StreamHub from its home screen icon (not in Safari), and check that the pla
 set to open this site in Safari, long-press the button and choose "Open in *the app*": iOS will remember it.
 
 **On a computer, Prime Video opens in the app when I want the site (or the other way round).**
-Choose in Settings → Pays, langue et lecture → Ouvrir les titres.
+Choose in Settings → Pays et langue → Ouvrir les titres.
 
 **"… n'est disponible sur aucune plateforme de streaming dans ce pays" (… is not available on any streaming platform
 in this country), although the title is out.**

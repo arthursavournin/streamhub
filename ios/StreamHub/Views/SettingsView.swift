@@ -24,8 +24,8 @@ struct SettingsView: View {
                         let shown = model.store.homeLayout.filter(\.on).count
                         SettingsRowLabel(icon: "house", title: "Accueil", summary: "\(shown) rangées sur \(model.store.homeLayout.count) · \(model.store.homeHero.map { "à l’affiche : \($0.title)" } ?? "affiche automatique")")
                     }
-                    NavigationLink { page("Pays, langue et lecture", "Pays du catalogue, langue de l’appli et ouverture des titres. Le pays suit celui de ta connexion (wifi, VPN, voyage) ; tu peux le changer à la main.") { RegionView() } } label: {
-                        SettingsRowLabel(icon: "globe", title: "Pays, langue et lecture", summary: "\(AppModel.countryName(model.store.region)) · \(model.uiLang == "en" ? "English" : "Français")")
+                    NavigationLink { page("Pays et langue", "Pays du catalogue et langue de l’appli.") { RegionView() } } label: {
+                        SettingsRowLabel(icon: "globe", title: "Pays et langue", summary: "\(AppModel.countryName(model.store.region)) · \(model.uiLang == "en" ? "English" : "Français")")
                     }
                     NavigationLink { page("À propos", "Version, mentions légales et confidentialité.") { AboutView() } } label: {
                         SettingsRowLabel(icon: "info.circle", title: "À propos")
@@ -111,49 +111,51 @@ private struct RegionView: View {
     }
 
     var body: some View {
-        // Langue de l'appli (comme le site) : français ou anglais, propre à cet iPhone
-        Text(loc("Langue")).font(.headline).frame(maxWidth: .infinity, alignment: .leading)
-        ActionList {
-            ForEach([("fr", "Français"), ("en", "English")], id: \.0) { code, name in
-                Button {
-                    model.setLanguage(code)
-                } label: {
-                    HStack {
-                        Text(name).foregroundStyle(.primary)
-                        Spacer()
-                        if model.uiLang == code {
-                            Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(Color.mine)
-                        }
-                    }
-                    .padding(.horizontal, 18)
-                    .frame(minHeight: 50)
-                    .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
+        // Comme la section du site : Pays, puis Langue, chacun dans un menu en carte avec son explication
+        RegionMenu(label: "Pays", detail: "catalogue et plateformes ; suit le pays de ta connexion (wifi, VPN, voyage), modifiable à la main",
+                   choices: sorted, selected: model.store.region) { model.store.setSetting("region", .string($0)) }
+        RegionMenu(label: "Langue", detail: "de l’appli et des fiches, sur cet appareil",
+                   choices: [("fr", "Français"), ("en", "English")], selected: model.uiLang) { model.setLanguage($0) }
+            .padding(.top, 6)
+        // Comme l'appli de l'écran d'accueil du site : pas de choix « Ouvrir les titres » (ordinateur seulement)
+        Text(loc("Les titres s’ouvrent dans l’appli de la plateforme si elle est installée, sinon sur son site."))
+            .font(.footnote).foregroundStyle(Color.appMuted).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 6)
+            .task {
+                if let list = try? await model.tmdb.regions(), !list.isEmpty { codes = list }
             }
-        }
-        Text(loc("Pays")).font(.headline).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 8)
-        ActionList {
-            ForEach(sorted, id: \.0) { code, name in
-                Button {
-                    model.store.setSetting("region", .string(code))
-                } label: {
-                    HStack {
-                        Text(name).foregroundStyle(.primary)
-                        Spacer()
-                        if model.store.region == code {
-                            Image(systemName: "checkmark").font(.body.weight(.semibold)).foregroundStyle(Color.mine)
-                        }
-                    }
-                    .padding(.horizontal, 18)
-                    .frame(minHeight: 50)
-                    .contentShape(.rect)
+    }
+}
+
+// Menu en carte, comme les <select> des réglages du site : libellé en gras suivi de son explication, puis le choix
+// affiché avec une flèche ; la liste s'ouvre au toucher, le choix en cours coché.
+private struct RegionMenu: View {
+    let label: String
+    let detail: String
+    let choices: [(String, String)]
+    let selected: String
+    let choose: (String) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("\(Text(loc(label)).fontWeight(.semibold)) \(Text(loc(detail)).foregroundStyle(Color.appMuted))")
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Menu {
+                Picker(loc(label), selection: Binding(get: { selected }, set: choose)) {
+                    ForEach(choices, id: \.0) { code, name in Text(name).tag(code) }
                 }
-                .buttonStyle(.plain)
+            } label: {
+                HStack {
+                    Text(choices.first { $0.0 == selected }?.1 ?? selected).font(.body.weight(.semibold)).foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "chevron.down").font(.footnote.weight(.semibold)).foregroundStyle(.primary)
+                }
+                .padding(.horizontal, 18)
+                .frame(minHeight: 54)
+                .background(Color.appBackground, in: .rect(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.appBorder))
+                .contentShape(.rect)
             }
-        }
-        .task {
-            if let list = try? await model.tmdb.regions(), !list.isEmpty { codes = list }
+            .tint(.primary) // texte blanc comme le site (un Menu prend sinon la couleur d'accent)
         }
     }
 }
@@ -316,7 +318,7 @@ struct HomeSettingsView: View {
 }
 
 // Une section des réglages. Vue à part (pas une fonction) : elle lit la langue, donc se redessine quand on la change
-// alors qu'elle est ouverte (Réglages → Pays, langue et lecture).
+// alors qu'elle est ouverte (Réglages → Pays et langue).
 private struct SettingsPage<Content: View>: View {
     @Environment(AppModel.self) private var model
     let title: String

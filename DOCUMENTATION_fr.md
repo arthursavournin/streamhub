@@ -321,7 +321,7 @@ les actions du compte, elles, s'appliquent tout de suite.
 | **Clés API** | Clé TMDB, clé Streaming Availability, avec un bouton Tester pour chacune. (Le relais StreamHub, pour les liens JustWatch, n'a pas de réglage : son adresse est fixe depuis la version 2.3.4.) |
 | **Accueil** | Rangées affichées sur l'accueil, leur ordre, et le titre à l'affiche. |
 | **Apparence** | Effet verre : Automatique, Transparent ou Teinté (propre à chaque appareil). |
-| **Pays, langue et lecture** | Pays du catalogue : tous les pays où TMDB connaît les plateformes (plus d’une centaine). Par défaut, **celui de ta connexion** (wifi, réseau mobile ou VPN, vu par le relais StreamHub) : quand il change (voyage, VPN activé ou coupé), StreamHub sélectionne ce pays à l’ouverture, même si tu en avais choisi un autre, et l’affiche dans un court message ; tant qu’il ne change pas, ton choix fait à la main reste. Propre à chaque appareil. Top 50 JustWatch pour France, Belgique, Suisse, Luxembourg, Canada, Royaume-Uni, États-Unis, Allemagne, Espagne et Italie (ailleurs, classement par popularité TMDB). Puis **langue de l’appli** (français ou anglais, sur cet appareil : toute l’interface, les pages légales, et les titres, résumés et genres venus de TMDB ; changer de langue recharge la page ; l'appli iPhone a le même choix depuis la version 2.9.0, appliqué tout de suite) et, sur ordinateur, **Ouvrir les titres**. |
+| **Pays et langue** | Pays du catalogue : tous les pays où TMDB connaît les plateformes (plus d’une centaine). Par défaut, **celui de ta connexion** (wifi, réseau mobile ou VPN, vu par le relais StreamHub) : quand il change (voyage, VPN activé ou coupé), StreamHub sélectionne ce pays à l’ouverture, même si tu en avais choisi un autre, et l’affiche dans un court message ; tant qu’il ne change pas, ton choix fait à la main reste. Propre à chaque appareil. Top 50 JustWatch pour France, Belgique, Suisse, Luxembourg, Canada, Royaume-Uni, États-Unis, Allemagne, Espagne et Italie (ailleurs, classement par popularité TMDB). Puis **langue de l’appli** (français ou anglais, sur cet appareil : toute l’interface, les pages légales, et les titres, résumés et genres venus de TMDB ; changer de langue recharge la page ; l'appli iPhone a le même choix depuis la version 2.9.0, appliqué tout de suite) et, sur ordinateur seulement, **Ouvrir les titres** (absent sur iPhone, iPad et dans l’appli iPhone : les titres s’y ouvrent dans l’appli de la plateforme si elle est installée). |
 | **À propos** | Version, mentions légales, politique de confidentialité, conditions d'utilisation, code source. |
 
 ### Ouvrir les titres (ordinateur)
@@ -506,7 +506,7 @@ Il ne tourne que sur StreamHub et sur les sites des plateformes et de leur conne
 sur tous les sites). Il n'agit que dans un parcours lancé depuis StreamHub (moins de 15 minutes, lien vers la
 plateforme du site ouvert), n'envoie rien sur Internet et ne garde, dans ton navigateur, que l'adresse du titre
 lancé. Une fois installé, la ligne « Script… installé » apparaît dans
-Réglages → Pays, langue et lecture, et la barre « Relancer » ne s'affiche plus.
+Réglages → Pays et langue, et la barre « Relancer » ne s'affiche plus.
 
 | Navigateur | Installation |
 |---|---|
@@ -567,7 +567,7 @@ installée. Si iOS a été réglé pour ouvrir ce site dans Safari, fais un appu
 « Ouvrir dans *l'appli* » : iOS s'en souviendra.
 
 **Sur ordinateur, Prime Video s'ouvre dans l'appli alors que je veux le site (ou l'inverse).**
-Choisis dans Réglages → Pays, langue et lecture → Ouvrir les titres.
+Choisis dans Réglages → Pays et langue → Ouvrir les titres.
 
 **« … n'est disponible sur aucune plateforme de streaming dans ce pays », alors que le titre est sorti.**
 JustWatch ne l'a pas encore référencé dans ton pays. StreamHub le complète tout seul pour les séries des grandes

@@ -540,6 +540,8 @@ html:has(dialog[open]) { overflow: hidden; }
 }
 .settings-back svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .settings-back:hover { background: rgba(255, 255, 255, 0.06); }
+/* Téléphone, dans une section : flèche seule (comme l'appli), pour laisser la place au titre */
+@media (max-width: 760px) { #settings[data-view="panel"] .settings-back span { display: none; } }
 .settings-title { flex: 1; min-width: 0; margin: 0; font-size: 1.3em; letter-spacing: -0.01em; }
 .settings-title span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .settings-save { flex: none; }
@@ -769,6 +771,7 @@ html:has(dialog[open]) { overflow: hidden; }
 .home-row.off label { color: var(--muted); }
 .home-row .icon-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; }
 .home-row .icon-btn:disabled { opacity: 0.3; cursor: default; }
+.choice-list[hidden] { display: none; } /* « Ouvrir les titres » : ordinateur seulement */
 .choice-list { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; border: 0; min-width: 0; }
 .choice-list legend { padding: 0; margin-bottom: 8px; font-weight: 600; }
 .choice-list legend em { display: block; font-weight: 400; font-style: normal; color: var(--muted); font-size: 0.9em; }

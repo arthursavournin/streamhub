@@ -199,7 +199,7 @@ export const EN = {
   'Mes abonnements': 'My subscriptions',
   'Clés API': 'API keys',
   Apparence: 'Appearance',
-  'Pays, langue et lecture': 'Country, language and playback',
+  'Pays et langue': 'Country and language',
   'À propos': 'About',
   'Dernière étape : colle ta clé TMDB (gratuite) ci-dessous, puis coche tes plateformes dans « Mes abonnements » et appuie sur « Enregistrer ».':
     'Last step: paste your (free) TMDB key below, then tick your platforms in “My subscriptions” and tap “Save”.',
@@ -242,6 +242,7 @@ export const EN = {
   'Plus opaque, plus lisible': 'More opaque, easier to read',
   'Une page web ne peut pas lire le réglage Liquid Glass d’iOS, d’iPadOS ou de macOS : choisis ici l’effet voulu.':
     'A web page can’t read the Liquid Glass setting of iOS, iPadOS or macOS: choose the effect you want here.',
+  'Pays du catalogue et langue de l’appli.': 'Catalog country and app language.',
   'Pays du catalogue, langue de l’appli et ouverture des titres.': 'Catalog country, app language and how titles open.',
   Pays: 'Country',
   'catalogue et plateformes disponibles': 'catalog and available platforms',

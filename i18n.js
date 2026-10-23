@@ -2,7 +2,7 @@
 // Le français reste la langue écrite dans le code. En anglais, chaque texte affiché (texte, infobulle, champ, titre de
 // la page…) est remplacé par sa traduction (i18n-en.js) dès qu'il apparaît, y compris ce qui est ajouté plus tard
 // (fiches, messages, réglages) : un MutationObserver suit toute la page. En français, rien ne se passe.
-// Réglage propre à chaque appareil (settings.uiLang, Réglages → Pays, langue et lecture) ; le changer recharge la page.
+// Réglage propre à chaque appareil (settings.uiLang, Réglages → Pays et langue) ; le changer recharge la page.
 import { loadSettings } from './store.js';
 import { EN, EN_PATTERNS } from './i18n-en.js';
 

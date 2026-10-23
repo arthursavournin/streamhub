@@ -12,12 +12,12 @@ import { sagaTitles, universeTitles, genreTitles } from './suggestions.js';
 import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
-// Interface en anglais si choisi (Réglages → Pays, langue et lecture) : traduit la page dès maintenant et tout ce qui
+// Interface en anglais si choisi (Réglages → Pays et langue) : traduit la page dès maintenant et tout ce qui
 // s'y ajoutera (voir i18n.js). En français, ne fait rien.
 startTranslation();
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.9.0';
+const APP_VERSION = '2.9.1';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -2650,6 +2650,8 @@ function openSettings(first = false, panel = null) {
       « Sur l’écran d’accueil ». Dans Safari, les titres s’ouvrent déjà dans l’appli de la plateforme si elle est installée.<br>`);
   }
   $('#desktopAppsField').hidden = CAN_DOWNLOAD; // téléphone / tablette : les liens ouvrent déjà l'appli
+  // Ordinateur seulement : la section propose aussi « Ouvrir les titres »
+  if (!CAN_DOWNLOAD) $('#deviceIntro').textContent = 'Pays du catalogue, langue de l’appli et ouverture des titres.';
   // Même phrase sur Mac et sur PC, seule la partie propre au système change (texte du Mac dans index.html)
   if (!MAC && $('#desktopAppsHint')) {
     const pc = /Win/.test(navigator.platform);

@@ -66,22 +66,30 @@ struct SearchView: View {
         guard !text.isEmpty else { results = []; suggestion = nil; return }
         searching = true
         defer { searching = false }
-        try? await Task.sleep(for: .milliseconds(350)) // on attend la fin de la frappe
+        try? await Task.sleep(for: .milliseconds(250)) // on attend la fin de la frappe
         guard !Task.isCancelled else { return }
         let tmdb = model.tmdb
-        let list = await Search.titles()
-        let fixed = await Task.detached { Search.suggest(text, in: list) }.value
-        guard !Task.isCancelled else { return }
         do {
-            // On cherche aussi la correction et, pour « harry potter 1 », le nom sans le numéro
+            // Tout part en même temps (avant : la correction des fautes était calculée avant d'interroger TMDB) : la
+            // recherche, le nom sans le numéro (« harry potter 1 »), et la correction, cherchée dès qu'elle est trouvée
             let (name, number) = Search.splitNumber(text)
             async let base = tmdb.search(text)
-            async let corrected = searchOrEmpty(tmdb, fixed)
             async let withoutNumber = searchOrEmpty(tmdb, number.isEmpty ? nil : name)
-            let others = await corrected + withoutNumber
+            async let fixedTask: String? = {
+                let list = await Search.titles()
+                return await Task.detached { Search.suggest(text, in: list) }.value
+            }()
+            // Premiers résultats affichés tout de suite, puis complétés et rangés (sagas, correction)
             let found = try await base
+            guard !Task.isCancelled else { return }
+            if !found.isEmpty { results = found }
+            let fixed = await fixedTask
+            let others = await searchOrEmpty(tmdb, fixed) + withoutNumber
+            guard !Task.isCancelled else { return }
             var seen = Set<String>()
             let merged = (fixed != nil ? others + found : found + others).filter { seen.insert("\($0.type.rawValue):\($0.id)").inserted }
+            results = merged
+            suggestion = fixed
             let arranged = await Search.arrangeSagas(merged, query: fixed ?? text, tmdb: tmdb)
             guard !Task.isCancelled else { return }
             results = arranged

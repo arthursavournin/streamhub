@@ -48,6 +48,7 @@ struct DetailView: View {
         do {
             let details = try await model.tmdb.details(ref.type, ref.id)
             self.details = details
+            loadSuggestions(details) // dès l'ouverture de la fiche : l'onglet Suggestions est prêt quand on y va
             entries = Links.entries(for: details, type: ref.type, region: model.store.region, providers: model.store.providers)
             let resolver = model.resolver
             let initial = entries
@@ -378,16 +379,21 @@ struct DetailView: View {
         let region = model.store.region
         let providers = model.store.providers
         suggestionsTask = Task {
-            async let genre = Suggestions.genre(tmdb, d, type: type, region: region, providers: providers)
+            // Les trois rangées sont cherchées en même temps et chacune s'affiche dès qu'elle est prête
+            let key = { (m: TMDBTitle) in "\(m.type.rawValue):\(m.id)" }
+            async let genreTask = Suggestions.genre(tmdb, d, type: type, region: region, providers: providers)
             let saga = await Suggestions.saga(tmdb, d)
             var groups = Suggestions.Groups(sagaName: saga.name, saga: saga.items)
             suggestions = groups
-            var shown = Set(saga.items.map { "movie:\($0.id)" })
-            groups.universe = await Suggestions.universe(tmdb, d, type: type, exclude: shown)
+            var shown = Set(saga.items.map(key)).union(["\(type.rawValue):\(d.id)"])
+            let sagaShown = shown
+            async let universeTask = Suggestions.universe(tmdb, d, type: type, exclude: sagaShown)
+            let genre = await genreTask
+            groups.genre = genre.filter { !shown.contains(key($0)) }
             suggestions = groups
-            shown.formUnion(groups.universe.map { "\($0.type.rawValue):\($0.id)" })
-            shown.insert("\(type.rawValue):\(d.id)")
-            groups.genre = await genre.filter { !shown.contains("\($0.type.rawValue):\($0.id)") }
+            groups.universe = await universeTask
+            shown.formUnion(groups.universe.map(key))
+            groups.genre = genre.filter { !shown.contains(key($0)) } // sans les titres passés dans « même univers »
             suggestions = groups
             suggestionsDone = true
         }

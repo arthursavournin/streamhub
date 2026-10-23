@@ -161,11 +161,21 @@ extension View {
     }
 }
 
-// Page Films, Séries ou Animés : grande affiche (le premier titre de la première rangée), puis les rangées
-struct SectionView: View {
+// Une rubrique de l'accueil ou l'accueil lui-même, superposés : seule celle choisie se voit et réagit aux appuis
+extension View {
+    func pane(shown: Bool) -> some View {
+        opacity(shown ? 1 : 0)
+            .allowsHitTesting(shown)
+            .accessibilityHidden(!shown)
+            .zIndex(shown ? 1 : 0)
+    }
+}
+
+// Rubrique Films, Séries ou Animés de l'accueil : grande affiche (le premier titre de la première rangée), puis les
+// rangées (la barre du haut et ses pastilles sont celles de l'accueil)
+struct SectionContent: View {
     @Environment(AppModel.self) private var model
     let section: HomeSection
-    let onSection: (HomeSection?) -> Void
     @State private var hero: TMDBTitle?
     @State private var error: String?
 
@@ -187,7 +197,6 @@ struct SectionView: View {
         }
         .ignoresSafeArea(edges: .top)
         .background(Color.appBackground)
-        .appTopBar(section: .some(section), transparent: true, onSection: onSection)
         .task(id: "\(section.rawValue)|\(model.catalogKey)") {
             do {
                 hero = try await model.fetch(rows[0]).first

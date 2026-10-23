@@ -38,12 +38,34 @@ final class AppModel {
 
     // ---------- Rangées de l'accueil ----------
 
+    // Rangées déjà chargées (ou en cours) pendant la session : une rangée qui réapparaît (défilement, retour sur une
+    // rubrique, grande affiche qui lit la même rangée) s'affiche tout de suite, sans tout recalculer
+    @ObservationIgnored private var rowCache: [String: Task<[TMDBTitle], Error>] = [:]
+
     func fetch(_ row: HomeRow) async throws -> [TMDBTitle] {
+        let key = "\(catalogKey)|\(row.key)|\(row.limit)"
+        if let task = rowCache[key] { return try await task.value }
+        let task = Task { try await load(row) }
+        rowCache[key] = task
+        do {
+            return try await task.value
+        } catch {
+            rowCache[key] = nil // réessayer la prochaine fois
+            throw error
+        }
+    }
+
+    // Rangées oubliées (« tirer pour actualiser » de l'accueil)
+    func clearRows() { rowCache = [:] }
+
+    private func load(_ row: HomeRow) async throws -> [TMDBTitle] {
         if row.ranked, let top = await fetchTop(limit: row.limit), !top.isEmpty { return top }
         guard case .catalog(let types, let sort, let genres, let extra, let pages) = row.kind else { return [] }
         let providers = Links.tmdbProviderIDs(store.providers)
         let shown = types.filter { genres.isEmpty || genres[$0] != nil }
         let tmdb = tmdb
+        // Séries pas encore référencées dans le pays : cherchées en même temps que la rangée (avant : après)
+        async let unlistedTask = shown.contains(.tv) ? fetchUnlisted(sort: sort, genre: genres[.tv], extra: extra, providers: providers) : []
         let lists = try await withThrowingTaskGroup(of: (Int, [TMDBTitle]).self) { group in
             for (i, type) in shown.enumerated() {
                 for page in 1...pages {
@@ -62,7 +84,7 @@ final class AppModel {
         }
         var seen = Set<String>()
         var items = lists.flatMap { $0 }.filter { seen.insert("\($0.type.rawValue):\($0.id)").inserted }
-        let unlisted = shown.contains(.tv) ? await fetchUnlisted(sort: sort, genre: genres[.tv], extra: extra, providers: providers) : []
+        let unlisted = await unlistedTask
         items += unlisted.filter { seen.insert("tv:\($0.id)").inserted }
         // Séries récentes : leur dernier épisode (pour les classer parmi les films, et affiché sur l'affiche)
         if sort == .recent {

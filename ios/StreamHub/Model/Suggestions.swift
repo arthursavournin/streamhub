@@ -95,9 +95,14 @@ nonisolated enum Suggestions {
                 group.addTask { (i * 2, (try? await tmdb.search(name)) ?? []) }
                 group.addTask {
                     let sagas = ((try? await tmdb.searchCollections(name)) ?? []).filter { contains($0.name, name) && $0.id != collectionID }.prefix(4)
-                    var parts: [TMDBTitle] = []
-                    for saga in sagas {
-                        parts += ((try? await tmdb.collection(saga.id))?.parts ?? []).map { var t = $0; t.mediaType = "movie"; return t }
+                    // Les sagas en même temps (avant : l'une après l'autre)
+                    let parts = await withTaskGroup(of: (Int, [TMDBTitle]).self) { inner in
+                        for (j, saga) in sagas.enumerated() {
+                            inner.addTask { (j, ((try? await tmdb.collection(saga.id))?.parts ?? []).map { var t = $0; t.mediaType = "movie"; return t }) }
+                        }
+                        var all: [(Int, [TMDBTitle])] = []
+                        for await result in inner { all.append(result) }
+                        return all.sorted { $0.0 < $1.0 }.flatMap(\.1)
                     }
                     return (i * 2 + 1, parts)
                 }
@@ -121,23 +126,39 @@ nonisolated enum Suggestions {
             candidates.append((m, inTitle, isRecommended))
         }
 
-        var kept: [TMDBTitle] = []
+        // Titres à vérifier sur leur fiche complète (même choix et mêmes limites qu'avant), vérifiés tous en même temps
+        // (avant : l'un après l'autre, jusqu'à 22 requêtes à la suite)
         var namedChecks = 0
         var recommendedChecks = 0
-        for (m, inTitle, _) in candidates where !seen.contains(key(m)) {
-            var ok = inTitle.contains { namedAfter(m.displayTitle, $0) || namedAfter(m.originalTitle ?? m.originalName, $0) }
+        var plan: [(m: TMDBTitle, ok: Bool, check: Bool, named: Bool)] = []
+        var planned = seen
+        for (m, inTitle, _) in candidates where planned.insert(key(m)).inserted {
+            let ok = inTitle.contains { namedAfter(m.displayTitle, $0) || namedAfter(m.originalTitle ?? m.originalName, $0) }
             let named = !inTitle.isEmpty
+            var check = false
             if !ok && (named ? namedChecks < maxNamedChecks : recommendedChecks < maxRecommendedChecks) {
                 if named { namedChecks += 1 } else { recommendedChecks += 1 }
-                if let facts = try? await tmdb.facts(m.type, m.id) {
+                check = true
+            }
+            plan.append((m, ok, check, named))
+        }
+        let checked = await withTaskGroup(of: (String, Bool).self) { group in
+            for p in plan where p.check {
+                group.addTask {
+                    guard let facts = try? await tmdb.facts(p.m.type, p.m.id) else { return (key(p.m), false) }
                     let shared = (facts.productionCompanies ?? []).filter { companies.contains($0.id) }.count
                     let creator = (facts.createdBy ?? []).contains { $0.id.map(creators.contains) ?? false }
-                    ok = named ? shared > 0 || creator : shared >= 2 && facts.keywordNames.contains(where: isSequel)
+                    return (key(p.m), p.named ? shared > 0 || creator : shared >= 2 && facts.keywordNames.contains(where: isSequel))
                 }
             }
-            guard ok else { continue }
-            seen.insert(key(m))
-            kept.append(m)
+            var ok = Set<String>()
+            for await (k, passed) in group where passed { ok.insert(k) }
+            return ok
+        }
+        var kept: [TMDBTitle] = []
+        for p in plan where p.ok || checked.contains(key(p.m)) {
+            seen.insert(key(p.m))
+            kept.append(p.m)
         }
         // Les plus connus d'abord (Star Wars en a des dizaines : séries LEGO, parodies…)
         return Array(kept.sorted { ($0.voteCount ?? 0) > ($1.voteCount ?? 0) }.prefix(20))

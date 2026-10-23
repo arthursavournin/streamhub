@@ -6,12 +6,43 @@ struct HomeView: View {
     @State private var hero: TMDBTitle?
     @State private var error: String?
     @State private var path = NavigationPath()
+    // Rubrique affichée par les pastilles (nil : Tout) ; les rubriques déjà ouvertes restent en mémoire (pas de
+    // rechargement ni de page vide quand on y revient)
+    @State private var section: HomeSection?
+    @State private var opened: Set<HomeSection> = []
 
     // Rangées choisies dans Réglages → Accueil, dans l'ordre choisi
     private var rows: [HomeRow] { model.store.homeLayout.filter(\.on).compactMap { HomeRow.named($0.key) } }
 
     var body: some View {
         NavigationStack(path: $path) {
+            // Tout, Films, Séries et Animés sur la même page, en fondu : avant, Tout → rubrique ouvrait une nouvelle page
+            // (glissement de la navigation iOS) alors qu'entre rubriques la page était remplacée sans transition
+            ZStack {
+                home.pane(shown: section == nil)
+                ForEach(HomeSection.allCases) { s in
+                    if opened.contains(s) {
+                        SectionContent(section: s).pane(shown: section == s)
+                    }
+                }
+            }
+            .background(Color.appBackground)
+            .appTopBar(section: .some(section), transparent: true, onSection: showSection)
+            .titleDestinations()
+            .navigationDestination(for: CatalogPreset.self) { CatalogView(preset: $0) }
+            .navigationDestination(for: LibraryList.self) { LocalListPage(list: $0) }
+            .task(id: "\(model.catalogKey)|\(model.store.homeHero?.id ?? 0)") { await loadTop() }
+            .task {
+                // Rubriques préparées en arrière-plan une fois l'accueil affiché (grande affiche et premières rangées) :
+                // le premier passage sur Films, Séries ou Animés est immédiat
+                try? await Task.sleep(for: .seconds(2))
+                opened.formUnion(HomeSection.allCases)
+            }
+        }
+    }
+
+    // L'accueil (Tout) : grande affiche, puis les rangées choisies
+    private var home: some View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 26) {
                     if let hero = hero ?? top.first {
@@ -38,20 +69,16 @@ struct HomeView: View {
                 .padding(.bottom, 24)
             }
             .ignoresSafeArea(edges: .top)
-            .background(Color.appBackground)
-            .appTopBar(section: .some(nil), transparent: true, onSection: showSection)
-            .titleDestinations()
-            .navigationDestination(for: HomeSection.self) { SectionView(section: $0, onSection: showSection) }
-            .navigationDestination(for: CatalogPreset.self) { CatalogView(preset: $0) }
-            .navigationDestination(for: LibraryList.self) { LocalListPage(list: $0) }
-            .refreshable { await loadTop() }
-            .task(id: "\(model.catalogKey)|\(model.store.homeHero?.id ?? 0)") { await loadTop() }
-        }
+            .refreshable {
+                model.clearRows()
+                await loadTop()
+            }
     }
 
-    // Pastilles : Tout (l'accueil) ou une rubrique, à la place de celle affichée
-    private func showSection(_ section: HomeSection?) {
-        path = section.map { NavigationPath([$0]) } ?? NavigationPath()
+    // Pastilles : Tout (l'accueil) ou une rubrique, à la place de celle affichée, dans un même fondu
+    private func showSection(_ next: HomeSection?) {
+        if let next { opened.insert(next) }
+        withAnimation(.easeInOut(duration: 0.25)) { section = next }
     }
 
     // Top 50 (rangée et affiche), et titre choisi pour l'affiche (Réglages → Accueil ou « À l'affiche » dans sa fiche)

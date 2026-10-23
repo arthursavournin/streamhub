@@ -12,7 +12,7 @@ import { initSpatialNav } from './nav.js';
 import * as library from './library.js';
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.6.2';
+const APP_VERSION = '2.6.3';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -212,6 +212,22 @@ function renderTypeSwitch() {
 }
 
 // Les abonnements se gèrent dans les réglages ; ici, un simple menu pour restreindre la Bibliothèque
+// Menus de la Bibliothèque : un <select> prend d'office la largeur de son option la plus longue (« Amazon Prime Video
+// with Ads » élargissait « Mes plateformes ») ; chaque capsule prend ici la largeur du choix affiché, en entier
+// (version 2.6.3, demande de l'utilisateur)
+const measureCanvas = document.createElement('canvas').getContext('2d');
+function fitSelects() {
+  for (const sel of document.querySelectorAll('.selects select')) {
+    const text = sel.selectedOptions[0]?.textContent ?? '';
+    const css = getComputedStyle(sel);
+    measureCanvas.font = `${css.fontWeight} ${css.fontSize} ${css.fontFamily}`;
+    const extra = ['paddingLeft', 'paddingRight', 'borderLeftWidth', 'borderRightWidth'].reduce((sum, k) => sum + parseFloat(css[k]), 0);
+    sel.style.width = `${Math.ceil(measureCanvas.measureText(text).width + extra + 2)}px`;
+  }
+}
+// La police change entre téléphone et ordinateur : on remesure
+window.matchMedia('(max-width: 860px)').addEventListener('change', fitSelects);
+
 function renderPlatformSelect() {
   const options = [];
   if (settings.providers.length) {
@@ -221,6 +237,7 @@ function renderPlatformSelect() {
   options.push({ value: 'all', label: 'Tout le catalogue' });
   el.platform.innerHTML = options.map((o) => `<option value="${esc(o.value)}">${esc(o.label)}</option>`).join('');
   el.platform.value = String(state.filter);
+  fitSelects();
 }
 
 async function loadGenres() {
@@ -243,6 +260,7 @@ async function loadGenres() {
       el.genre.insertAdjacentHTML('beforeend', `<option value="${esc(state.genre)}">${esc(state.genre)}</option>`);
     }
     el.genre.value = state.genre;
+    fitSelects();
   } catch {
     /* le message d'erreur s'affiche déjà via le chargement du catalogue */
   }
@@ -612,6 +630,7 @@ async function showView(view, { library: filters } = {}) {
     renderTypeSwitch();
     renderPlatformSelect();
     el.sort.value = state.sort;
+    fitSelects();
     await loadGenres(); // avant de charger : un genre venu de « Tout voir » doit être connu
     if (state.view === 'library') reload();
   } else if (grid) {
@@ -2951,6 +2970,8 @@ document.addEventListener('click', (e) => {
 
 $('#settingsBtn').addEventListener('click', () => (settings.tmdbKey || accountState().signedIn || choseGuest() ? openSettings(!settings.tmdbKey) : startOnboarding()));
 
+// Un autre choix : la capsule prend sa largeur
+for (const sel of [el.platform, el.genre, el.sort]) sel.addEventListener('change', fitSelects);
 el.platform.addEventListener('change', () => {
   state.filter = el.platform.value;
   reload();

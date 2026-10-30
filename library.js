@@ -80,8 +80,14 @@ export function toggleList(entry) {
 }
 
 // Pour une série, une seule ligne par série : le dernier épisode lancé
+// Série lancée sans épisode précis (« Regarder sur… ») : on garde le dernier épisode connu, sinon l'historique
+// l'oublierait et « Où en es-tu ? » repartirait de l'épisode 1 (signalé par l'utilisateur). Renvoie l'entrée enregistrée.
 export function recordWatch(entry) {
-  putFirst('history', { ...entry, key: titleKey(entry.type, entry.id) }, HISTORY_MAX);
+  const key = titleKey(entry.type, entry.id);
+  const last = entry.episode == null ? lib.history.find((e) => e.key === key && e.episode != null) : null;
+  const full = { ...entry, ...(last && { season: last.season, episode: last.episode, episodeName: last.episodeName }), key };
+  putFirst('history', full, HISTORY_MAX);
+  return full;
 }
 
 export function addDownload(entry) {

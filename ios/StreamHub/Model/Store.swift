@@ -238,8 +238,16 @@ final class AppStore {
     }
 
     // Pour une série, une seule ligne par série : le dernier épisode lancé
-    func recordWatch(_ entry: LibraryEntry) {
+    // Série lancée sans épisode précis (« Regarder sur… ») : on garde le dernier épisode connu, sinon l'historique
+    // l'oublierait et « Où en es-tu ? » repartirait de l'épisode 1 (signalé par l'utilisateur). Renvoie l'entrée enregistrée.
+    @discardableResult
+    func recordWatch(_ entry: LibraryEntry) -> LibraryEntry {
+        var entry = entry
+        if entry.episode == nil, let last = entries(.history).first(where: { $0.key == entry.key && $0.episode != nil }) {
+            for field in ["season", "episode", "episodeName"] { entry.raw[field] = last.raw[field] }
+        }
         putFirst(.history, entry, max: Self.historyMax)
+        return entry
     }
 
     // Téléchargement : un film, ou un épisode (clé « tv:id:s1e3 », comme downloadKey du site)

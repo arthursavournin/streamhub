@@ -26,6 +26,13 @@ struct SeasonsSection: View {
     @State private var allEpisodes: [Episode]? // tous les épisodes TMDB, pour le découpage sans filler
     @State private var netflixShow: NetflixEpisodes.Show? // liens Netflix de chaque épisode (Naruto, Shippuden, Boruto)
 
+    // Nom du découpage choisi, affiché sur son menu
+    private var sourceName: String {
+        if source == Self.fillers, let fillerShow { return loc("Découpage \(fillerShow.name)") }
+        if let group = groupChoices.first(where: { $0.id == source }) { return loc("Découpage \(group.name)") }
+        return loc("Découpage TMDB")
+    }
+
     private var fillerMode: Bool { fillerShow != nil && source == Self.fillers }
     private var groupMode: Bool { source != Self.fillers && source != Self.tmdbSource }
     private static let fillers = "fillers"
@@ -58,6 +65,7 @@ struct SeasonsSection: View {
         if !seasons.isEmpty {
             VStack(alignment: .leading, spacing: 14) {
                 if fillerShow != nil || !groupChoices.isEmpty {
+                    Menu {
                     Picker(loc("Découpage"), selection: $source) {
                         if let fillerShow { Text(loc("Découpage \(fillerShow.name)")).tag(Self.fillers) }
                         Text(loc("Découpage TMDB")).tag(Self.tmdbSource)
@@ -65,8 +73,8 @@ struct SeasonsSection: View {
                             Text(loc("Découpage \(g.name)\(g.groupCount.map { " · \($0) saison\($0 > 1 ? "s" : "")" } ?? "")")).tag(g.id)
                         }
                     }
-                    .pickerStyle(.menu)
-                    .padding(.horizontal, 6)
+                    } label: { MenuCapsule(text: sourceName) }
+                    .padding(.horizontal, 16)
                 }
                 ScrollViewReader { proxy in
                     ScrollView(.horizontal) {

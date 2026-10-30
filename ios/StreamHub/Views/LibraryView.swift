@@ -178,17 +178,29 @@ struct HistoryRow: View {
                 }
                 .scrollIndicators(.hidden)
                 // Bleu foncé, pas rouge (demande de l'utilisateur)
-                Button(loc("Supprimer l’historique"), systemImage: "trash") { confirming = true }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Color(red: 0x1d / 255, green: 0x3b / 255, blue: 0x72 / 255))
-                    .foregroundStyle(.white)
+                // Confirmation sur place, comme le site (pas de fenêtre du système : charte commune, version 2.10.0)
+                let darkBlue = Color(red: 0x1d / 255, green: 0x3b / 255, blue: 0x72 / 255)
+                if confirming {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(loc("Supprimer tout l’historique, sur tous tes appareils ?"))
+                        HStack(spacing: 8) {
+                            Button(loc("Supprimer")) { withAnimation { model.store.clearHistory() } }
+                                .buttonStyle(.borderedProminent).tint(darkBlue).foregroundStyle(.white)
+                            Button(loc("Annuler")) { confirming = false }
+                                .buttonStyle(.glass)
+                        }
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .buttonBorderShape(.capsule)
                     .padding(.horizontal, 16)
-            }
-            .alert(loc("Supprimer l’historique ?"), isPresented: $confirming) {
-                Button(loc("Supprimer")) { withAnimation { model.store.clearHistory() } }
-                Button(loc("Annuler"), role: .cancel) {}
-            } message: {
-                Text(loc("Tous les titres regardés seront retirés, sur tous tes appareils."))
+                } else {
+                    Button(loc("Supprimer l’historique"), systemImage: "trash") { confirming = true }
+                        .buttonStyle(.borderedProminent)
+                        .buttonBorderShape(.capsule)
+                        .tint(darkBlue)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16)
+                }
             }
         }
     }

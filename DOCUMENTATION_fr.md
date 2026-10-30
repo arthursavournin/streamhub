@@ -164,8 +164,7 @@ Sous le résumé, la fiche a des **onglets** (aussi dans l'appli iPhone) :
 
 Un film ou un épisode lancé depuis StreamHub entre tout de suite dans l'historique, sans question. Pour une série,
 on enchaîne souvent plusieurs épisodes sur la plateforme : en revenant dans StreamHub (au moins 3 minutes après), une
-seule fenêtre demande « Où en es-tu de *Naruto* ? » avec la saison et le dernier épisode regardé (l'épisode lancé est
-déjà choisi) ; « Enregistrer » met l'historique à jour, « Ignorer » garde l'épisode lancé. La même fenêtre propose
+seule fenêtre demande « Où en es-tu de *Naruto* ? » avec la saison et le dernier épisode regardé (le dernier épisode lancé est déjà choisi) ; « Enregistrer » met l'historique à jour, « Ignorer » garde l'épisode lancé. La même fenêtre propose
 « J'aime la série ». Un titre à télécharger entre tout de suite
 dans les téléchargements, sans question au retour.
 

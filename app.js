@@ -17,7 +17,7 @@ import * as library from './library.js';
 startTranslation();
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.9.3';
+const APP_VERSION = '2.10.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -1227,7 +1227,7 @@ async function openDetail(type, id, opener) {
     // Streaming Availability peut mettre plusieurs secondes ; un clic pendant ce temps attend le lien (onLaunch).
     const loading = linksLoading(current);
     const relay = api.relayOffers(type, id, titleOf(item)).catch(() => []);
-    const links = await api.streamingOptions(type, id).catch((err) => {
+    const links = await api.streamingOptions(type, id, type === 'tv' ? item.last_episode_to_air : null).catch((err) => {
       toast(err.message);
       return null;
     });
@@ -2119,10 +2119,10 @@ function onLaunch(link, event) {
   }
   // Lancé = regardé : dans l'historique tout de suite, sans « Tu as regardé… ? » au retour (demande de l'utilisateur)
   if (entry) {
-    library.recordWatch({ ...entry, platform, page: entry.page ?? entry.href });
+    const watched = library.recordWatch({ ...entry, platform, page: entry.page ?? entry.href });
     // Série : on enchaîne souvent plusieurs épisodes sur la plateforme ; au retour, « Où en es-tu ? » note le
     // dernier épisode vraiment regardé (et propose J'aime)
-    if (entry.type === 'tv') library.addPending('progress', { ...entry, platform, page: entry.page ?? entry.href });
+    if (entry.type === 'tv') library.addPending('progress', watched);
     updateCounts();
   }
   if (IOS_WEB_APP && /^https:\/\//.test(link.href)) {

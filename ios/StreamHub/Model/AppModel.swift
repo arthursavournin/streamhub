@@ -209,9 +209,9 @@ final class AppModel {
         let entry = libraryEntry(watch, for: ref, date: date, episode: episode)
         // Lancé = regardé : dans l'historique tout de suite, sans « Tu as regardé… ? » au retour (demande de
         // l'utilisateur, comme le site depuis la version 1.9.2)
-        store.recordWatch(entry)
+        let watched = store.recordWatch(entry)
         // Série : on enchaîne souvent plusieurs épisodes sur la plateforme
-        if ref.type == .tv { pendingProgress = PendingProgress(entry: entry, at: Date()) }
+        if ref.type == .tv { pendingProgress = PendingProgress(entry: watched, at: Date()) }
         await openPlatform(watch.href)
     }
 

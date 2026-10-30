@@ -20,28 +20,31 @@ struct ProgressSheet: View {
                 Text(loc("Où en es-tu de « \(entry.title) » ?"))
                     .font(.title3.weight(.bold))
                 if let platform = entry.platform {
-                    Text(loc("sur \(Platforms.shortName(platform))")).foregroundStyle(.secondary)
+                    Text(loc("sur \(Platforms.shortName(platform))")).foregroundStyle(Color.appMuted)
                 }
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(loc("Dernier épisode regardé")).font(.subheadline).foregroundStyle(.secondary)
+                Text(loc("Dernier épisode regardé")).font(.subheadline.weight(.semibold)).foregroundStyle(Color.appMuted)
                 if seasons.isEmpty {
                     ProgressView().frame(maxWidth: .infinity)
                 } else {
+                    // Menus en capsule, comme ceux de la Bibliothèque (charte commune, version 2.10.0)
                     HStack(spacing: 10) {
-                        Picker(loc("Saison"), selection: $season) {
-                            ForEach(seasons, id: \.seasonNumber) { s in Text(loc("Saison \(s.seasonNumber)")).tag(s.seasonNumber) }
-                        }
+                        Menu {
+                            Picker(loc("Saison"), selection: $season) {
+                                ForEach(seasons, id: \.seasonNumber) { s in Text(loc("Saison \(s.seasonNumber)")).tag(s.seasonNumber) }
+                            }
+                        } label: { MenuCapsule(text: loc("Saison \(season)")) }
                         .fixedSize()
-                        Picker(loc("Épisode"), selection: $episode) {
-                            ForEach(episodes) { e in Text(loc(label(e))).tag(e.episodeNumber) }
+                        Menu {
+                            Picker(loc("Épisode"), selection: $episode) {
+                                ForEach(episodes) { e in Text(loc(label(e))).tag(e.episodeNumber) }
+                            }
+                        } label: {
+                            MenuCapsule(text: episodes.first { $0.episodeNumber == episode }.map { loc(label($0)) } ?? loc("Épisode \(episode)"))
                         }
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .pickerStyle(.menu)
-                    .buttonStyle(.bordered)
                 }
             }
 
@@ -52,8 +55,7 @@ struct ProgressSheet: View {
                 } label: {
                     Text(loc("Enregistrer")).frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                .buttonStyle(WideButtonStyle())
                 .disabled(episodes.isEmpty)
 
                 HStack {
@@ -63,13 +65,15 @@ struct ProgressSheet: View {
                     .tint(liked ? .mine : .primary)
                     Spacer()
                     Button(loc("Ignorer")) { model.progressQuestion = nil }
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.appMuted)
                 }
                 .font(.subheadline)
             }
         }
         .padding(20)
         .presentationDetents([.height(320)])
+        .presentationBackground(Color.appSurface)
+        .presentationCornerRadius(22)
         .presentationDragIndicator(.visible)
         .task { await loadSeasons() }
         .onChange(of: season) { _, number in

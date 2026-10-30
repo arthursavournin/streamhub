@@ -93,7 +93,7 @@ nonisolated enum L10n {
         "Accueil de la plateforme": "Platform home", "Liens sur TMDB": "Links on TMDB", "Reprise de la série": "Resume series",
         "Prime Video avec pub": "Prime Video with ads", "Netflix avec pub": "Netflix with ads",
         // Saisons
-        "Épisodes spéciaux": "Specials", "Découpage": "Season layout", "Découpage TMDB": "TMDB layout",
+        "Épisodes spéciaux": "Specials", "Supprimer tout l’historique, sur tous tes appareils ?": "Clear the whole history, on all your devices?", "Découpage": "Season layout", "Découpage TMDB": "TMDB layout",
         "Netflix - Sans filler": "Netflix - No filler", "Que des fillers dans cette saison": "Fillers only in this season",
         "Pas encore d’épisodes annoncés.": "No episodes announced yet.", "Dernier vu": "Last watched", "Filler": "Filler",
         "Pas encore de résumé en français.": "No summary yet.", "Pas disponible en streaming par abonnement": "Not available on subscription streaming",

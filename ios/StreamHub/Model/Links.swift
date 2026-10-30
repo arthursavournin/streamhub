@@ -112,7 +112,7 @@ struct LinkResolver {
 
     // Boutons avec leurs liens directs, et liens Streaming Availability de chaque saison et épisode (séries)
     func resolve(_ entries: [WatchEntry], details: TitleDetails, type: MediaType) async -> (entries: [WatchEntry], seasons: [SASeason]) {
-        async let sa = streamingOptions(type: type, id: details.id)
+        async let sa = streamingOptions(type: type, id: details.id, latest: details.lastEpisodeToAir)
         async let relay = relayOffers(type: type, id: details.id, title: details.displayTitle)
         var out = entries
         let found = await sa
@@ -133,10 +133,12 @@ struct LinkResolver {
     // ---------- Streaming Availability ----------
 
     // Pour une série, on récupère aussi les liens de chaque saison et de chaque épisode
-    private func streamingOptions(type: MediaType, id: Int) async -> (options: [SAOption], seasons: [SASeason]) {
+    // latest : dernier épisode sorti. Un nouvel épisode oublie les liens gardés, et une réponse sans lui n'est pas gardée
+    // (Streaming Availability ne l'a pas encore) : sinon il n'aurait que « La saison sur… » (comme le site)
+    private func streamingOptions(type: MediaType, id: Int, latest: LatestEpisode?) async -> (options: [SAOption], seasons: [SASeason]) {
         guard !saKey.isEmpty else { return ([], []) }
         let country = region.lowercased()
-        let cacheKey = "\(type.rawValue):\(country):\(id)"
+        let cacheKey = "\(type.rawValue):\(country):\(id):\(latest?.airDate ?? "")"
         if let cached = Self.saCache[cacheKey] { return cached }
         let host = "streaming-availability.p.rapidapi.com"
         let granularity = type == .tv ? "&series_granularity=episode" : ""
@@ -168,7 +170,8 @@ struct LinkResolver {
             return SASeason(number: number, options: pick(s["streamingOptions"]), episodes: episodes)
         }
         let result = (pick(json["streamingOptions"]), seasons)
-        Self.saCache[cacheKey] = result
+        let hasLatest = latest.map { l in seasons.first { $0.number == l.seasonNumber }?.episodes[l.episodeNumber]?.isEmpty == false } ?? true
+        if hasLatest { Self.saCache[cacheKey] = result }
         return result
     }
 

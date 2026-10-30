@@ -9,6 +9,7 @@ import { autoplayLink, providerLogo, webLink, withLogos, withOriginals, withVirt
 const TMDB = 'https://api.themoviedb.org/3';
 const SA_HOST = 'streaming-availability.p.rapidapi.com';
 const SA_CACHE_MS = 3 * 24 * 3600 * 1000; // l'offre gratuite est limitée : on garde les liens 3 jours
+const SA_RETRY_MS = 6 * 3600 * 1000; // réponse sans le dernier épisode sorti : on redemande au bout de 6 h
 // Relais StreamHub (relay/worker.js) : interroge JustWatch, qui refuse les appels directs des autres sites
 const RELAY_CACHE_MS = 24 * 3600 * 1000;
 
@@ -280,12 +281,14 @@ export function makeApi(settings) {
     // Liens directs (fiche ou lecture) par plateforme, via Streaming Availability v4.
     // Pour une série, on récupère aussi les liens de chaque saison et de chaque épisode.
     // Renvoie { options, seasons: [{ number, options, episodes: [{ number, options }] }] } ou null sans clé.
-    async streamingOptions(type, tmdbId) {
+    // latest : dernier épisode sorti (TMDB). Un nouvel épisode oublie les liens gardés : sinon, jusqu'à 3 jours après sa
+    // sortie, il n'avait que « La saison sur… » (VisionQuest 5 et 6, signalé par l'utilisateur).
+    async streamingOptions(type, tmdbId, latest = null) {
       if (!settings.saKey.trim()) return null;
       const country = region.toLowerCase();
-      const cacheKey = `sa4:${type}:${country}:${tmdbId}`;
+      const cacheKey = `sa4:${type}:${country}:${tmdbId}${latest?.air_date ? `:${latest.air_date}` : ''}`;
       const cached = cacheGet(cacheKey, SA_CACHE_MS);
-      if (cached) return cached;
+      if (cached && (!cached.missingLatest || cacheGet(cacheKey, SA_RETRY_MS))) return cached;
 
       const params = new URLSearchParams({ country });
       if (type === 'tv') params.set('series_granularity', 'episode');
@@ -326,6 +329,9 @@ export function makeApi(settings) {
           })),
         })),
       };
+      if (latest && !result.seasons.find((s) => s.number === latest.season_number)?.episodes.some((e) => e.number === latest.episode_number && e.options.length)) {
+        result.missingLatest = true; // Streaming Availability n'a pas encore cet épisode
+      }
       cacheSet(cacheKey, result);
       return result;
     },

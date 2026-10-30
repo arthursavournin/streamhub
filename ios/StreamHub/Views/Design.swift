@@ -18,6 +18,24 @@ extension LinearGradient {
     )
 }
 
+// Menu en capsule : texte en gras et petite flèche, fond de carte (comme .selects select du site)
+struct MenuCapsule: View {
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(text).lineLimit(1)
+            Image(systemName: "chevron.down").font(.caption2.weight(.bold))
+        }
+        .font(.subheadline.weight(.semibold))
+        .foregroundStyle(Color.primary)
+        .padding(.horizontal, 16)
+        .frame(height: 40)
+        .background(Color.appSurface, in: .capsule)
+        .overlay(Capsule().strokeBorder(Color.appBorder))
+    }
+}
+
 // Carte : fond, bord, coins arrondis
 struct Card<Content: View>: View {
     var spacing: CGFloat = 14

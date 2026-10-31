@@ -17,7 +17,7 @@ Disney+, Canal+, TF1+, M6+, france.tv, Arte, Apple TV, Max, Paramount+…
 - Netflix-style browsing: home, movies, series, filterable library, search (even by nickname or acronym).
 - Full title pages, seasons and episodes, with a button to start each title on your platform.
 - Your lists: My list, Likes, History, Downloads.
-- Optional account (email, Google or GitHub): settings and lists end-to-end encrypted and synced across all your
+- Optional account (email or GitHub): settings and lists end-to-end encrypted and synced across all your
   devices. Or as a guest: everything stays in your browser.
 - Free, no ads, no tracking.
 
@@ -41,7 +41,7 @@ its own window).
 
 #### First launch
 
-1. Open StreamHub, pick **English** on the welcome screen, then create an account (email, Google or GitHub), sign in, or choose **Continuer sans compte**
+1. Open StreamHub, pick **English** on the welcome screen, then create an account (email or GitHub), sign in, or choose **Continuer sans compte**
    (Continue without an account). Already using StreamHub on another device? Sign in: everything comes back.
 2. Paste your **TMDB key** in **Clés API** (API keys). It is free: create an account on
    [themoviedb.org](https://www.themoviedb.org), then **Settings → API**.
@@ -88,7 +88,7 @@ Prime Video, Disney+, Canal+, TF1+, M6+, france.tv, Arte, Apple TV, Max, Paramou
 - Parcours façon Netflix : accueil, films, séries, bibliothèque filtrable, recherche (même par surnom ou sigle).
 - Fiches complètes, saisons et épisodes, avec un bouton pour lancer chaque titre sur ta plateforme.
 - Tes listes : Ma liste, J'aime, Historique, Téléchargements.
-- Compte facultatif (e-mail, Google ou GitHub) : réglages et listes chiffrés de bout en bout et synchronisés entre
+- Compte facultatif (e-mail ou GitHub) : réglages et listes chiffrés de bout en bout et synchronisés entre
   tous tes appareils. Ou en invité : tout reste dans ton navigateur.
 - Gratuit, sans publicité, sans pistage.
 
@@ -113,7 +113,7 @@ plus pratique (une icône, sa propre fenêtre).
 
 #### Premier lancement
 
-1. Ouvre StreamHub (Français ou English, au choix dès l’écran d’accueil) : crée un compte (e-mail, Google ou GitHub), connecte-toi, ou choisis **Continuer sans compte**.
+1. Ouvre StreamHub (Français ou English, au choix dès l’écran d’accueil) : crée un compte (e-mail ou GitHub), connecte-toi, ou choisis **Continuer sans compte**.
    Tu utilises déjà StreamHub sur un autre appareil ? Connecte-toi : tout revient.
 2. Colle ta **clé TMDB** dans **Clés API**. Elle est gratuite : crée un compte sur
    [themoviedb.org](https://www.themoviedb.org), puis **Paramètres → API**.

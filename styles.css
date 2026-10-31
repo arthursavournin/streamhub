@@ -876,7 +876,7 @@ html:has(dialog[open]) { overflow: hidden; }
 .auth-providers:empty { display: none; }
 .auth-divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 0.85em; }
 .auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
-/* Boutons de connexion : Google (fond blanc, logo en couleurs, comme le demande Google), GitHub (fond noir) */
+/* Bouton de connexion : GitHub (fond noir) */
 .social-btn {
   display: flex;
   align-items: center;
@@ -894,7 +894,6 @@ html:has(dialog[open]) { overflow: hidden; }
 .social-btn svg { width: 20px; height: 20px; flex: none; }
 .social-btn:hover { filter: brightness(0.96); }
 .social-btn:active { transform: scale(0.99); }
-.social-btn.google { background: #fff; color: #1f1f1f; border: 1px solid #dadce0; }
 .social-btn.github { background: #0d1117; color: #fff; border: 1px solid #30363d; }
 .social-btn.github:hover { filter: brightness(1.25); }
 .auth-switch { margin: 0; text-align: center; color: var(--muted); font-size: 0.92em; }
@@ -921,7 +920,6 @@ html:has(dialog[open]) { overflow: hidden; }
 }
 .avatar-badge { position: absolute; right: -4px; bottom: -4px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--surface); }
 .avatar-badge svg { width: 14px; height: 14px; }
-.avatar-badge.google { background: #fff; }
 .avatar-badge.github { background: #0d1117; color: #fff; }
 .profile-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .profile-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1.05em; }

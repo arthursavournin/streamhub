@@ -7,7 +7,7 @@ import Security
 // Comptes StreamHub (version 2.0), compatibles avec account.js du site : même Supabase, même coffre, mêmes clés.
 //
 // Une clé de coffre aléatoire (AES-GCM 256) chiffre les données synchronisées. Supabase la garde deux fois, fermée à
-// clé (table vaults) : par une clé tirée du mot de passe (ou du mot de passe du coffre, comptes Google / GitHub) et
+// clé (table vaults) : par une clé tirée du mot de passe (ou du mot de passe du coffre, comptes GitHub) et
 // par une clé tirée de la clé de secours. Le vrai mot de passe ne quitte jamais l'appareil : PBKDF2 puis HKDF en
 // tirent un « mot de passe de connexion » envoyé à Supabase Auth et une clé qui ouvre le coffre.
 // Secrets (session, clé du coffre) dans le trousseau iOS ; le reste dans UserDefaults.
@@ -51,7 +51,7 @@ nonisolated enum AccountCrypto {
         return (base64URL(expand(master, info: "streamhub:login")), expand(master, info: "streamhub:vault"))
     }
 
-    // Mot de passe du coffre (Google, GitHub) : sel aléatoire gardé dans le coffre
+    // Mot de passe du coffre (GitHub) : sel aléatoire gardé dans le coffre
     static func vaultPasswordKey(_ password: String, salt: String) -> Data {
         expand(pbkdf2(password, salt: salt, iterations: kdfIterations), info: "streamhub:vault")
     }
@@ -105,7 +105,7 @@ nonisolated struct VaultRow: Codable, Sendable {
 // Ce que l'utilisateur doit encore faire une fois connecté
 enum AccountNeed: String, Codable {
     case unlock // entrer son mot de passe (du coffre)
-    case create // créer son coffre (compte Google / GitHub ouvert sur le site sans coffre)
+    case create // créer son coffre (compte GitHub ouvert sur le site sans coffre)
 }
 
 struct AccountMeta: Codable, Equatable {
@@ -204,8 +204,8 @@ final class AccountService {
     }
 
     // Fournisseurs de connexion (comme PROVIDERS d'account.js) ; Apple : demande l'Apple Developer Program payant
-    nonisolated static let providers = ["google": "Google", "github": "GitHub"]
-    // Retour de Google / GitHub dans l'appli (à mettre dans Supabase : Authentication → URL Configuration → Redirect URLs)
+    nonisolated static let providers = ["google": "Google", "github": "GitHub"] // Google : sessions ouvertes avant la 2.11.0
+    // Retour de GitHub dans l'appli (à mettre dans Supabase : Authentication → URL Configuration → Redirect URLs)
     nonisolated static let callbackScheme = "streamhub"
     nonisolated static let callbackURL = "streamhub://auth-callback"
 
@@ -466,7 +466,7 @@ final class AccountService {
         try await afterSignIn(unlock: derived.unlock)
     }
 
-    // Coffre fermé (mot de passe changé ailleurs, compte Google / GitHub) : mot de passe (du coffre)
+    // Coffre fermé (mot de passe changé ailleurs, compte GitHub) : mot de passe (du coffre)
     func unlockVault(_ password: String) async throws {
         guard let vault = try await fetchVault() else { return }
         guard let raw = await openWith(vault, password: password) else {
@@ -475,7 +475,7 @@ final class AccountService {
         opened(raw)
     }
 
-    // Compte Google / GitHub dont le coffre n'existe pas encore : mot de passe du coffre choisi
+    // Compte GitHub dont le coffre n'existe pas encore : mot de passe du coffre choisi
     func createVaultWith(_ password: String) async throws {
         try await checkPassword(password)
         let salt = AccountCrypto.randomSalt()
@@ -483,14 +483,15 @@ final class AccountService {
         try await createVault(mode: "vault", unlock: key, salt: salt)
     }
 
-    // ---------- Google, GitHub ----------
+    // ---------- GitHub ----------
 
     @ObservationIgnored private var enabled: [String]?
     // Fournisseurs activés dans Supabase (seuls leurs boutons s'affichent)
     func enabledProviders() async -> [String] {
         if let enabled { return enabled }
         guard let settings = try? await call("/auth/v1/settings") else { return [] }
-        let list = ["google", "github"].filter { settings["external"]?[$0]?.bool == true }
+        // Google retiré en 2.11.0 (demande de l'utilisateur)
+        let list = ["github"].filter { settings["external"]?[$0]?.bool == true }
         enabled = list
         return list
     }
@@ -509,7 +510,7 @@ final class AccountService {
         return (components.url!, verifier)
     }
 
-    // Retour de Google / GitHub (streamhub://auth-callback?code=…) : session, puis coffre (mot de passe du coffre)
+    // Retour de GitHub (streamhub://auth-callback?code=…) : session, puis coffre (mot de passe du coffre)
     func finishOAuth(_ callback: URL, verifier: String) async throws {
         let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems ?? []
         if let error = items.first(where: { $0.name == "error_description" })?.value {

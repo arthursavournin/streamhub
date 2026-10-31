@@ -1,8 +1,8 @@
-// Comptes StreamHub (version 2.0.0) : connexion Supabase (e-mail et mot de passe, Google, GitHub) et coffre chiffré.
+// Comptes StreamHub (version 2.0.0) : connexion Supabase (e-mail et mot de passe, GitHub) et coffre chiffré.
 //
 // Chiffrement de bout en bout : une clé de coffre aléatoire (AES-GCM 256) chiffre les données synchronisées
 // (sync.js). Supabase la garde deux fois, fermée à clé (table vaults) :
-//   - password_lock : par une clé tirée du mot de passe (compte e-mail) ou du mot de passe du coffre (Google, GitHub)
+//   - password_lock : par une clé tirée du mot de passe (compte e-mail) ou du mot de passe du coffre (GitHub)
 //   - recovery_lock : par une clé tirée de la clé de secours (20 caractères tirés au hasard)
 // Le vrai mot de passe ne quitte jamais l'appareil : il en sort deux secrets indépendants (PBKDF2 puis HKDF),
 // un « mot de passe de connexion » envoyé à Supabase Auth et une clé qui ouvre le coffre, gardée ici.
@@ -12,7 +12,7 @@ import { LANG } from './i18n.js';
 
 const SUPABASE_URL = 'https://bfcmqdvztmkpqwamwejp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_RB_4r6Da9y2SLQPjavQXVA_w2Brn3LI'; // clé publique (faite pour être dans le code)
-// Ce que l'adresse du site devient après la connexion Google / GitHub et les liens des e-mails (liste autorisée
+// Ce que l'adresse du site devient après la connexion GitHub et les liens des e-mails (liste autorisée
 // dans Supabase : Authentication → URL Configuration)
 const SITE_URL = new URL('./', location.href).href;
 
@@ -27,7 +27,9 @@ const devServer = () => {
 };
 const server = () => devServer() ?? { url: SUPABASE_URL, key: SUPABASE_KEY };
 
-export const PROVIDERS = { google: 'Google', github: 'GitHub' }; // Apple : demande l'Apple Developer Program payant
+// Google retiré (version 2.11.0, demande de l'utilisateur : Google exigeait un domaine à soi pour vérifier l'appli).
+// Apple : demande l'Apple Developer Program payant
+export const PROVIDERS = { github: 'GitHub' };
 
 // Fournisseurs activés dans Supabase (Authentication → Sign In / Providers) : seuls leurs boutons s'affichent
 let enabled = null;
@@ -122,7 +124,7 @@ async function passwordSecrets(email, password) {
   return { login: b64url(await expand(master, 'streamhub:login')), unlock: await expand(master, 'streamhub:vault') };
 }
 
-// Mot de passe du coffre (Google, GitHub) : sel aléatoire gardé dans le coffre
+// Mot de passe du coffre (GitHub) : sel aléatoire gardé dans le coffre
 async function vaultPasswordKey(password, salt) {
   return expand(await stretch(password, salt, KDF_ITERATIONS), 'streamhub:vault');
 }
@@ -196,7 +198,7 @@ function dropKeys(...names) {
 //   IndexedDB ; avant 2.3.4 : pending.unlock en base64) }
 
 const ACCOUNT_KEY = 'streamhub:account';
-const FLOW_KEY = 'streamhub:auth-flow'; // connexion Google / GitHub en cours (vérificateur PKCE)
+const FLOW_KEY = 'streamhub:auth-flow'; // connexion GitHub en cours (vérificateur PKCE)
 const RESET_KEY = 'streamhub:reset-asked'; // « mot de passe oublié » demandé ici : { email, at }
 // Compte changé dans un autre onglet (déconnexion, autre compte) : les clés gardées en mémoire ici sont relues
 window.addEventListener('storage', (e) => e.key === ACCOUNT_KEY && memoryKeys.clear());
@@ -416,7 +418,7 @@ async function afterSignIn({ unlockRaw = null } = {}) {
   if (!vault) {
     // Premier passage : compte e-mail (mot de passe connu) → coffre créé tout de suite ; sinon on demande
     if (unlockRaw) return createVault('login', unlockRaw);
-    // Session ouverte par Google / GitHub : pas de mot de passe StreamHub, on en choisit un pour le coffre
+    // Session ouverte par GitHub (ou Google, avant la 2.11.0) : pas de mot de passe StreamHub, on en choisit un pour le coffre
     return update({ needs: 'create', vaultMode: loadAccount().via === 'oauth' ? 'vault' : 'login' });
   }
   update({ vaultMode: vault.kdf.mode });
@@ -481,7 +483,7 @@ export async function signIn(email, password) {
   await afterSignIn({ unlockRaw: secrets.unlock });
 }
 
-// Google, GitHub : départ vers le fournisseur (PKCE : le code reçu au retour ne sert qu'avec le vérificateur gardé ici)
+// GitHub : départ vers le fournisseur (PKCE : le code reçu au retour ne sert qu'avec le vérificateur gardé ici)
 export async function signInWith(provider) {
   const verifier = b64url(crypto.getRandomValues(new Uint8Array(32)));
   const challenge = b64url(await crypto.subtle.digest('SHA-256', enc.encode(verifier)));
@@ -494,7 +496,7 @@ export async function signInWith(provider) {
   location.assign(`${server().url}/auth/v1/authorize?${params}`);
 }
 
-// Ouvre le coffre (nouvel appareil, ou session venue d'un lien / de Google) avec le mot de passe
+// Ouvre le coffre (nouvel appareil, ou session venue d'un lien / de GitHub) avec le mot de passe
 export async function unlockVault(password) {
   const vault = await fetchVault();
   if (!vault) return update({ needs: 'create' });
@@ -503,7 +505,7 @@ export async function unlockVault(password) {
   await opened(raw);
 }
 
-// Premier coffre d'un compte Google / GitHub (mot de passe du coffre choisi), ou d'un compte e-mail confirmé
+// Premier coffre d'un compte GitHub (mot de passe du coffre choisi), ou d'un compte e-mail confirmé
 // sur un autre appareil (mot de passe du compte, vérifié auprès de Supabase)
 export async function createVaultWith(password) {
   const a = loadAccount();
@@ -602,7 +604,7 @@ export async function deleteAccount(password) {
   await signOut();
 }
 
-// ---------- Retour sur le site (Google / GitHub, liens des e-mails) ----------
+// ---------- Retour sur le site (GitHub, liens des e-mails) ----------
 
 // Lien d'e-mail ouvert sans inscription ni « mot de passe oublié » en cours sur cet appareil : la session n'est gardée
 // qu'après confirmation (l'adresse du compte est affichée). Sans ça, un lien piégé (jetons du compte de quelqu'un

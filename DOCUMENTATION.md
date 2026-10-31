@@ -261,7 +261,7 @@ interface can already be driven with the remote's arrows, OK and Back. Ideas for
 1. Open StreamHub: on first launch, only the sign-in page is shown. Under "Bienvenue sur StreamHub", pick
    **Français** or **English**: everything switches to that language, and the account emails (confirmation, forgotten
    password) arrive in the same language.
-2. **Sign in or create an account** (email and password, Google or GitHub): if you already use StreamHub elsewhere,
+2. **Sign in or create an account** (email and password, or GitHub): if you already use StreamHub elsewhere,
    your keys, subscriptions and lists come back, and you are done. You can also choose **Continuer sans compte**
    (Continue without an account, as a guest): everything then stays on this device
    ([part 6](#6-your-account-and-sync)).
@@ -321,7 +321,7 @@ account actions apply immediately.
 
 | Section | Content |
 |---|---|
-| **Compte** (Account) | Create an account, sign in (email, Google, GitHub), forgot password, change password, recovery key, sign out, delete the account. As a guest: the sign-in page, with the Google and GitHub buttons. |
+| **Compte** (Account) | Create an account, sign in (email, GitHub), forgot password, change password, recovery key, sign out, delete the account. As a guest: the sign-in page, with the Google and GitHub buttons. |
 | **Mes abonnements** (My subscriptions) | The platforms you subscribe to, with a field to filter the list. Ticking Prime Video also ticks the channels included with Prime. Paid add-ons sold on another platform are "channels" ticked separately, e.g. **HBO Max Amazon Channel** (HBO Max on Prime Video) or Canal+'s channels (France) **HBO Max Canal+ Channel**, **Apple TV Canal+ Channel** and **Paramount Plus Canal+ Channel**, to watch those catalogs on Canal+. Ticking **Canal+ Ciné Séries** also ticks the bundle's platforms: Canal+, Canal+ Séries, Netflix and Canal+'s HBO Max, Apple TV and Paramount+ channels; Ciné+ OCS is listed under Canal+. Netflix remains a separate account (activated from your Canal+ space) and opens in the Netflix app. |
 | **Clés API** (API keys) | TMDB key, Streaming Availability key, with a Test button for each. (The StreamHub relay, for JustWatch links, has no setting: its address is fixed since version 2.3.4.) |
 | **Accueil** (Home) | Rows shown on the home page, their order, and the featured title. |
@@ -359,8 +359,8 @@ sent.
 - **With your email**: **Créer un compte** (Create an account) tab, address and password (at least 12 characters),
   then open the link received by email (check your spam folder too). On your other devices: **Se connecter** (Sign in)
   with the same address and password.
-- **With Google or GitHub** (buttons shown when enabled): on the first sign-in, StreamHub asks you to choose a **vault
-  password**. It encrypts your data; it is specific to StreamHub and unrelated to your Google or GitHub account. You
+- **With GitHub** (button shown when enabled): on the first sign-in, StreamHub asks you to choose a **vault
+  password**. It encrypts your data; it is specific to StreamHub and unrelated to your GitHub account. You
   type it once on each new device.
 
 When the account is created, StreamHub shows your **recovery key** (20 characters, for example
@@ -373,7 +373,7 @@ appear in known data breaches. This check runs on your device, before anything i
 service: only the first 5 characters of a hash of the password are sent, never the password. A password chosen before
 version 2.3.4 still works.
 
-In the iPhone app: **Settings → Compte**, with the same account (email and password, Google or GitHub: Apple's sign-in
+In the iPhone app: **Settings → Compte**, with the same account (email and password, or GitHub: Apple's sign-in
 window opens, then returns to the app). Links in emails (confirmation, forgotten password) open on the site: after
 confirming, come back to the app and tap **J'ai confirmé mon adresse** (I've confirmed my address).
 
@@ -389,8 +389,7 @@ or watched again there after the removal.
 ### Forgotten password, changing your password, deleting the account
 
 - **Mot de passe oublié ?** (Forgot password?, under **Se connecter**): an email sends you a link; it opens
-  StreamHub, where you choose a new password and enter your **recovery key**. Forgot your vault password (Google,
-  GitHub)? Same thing, with **Mot de passe du coffre oublié ?** once signed in.
+  StreamHub, where you choose a new password and enter your **recovery key**. Forgot your vault password (GitHub)? Same thing, with **Mot de passe du coffre oublié ?** once signed in.
 - **"Ce lien est-il pour toi ?"** (Is this link for you?): an email link (confirmation, forgotten password) opened on
   a different device or browser than the one that requested it first shows the account's address. Only continue if
   it is yours: a booby-trapped link cannot silently sign you in to someone else's account.
@@ -599,7 +598,7 @@ The email link was opened somewhere other than where it was requested. Check the
 continue; otherwise, ignore the link.
 
 **"Connexion commencée dans un autre navigateur" (Sign-in started in another browser).**
-Google / GitHub sign-in must finish in the browser where it started: start again from that one.
+GitHub sign-in must finish in the browser where it started: start again from that one.
 
 **Still stuck?**
 Open an issue on GitHub: **[Issues → New issue](https://github.com/arthursavournin/streamhub/issues/new)**, with your
@@ -652,7 +651,7 @@ Then open **http://localhost:8080**. The relay accepts calls coming from `localh
 | `account.js` | Supabase accounts (Auth and database, direct HTTP calls): sign-up, sign-in, vault, recovery key |
 | `account-ui.js` | Settings → Account |
 | `supabase/schema.sql` | `vaults` and `sync_data` tables, access rules (one row each), `delete_my_account`, `keepalive`, closed default privileges for future objects |
-| `mentions-legales.html`, `confidentialite.html`, `conditions.html`, `legal.css` | Legal pages (French law LCEN, GDPR, terms of use required by Google for sign-in) |
+| `mentions-legales.html`, `confidentialite.html`, `conditions.html`, `legal.css` | Legal pages (French law LCEN, GDPR, terms of use) |
 | `supabase/menage.sql` | Daily cleanup (pg_cron): retention periods stated in the policy |
 | `supabase/templates/` | Emails in French (confirmation, forgotten password), to paste into Supabase: Authentication → Emails → Templates |
 | `episodes.js` | Direct links to TF1+ and M6+ episodes (index published in `data/`) |

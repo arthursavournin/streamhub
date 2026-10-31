@@ -2,7 +2,7 @@ import AuthenticationServices
 import SwiftUI
 import UIKit
 
-// Compte, comme sur le site (account-ui.js) : carte de connexion (e-mail, Google, GitHub), coffre à ouvrir, carte de
+// Compte, comme sur le site (account-ui.js) : carte de connexion (e-mail, GitHub), coffre à ouvrir, carte de
 // profil, actions en liste, clé de secours. Sert dans Réglages → Compte et au premier lancement (onboarding : avec
 // l'accueil et « Continuer sans compte »). Les liens des e-mails (confirmation, mot de passe oublié) ouvrent le site.
 struct AccountScreen: View {
@@ -20,7 +20,7 @@ struct AccountScreen: View {
     @State private var busy = false
     @State private var message: (text: String, ok: Bool)?
     @State private var providers: [String] = []
-    @State private var oauthBusy = false // pas de roue sur « Se connecter » pendant la connexion Google / GitHub
+    @State private var oauthBusy = false // pas de roue sur « Se connecter » pendant la connexion GitHub
 
     private var account: AccountService { model.account }
 
@@ -232,14 +232,12 @@ struct AccountScreen: View {
             ZStack(alignment: .bottomTrailing) {
                 Circle().fill(LinearGradient.accent).frame(width: 56, height: 56)
                     .overlay(Text(String(account.email.prefix(1)).uppercased()).font(.title2.weight(.bold)).foregroundStyle(.white))
-                if provider == "google" || provider == "github" {
-                    Group {
-                        if provider == "google" { Image(.googleLogo).resizable() } else { Image(.gitHubLogo).resizable().renderingMode(.template) }
-                    }
+                if provider == "github" {
+                    Image(.gitHubLogo).resizable().renderingMode(.template)
                     .frame(width: 13, height: 13)
                     .foregroundStyle(.white)
                     .frame(width: 24, height: 24)
-                    .background(provider == "google" ? Color.white : Color.black, in: .circle)
+                    .background(Color.black, in: .circle)
                     .overlay(Circle().strokeBorder(Color.appSurface, lineWidth: 2))
                     .offset(x: 4, y: 4)
                 }
@@ -339,7 +337,7 @@ struct AccountScreen: View {
         }
     }
 
-    // Google / GitHub : fenêtre de connexion d'Apple (navigateur intégré), retour sur streamhub://auth-callback
+    // GitHub : fenêtre de connexion d'Apple (navigateur intégré), retour sur streamhub://auth-callback
     private func oauth(_ provider: String) {
         oauthBusy = true
         run {

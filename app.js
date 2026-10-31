@@ -17,7 +17,7 @@ import * as library from './library.js';
 startTranslation();
 
 // À changer à chaque mise en ligne (avec le nom du cache dans sw.js) : affiché dans les réglages
-const APP_VERSION = '2.10.0';
+const APP_VERSION = '2.11.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) =>
@@ -3139,14 +3139,14 @@ if (!settings.tmdbKey) {
   else openSettings(true);
 }
 startAutoSync(applySynced); // réglages et listes des autres appareils
-// Retour de Google / GitHub ou d'un lien d'e-mail (confirmation, mot de passe oublié) : Réglages → Compte
+// Retour de GitHub ou d'un lien d'e-mail (confirmation, mot de passe oublié) : Réglages → Compte
 handleAuthRedirect().then((result) => {
   if (!result) return;
   if (!el.settings.open) openSettings(false, 'account');
   else if (!el.settings.classList.contains('onboarding')) selectPanel('account');
   if (result.kind === 'link-confirm') accountUi.render(); // « Ce lien est-il pour toi ? » (F8)
   const messages = {
-    oauth: accountState().open ? `Connecté avec ${{ google: 'Google', github: 'GitHub' }[result.provider] ?? result.provider}.` : '',
+    oauth: accountState().open ? `Connecté avec ${result.provider === 'github' ? 'GitHub' : result.provider}.` : '',
     confirmed: accountState().open ? 'Adresse confirmée : compte créé.' : 'Adresse confirmée.',
     recovery: '',
   };

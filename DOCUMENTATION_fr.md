@@ -258,7 +258,7 @@ appli TV :
 1. Ouvre StreamHub : au premier lancement, seule la page de connexion s'affiche. Sous « Bienvenue sur StreamHub »,
    choisis **Français** ou **English** : tout passe dans cette langue, et les e-mails du compte (confirmation, mot de
    passe oublié) arriveront dans la même langue.
-2. **Connecte-toi ou crée un compte** (e-mail et mot de passe, Google ou GitHub) : si tu utilises déjà StreamHub
+2. **Connecte-toi ou crée un compte** (e-mail et mot de passe, ou GitHub) : si tu utilises déjà StreamHub
    ailleurs, clés, abonnements et listes reviennent, et c'est fini. Tu peux aussi choisir **Continuer sans compte**
    (invité) : tout reste alors sur cet appareil ([partie 6](#6-ton-compte-et-la-synchronisation)).
 3. Sinon, StreamHub te demande ta **clé TMDB** ([partie 4](#4-les-clés-api)). C'est la seule clé obligatoire.
@@ -317,7 +317,7 @@ les actions du compte, elles, s'appliquent tout de suite.
 
 | Section | Contenu |
 |---|---|
-| **Compte** | Créer un compte, se connecter (e-mail, Google, GitHub), mot de passe oublié, changer de mot de passe, clé de secours, se déconnecter, supprimer le compte. En invité : la page de connexion, avec les boutons Google et GitHub. |
+| **Compte** | Créer un compte, se connecter (e-mail, GitHub), mot de passe oublié, changer de mot de passe, clé de secours, se déconnecter, supprimer le compte. En invité : la page de connexion, avec les boutons Google et GitHub. |
 | **Mes abonnements** | Les plateformes auxquelles tu es abonné, avec un champ pour filtrer la liste. Cocher Prime Video coche aussi les chaînes incluses avec Prime. Les options payantes vendues sur une autre plateforme sont des « chaînes » à cocher à part, par exemple **HBO Max Amazon Channel** (HBO Max sur Prime Video) ou les chaînes de Canal+ (France) **HBO Max Canal+ Channel**, **Apple TV Canal+ Channel** et **Paramount Plus Canal+ Channel**, pour regarder ces catalogues sur Canal+. Cocher **Canal+ Ciné Séries** coche aussi les plateformes de l'offre : Canal+, Canal+ Séries, Netflix et les chaînes HBO Max, Apple TV et Paramount+ de Canal+ ; Ciné+ OCS est référencé sous Canal+. Netflix reste un compte à part (activé depuis ton espace Canal+) et s'ouvre dans l'appli Netflix. |
 | **Clés API** | Clé TMDB, clé Streaming Availability, avec un bouton Tester pour chacune. (Le relais StreamHub, pour les liens JustWatch, n'a pas de réglage : son adresse est fixe depuis la version 2.3.4.) |
 | **Accueil** | Rangées affichées sur l'accueil, leur ordre, et le titre à l'affiche. |
@@ -356,9 +356,9 @@ l'appareil, rien n'est envoyé.
 - **Avec ton e-mail** : onglet **Créer un compte**, adresse et mot de passe (12 caractères au moins), puis ouvre le lien
   reçu par e-mail (regarde aussi dans les indésirables). Sur tes autres appareils : **Se connecter** avec la même
   adresse et le même mot de passe.
-- **Avec Google ou GitHub** (boutons affichés quand ils sont activés) : à la première connexion, StreamHub te demande
+- **Avec GitHub** (bouton affiché quand il est activé) : à la première connexion, StreamHub te demande
   de choisir un **mot de passe du coffre**. Il chiffre tes données ; il est propre à StreamHub, sans rapport avec ton
-  compte Google ou GitHub. Tu le tapes une fois sur chaque nouvel appareil.
+  compte GitHub. Tu le tapes une fois sur chaque nouvel appareil.
 
 À la création, StreamHub affiche ta **clé de secours** (20 caractères, par exemple `ABCD-EFGH-JKLM-NPQR-STUV`) :
 note-la dans ton gestionnaire de mots de passe. Elle seule permet de retrouver tes données si tu oublies ton mot de
@@ -370,7 +370,7 @@ moins** et ne pas figurer dans des fuites de données connues. Cette vérificati
 l'envoi, auprès du service Have I Been Pwned : seuls les 5 premiers caractères d'une empreinte du mot de passe partent,
 jamais le mot de passe. Un mot de passe choisi avant la version 2.3.4 marche toujours.
 
-Dans l'appli iPhone : **Réglages → Compte**, avec le même compte (e-mail et mot de passe, Google ou GitHub : la
+Dans l'appli iPhone : **Réglages → Compte**, avec le même compte (e-mail et mot de passe, ou GitHub : la
 fenêtre de connexion d'Apple s'ouvre, puis revient dans l'appli). Les liens des e-mails (confirmation, mot de passe oublié) s'ouvrent sur le site : après la confirmation,
 reviens dans l'appli et touche **J'ai confirmé mon adresse**.
 
@@ -387,7 +387,7 @@ sauf s'il y est de nouveau ajouté ou regardé après le retrait.
 ### Mot de passe oublié, changer de mot de passe, supprimer le compte
 
 - **Mot de passe oublié ?** (sous **Se connecter**) : un e-mail t'envoie un lien ; il ouvre StreamHub, où tu choisis
-  un nouveau mot de passe et entres ta **clé de secours**. Mot de passe du coffre oublié (Google, GitHub) : même
+  un nouveau mot de passe et entres ta **clé de secours**. Mot de passe du coffre oublié (GitHub) : même
   chose, avec **Mot de passe du coffre oublié ?** une fois connecté.
 - **« Ce lien est-il pour toi ? »** : un lien d'e-mail (confirmation, mot de passe oublié) ouvert sur un autre
   appareil ou navigateur que celui de la demande affiche d'abord l'adresse du compte. Continue seulement si c'est la
@@ -601,7 +601,7 @@ Le lien de l'e-mail a été ouvert ailleurs que là où il a été demandé. Vé
 continue ; sinon, ignore le lien.
 
 **« Connexion commencée dans un autre navigateur ».**
-La connexion Google / GitHub doit se terminer dans le navigateur où elle a commencé : recommence depuis celui-ci.
+La connexion GitHub doit se terminer dans le navigateur où elle a commencé : recommence depuis celui-ci.
 
 **Le problème persiste ?**
 Ouvre un ticket sur GitHub : **[Issues → New issue](https://github.com/arthursavournin/streamhub/issues/new)**, en
@@ -654,7 +654,7 @@ Puis ouvre **http://localhost:8080**. Le relais accepte les appels venant de `lo
 | `account.js` | Comptes Supabase (Auth et base, appels HTTP directs) : inscription, connexion, coffre, clé de secours |
 | `account-ui.js` | Réglages → Compte |
 | `supabase/schema.sql` | Tables `vaults` et `sync_data`, règles d'accès (chacun sa ligne), `delete_my_account`, `keepalive`, droits par défaut fermés pour les futurs objets |
-| `mentions-legales.html`, `confidentialite.html`, `conditions.html`, `legal.css` | Pages légales (LCEN, RGPD, conditions d'utilisation demandées par Google pour la connexion) |
+| `mentions-legales.html`, `confidentialite.html`, `conditions.html`, `legal.css` | Pages légales (LCEN, RGPD, conditions d'utilisation) |
 | `supabase/menage.sql` | Ménage quotidien (pg_cron) : durées de conservation annoncées dans la politique |
 | `supabase/templates/` | E-mails en français (confirmation, mot de passe oublié), à coller dans Supabase : Authentication → Emails → Templates |
 | `episodes.js` | Liens directs vers les épisodes TF1+ et M6+ (index publié dans `data/`) |

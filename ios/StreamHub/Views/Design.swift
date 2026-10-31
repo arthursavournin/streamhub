@@ -121,7 +121,7 @@ struct WideButtonStyle: ButtonStyle {
     }
 }
 
-// « Continuer avec Google » (fond blanc, logo en couleurs, comme le demande Google) / « Continuer avec GitHub » (fond noir)
+// « Continuer avec GitHub » (fond noir)
 struct SocialButton: View {
     let provider: String
     let action: () -> Void
@@ -129,17 +129,13 @@ struct SocialButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                if provider == "google" {
-                    Image(.googleLogo).resizable().frame(width: 20, height: 20)
-                } else {
-                    Image(.gitHubLogo).resizable().renderingMode(.template).frame(width: 20, height: 20)
-                }
+                Image(.gitHubLogo).resizable().renderingMode(.template).frame(width: 20, height: 20)
                 Text(loc("Continuer avec \(AccountService.providers[provider] ?? provider)")).font(.body.weight(.semibold))
             }
-            .foregroundStyle(provider == "google" ? Color(white: 0.12) : .white)
+            .foregroundStyle(.white)
             .frame(maxWidth: .infinity, minHeight: 50)
-            .background(provider == "google" ? Color.white : Color(red: 0x0d / 255, green: 0x11 / 255, blue: 0x17 / 255), in: .rect(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(provider == "google" ? Color(white: 0.86) : Color(red: 0x30 / 255, green: 0x36 / 255, blue: 0x3d / 255)))
+            .background(Color(red: 0x0d / 255, green: 0x11 / 255, blue: 0x17 / 255), in: .rect(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color(red: 0x30 / 255, green: 0x36 / 255, blue: 0x3d / 255)))
         }
         .buttonStyle(.plain)
     }
